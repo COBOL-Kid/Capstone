@@ -30,7 +30,7 @@
     The page includes:
     - A section displaying recent Technical Service Bulletins (TSBs) and safety bulletins.
     - Cards representing my vehicles, each with a picture, year/make/model, and buttons to add/edit a vehicle.
-    - A link to find nearby repair services.
+    - An option to find nearby repair services.
     - If I select “Services Near Me,” I am redirected to the services near me page.
     - Choosing “Add a Vehicle” redirects me to the Add a Vehicle Page.
 
@@ -55,6 +55,7 @@
     - Create reminders.
     - Update mileage.
     - Delete the vehicle.
+    - An option to lookup check engine light or other repair codes.
     - Navigate to the maintenance information page.
 
 
@@ -62,7 +63,7 @@
 
     - If I choose the maintenance option:
         - A picture of the vehicle, along with its year, make, model, and VIN, appears at the top.
-        - A list of recommended maintenance items (within ±10,000 miles of the current mileage) is displayed.
+        - A list of recommended maintenance items (within ±10,000 miles of the current mileage) is displayed, along with approximate pricing and parts needed
         - Beneath, I find outstanding recalls and service bulletins.
 
     I see options to:
@@ -76,6 +77,23 @@
         - I enter the repair mileage and optionally the cost.
         - If the desired item isn’t in the list, I can manually add details (description, notes, price, mileage).
         - After selection, I receive a confirmation summary and can either confirm or edit my choices.
+        
+### Create Maintenance Reminder:
+
+    If I navigate to the “Create Reminder” page:
+
+    - I see a list of upcoming maintenance tasks.
+    - I can select specific maintenance items by checking checkboxes next to them.
+
+    Reminder preferences:
+    
+    Option A: Custom Reminder Date
+    - I manually enter the date when I would like to receive the reminder.
+
+    Option B: Default Estimation
+    - I choose the default option, allowing the application to estimate the reminder date based on the maintenance schedule.
+
+    Upon submitting the form, I receive a confirmation page showing the details of the reminder. I can confirm or cancel and am navigated back to the vehicle summary page.
 
 ### View Maintenance Log:
 

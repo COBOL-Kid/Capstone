@@ -50,6 +50,7 @@
         The page displays:
         - Year, make, model, and additional vehicle details.
         - Recently posted TSBs or safety recalls.
+        - Any upcoming reminders
 
     I see options to:
     - Create reminders.
@@ -73,7 +74,7 @@
 
     Adding a Maintenance Record:
         - I see suggested maintenance items (within ±10,000 miles).
-        - I can check a box next to an item to add it as a maintenance task.
+        - I can check a box next to an item to add it as a completed maintainence item.
         - I enter the repair mileage and optionally the cost.
         - If the desired item isn’t in the list, I can manually add details (description, notes, price, mileage).
         - After selection, I receive a confirmation summary and can either confirm or edit my choices.

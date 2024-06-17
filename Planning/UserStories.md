@@ -53,7 +53,18 @@
     - Delete the vehicle.
     - Navigate to the maintenance information page.
     - Navigate to saftey recall information page.
+    - Click next to a reminder to edit it
+    - Click next to a reminder to delete it
 
+### Edit a Reminder:
+
+    If I click edit a reminder I am redirected to a new page where I see the existing reminder details and can update the date or description.
+    If I click update the reminder is updated, if I click cancel the reminder is not edited. I am redirected back to the detailed vhicle summary page.
+
+### Delete a Reminder:
+
+    If I click delete a reminder I am redirected to a new page where I see the existing reminder details.
+    If I click delete on this page the reminder is deleted, if I click cancel the reminder is not deleted. I am redirected back to the detailed vhicle summary page.
 
 ### Maintenance Information Page:
 
@@ -63,8 +74,10 @@
         - A list of completed maintenance items with the completed date and mileage.
 
     I see options to:
-        - Click next to an item to add a maintenance record for that item.
-        - Click next to an item to add a reminder for that item.
+        - Click next to a non-complete maintainence item to add maintenance record for that item.
+        - Click next to a completed maintenance item to edit the comments.
+        - Click next to a completed maintenance item to delete it.
+        - Click next to a non-completed maintenance item to add/edit a reminder for that item.
         - Create a custom reminder.
         - Add a custom maintainence record.
 
@@ -72,11 +85,22 @@
 
         If I naviagted here by clicking button next to a non-complete maintenance record I see:
         - Summary Details of record I clicked.
+        - A place to enter notes regarding this maintenance item.
 
         If I navigated here by clicking custom maintenance item:
-        - I can manually add details (description, notes, price, mileage).
+        - I can manually add details (description, notes, price, mileage, notes).
 
         After selection, I receive a confirmation summary and can either confirm or edit my choices.
+
+### Edit a Maintenance Item:
+
+    If I click edit a maintenance item notes I am redirected to a new page where I see the existing maintenance details and can update the notes associated with the item.
+    If I click update the notes are updated, if I click cancel the notes are not edited. I am redirected back to the maintenance information page.
+
+### Delete a Maintenance Item:
+
+    If I click delte a maintenance item I am redirected to a new page where I see the existing maintenance details.
+    If I click delete the item is deleted, if I click cancel the item is not edited. I am redirected back to the maintenance information page.
         
 ### Add a Maintenance Reminder:
 

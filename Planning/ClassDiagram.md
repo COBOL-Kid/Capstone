@@ -54,7 +54,7 @@
 
 ## Owner
 
-    Owner getOwner(Owner)
+    Owner getOwnerByUsername(Owner)
 
     Owner createOwner(Owner)
 
@@ -63,6 +63,8 @@
     Result createVin(Vin)
 
     Vin getVin(vin#)
+
+    List<Vin> getVinByOwnerId(ownerId)
 
     Result updateVin(Vin)
 
@@ -109,7 +111,7 @@
     - Cannot be a duplicate (ie same first name, last name, email).
     - No fields cannot be null or empty.
 
-    Owner getOwner(Owner)
+    Owner getOwnerByUsername(Owner)
 
     Owner createOwner(Owner)
 
@@ -122,7 +124,9 @@
 
     Result createVin(Vin)
 
-    Vin getVin(vin#)
+    List<Vin> getVinByOwnerId(ownerId)
+
+    Vin getVinByNumber(vin#)
 
     Result updateVin(Vin)
 
@@ -156,3 +160,6 @@
     emailScheduler()
     -> will fetch emails using findReminderByToday()
     -> will send the emails using sendEmail()
+
+# Global Error Handler
+

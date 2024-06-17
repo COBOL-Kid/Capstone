@@ -20,73 +20,66 @@ output: [maintenance +- 10k mi, decription, cost, mileage]
 
 ## Owner
 
-/owner
-GET Owner
-input: @RequestBody Owner
+GET /owner
+input: @ Owner
+output: Owner
 
-/owner
-POST Owner
+
+POST /owner
 input: @RequestBody Owner
 
 ## Reminder Controller
 
-/reminder:vinId
-GET Reminder
+
+GET /reminder:vinId
 input: @pathvariable vinId
 output: [reminders]
 
-/reminder/create
-POST Reminder
+POST /reminder/create
 input: @RequestBody Reminder
 
-/reminder/update
-PUT Reminder
+PUT /reminder/update
 input: @RequestBody Reminder
 
-/reminder/delete:reminderId
-DELETE Reminder
+DELETE /reminder/delete:reminderId
 input: @PathVariable ReminderId
 
 ## Vin Controller
 
-/vin
-GET Vin
-input: @PathVariable Vin#
-output: Vin Model
+/vin/owner
+GET /vin/owner:ownerId
+input: @PathVariable ownerId
+output: List<Vins>
 
-/vin/create
-POST Vin
+GET /vin:vin#
+input: @PathVariable Vin#
+output: Vin
+
+POST /vin/create
 **Will need to call GET Vehicle from Api
 input: @RequestBody Vin
 
-/vin/update
-PUT Vin
+PUT /vin/update
 input: @RequestBody Vin
 
-/vin/delete
-DELETE Vin
+DELETE /vin/delete
 input: @PathVariable Vin#
 
 ## Record Controller
 
-/record:vinId
-GET Record
+GET /record:vinId
 input: @PathVariable vinId
 output: [records]
 
-/record/create
-POST Record
+POST /record/create
 input: @RequestBody Record
 
-/record/update
-PUT Record
+PUT /record/update
 input: @RequestBody Record
 
-/record/delete:recordId
-DELETE Record
+DELETE /record/delete:recordId
 input: @PathVariable recordId
 
-/record/calculate
-GET Record
+GET /record/calculate
 input: @RequestBody Record
 output: Record (with calculated date)

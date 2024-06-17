@@ -1,42 +1,84 @@
 # Mappers
 
-    Vehicle
+    Vin
+    - all fields
+    - {vehicle}
+
     Owner
+    - all fields
+
     Record
+    - all fields
 
     Reminder
-    - ReminderId
-    - Description
-    - Date
-    - Vin
+    - all fields
 
 # Models
 
+    Owner
+    - all fields
+
     Vin
-    - vinId
-    - mileage
+    - all fields
     - {Vehicle}
 
     Vehicle
-    - vehicleId
-    - year
-    - make
-    - model
-    - image
+    - all fields
 
     Reminder
-    - reminderId
-    - description
-    - reminderDate
-    - vinId
+    - all fields
 
     Record
-    - recordId
-    - vinId
-    - description
-    - notes
-    - dateCompleted
-    - mileage
-    - cost
+    - all fields
+
+    Result
+    - errorMessages[]
+    - payload<?>
+
+# Repository
+
+## Record
+
+    Record[] getRecord(vinId)
+
+    Result createRecord(Record)
+
+    Result updateRecord(Record)
+
+    Result deleteRecord(recordId)
+
+## Owner
+
+    Owner getOwner(Owner)
+
+    Owner createOwner(Owner)
+
+## Vin
+
+    Result createVin(Vin)
+
+    Vin getVin(vin#)
+
+    Result updateVin(Vin)
+
+    Result deleteVin(vin#)
+
+## Vehicle
+
+    Result getVehicle(vehicle)
+
+## Reminder
+
+    Result createReminder(Reminder)
+
+    Reminder getReminder(vinId)
+
+    Result updateReminder(Reminder)
+
+    Result deleteReminder(reminderId)
+
+# Service
 
     
+    
+

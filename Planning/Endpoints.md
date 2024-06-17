@@ -18,11 +18,17 @@ output: [maintenance +- 10k mi, decription, cost, mileage]
 
 # My Backend
 
+## Owner
+
+/owner
+GET Owner
+input: @RequestBody Owner
+
 ## Reminder Controller
 
-/reminder:vin
+/reminder:vinId
 GET Reminder
-input: @pathvariable VIN
+input: @pathvariable vinId
 output: [reminders]
 
 /reminder/create

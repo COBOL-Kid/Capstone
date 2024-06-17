@@ -49,12 +49,21 @@
         - Upcoming reminders.
 
     I see options to:
-    - Update mileage.
+    - A field to Update mileage.
     - Delete the vehicle.
     - Navigate to the maintenance information page.
     - Navigate to saftey recall information page.
     - Click next to a reminder to edit it
     - Click next to a reminder to delete it
+
+### Update Mileage
+
+    If I fill in update mileage, and click update mileage the page will refresh and show the updated mileage on the detailed behicle summary page.
+
+### Delete a Vehicle
+
+    If I click delete vhicle I encounter a popup asking If I would really like to delete the vehicle and telling me this action is non-reversable.
+    If I click confirm on this popup the vehicle is deleted, if I click cancel the vehicle is not deleted. The popup window disappears.
 
 ### Edit a Reminder:
 

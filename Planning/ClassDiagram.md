@@ -1,5 +1,10 @@
 # Mappers
 
+    ReminderEmail
+    - reminder description
+    - vin
+    - {owner}
+
     Vin
     - all fields
     - {vehicle}
@@ -32,14 +37,14 @@
     - all fields
 
     Result
-    - errorMessages[]
+    - errorMessages
     - payload<?>
 
 # Repository
 
 ## Record
 
-    Record[] getRecord(vinId)
+    List<Record> getRecord(vinId)
 
     Result createRecord(Record)
 
@@ -76,6 +81,8 @@
     Result updateReminder(Reminder)
 
     Result deleteReminder(reminderId)
+
+    List<ReminderEmail> findReminderByToday()
 
 # Service
 
@@ -139,3 +146,13 @@
     Result updateReminder(Reminder)
 
     Result deleteReminder(reminderId)
+
+## Email Service
+
+    void sendEmail(ReminderEmail)
+
+## Email Scheduler
+
+    emailScheduler()
+    -> will fetch emails using findReminderByToday()
+    -> will send the emails using sendEmail()

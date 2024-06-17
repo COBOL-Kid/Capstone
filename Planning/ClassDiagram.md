@@ -95,7 +95,7 @@
     - Cannot be a duplicate (ie all fields the same).
     - Record must exist (delete)
 
-    Record[] getRecord(vinId)
+    List(Record) getRecord(vinId)
 
     Result createRecord(Record)
 

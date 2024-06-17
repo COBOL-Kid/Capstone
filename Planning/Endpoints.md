@@ -24,6 +24,10 @@ output: [maintenance +- 10k mi, decription, cost, mileage]
 GET Owner
 input: @RequestBody Owner
 
+/owner
+POST Owner
+input: @RequestBody Owner
+
 ## Reminder Controller
 
 /reminder:vinId
@@ -45,21 +49,21 @@ input: @PathVariable ReminderId
 
 ## Vin Controller
 
-/vehicle
+/vin
 GET Vin
 input: @PathVariable Vin#
 output: Vin Model
 
-/vehicle/create
+/vin/create
 POST Vin
-**Will need to call GET Vin from Api
+**Will need to call GET Vehicle from Api
 input: @RequestBody Vin
 
-/vehicle/update
+/vin/update
 PUT Vin
 input: @RequestBody Vin
 
-/vehicle/delete
+/vin/delete
 DELETE Vin
 input: @PathVariable Vin#
 

@@ -22,64 +22,74 @@ output: [maintenance +- 10k mi, decription, cost, mileage]
 
 GET /owner
 input: @ Owner
-output: Owner
+output: Owner/NotFound
 
 
 POST /owner
 input: @RequestBody Owner
+output: OK/NotAuthenticated
 
 ## Reminder Controller
 
 
 GET /reminder:vinId
 input: @pathvariable vinId
-output: [reminders]
+output: [reminders]/NOT_FOUND
 
 POST /reminder/create
 input: @RequestBody Reminder
+output: CREATED/BAD_REQUEST/FORBIDDEN
 
 PUT /reminder/update
 input: @RequestBody Reminder
+output: OK/NOT_FOUND/FORBIDDEN/CONFLICT
 
 DELETE /reminder/delete:reminderId
 input: @PathVariable ReminderId
+output: OK/NOT_FOUND
 
 ## Vin Controller
 
 /vin/owner
 GET /vin/owner:ownerId
 input: @PathVariable ownerId
-output: List<Vins>
+output: List<Vins>/NOT_FOUND/FORBIDDEN
 
 GET /vin:vin#
 input: @PathVariable Vin#
-output: Vin
+output: Vin/NOT_FOUND/FORBIDDEN
 
 POST /vin/create
 **Will need to call GET Vehicle from Api
 input: @RequestBody Vin
+output: CREATED/BAD_REQUEST/FORBIDDEN
 
 PUT /vin/update
 input: @RequestBody Vin
+output: OK/NOT_FOUND/FORBIDDEN/CONFLICT
 
 DELETE /vin/delete
 input: @PathVariable Vin#
+output: OK/NOT_FOUND/FORBIDDEN
 
 ## Record Controller
 
 GET /record:vinId
 input: @PathVariable vinId
-output: [records]
+output: [records]/NOT_FOUND/FORBIDDEN
 
 POST /record/create
 input: @RequestBody Record
+output: CREATED/BAD_REQUEST/FORBIDDEN
 
 PUT /record/update
 input: @RequestBody Record
+output: OK/NOT_FOUND/FORBIDDEN/CONFLICT
 
 DELETE /record/delete:recordId
 input: @PathVariable recordId
+output: OK/NOT_FOUND/FORBIDDEN
 
 GET /record/calculate
 input: @RequestBody Record
-output: Record (with calculated date)
+output: Record (with calculated date)/FORBIDDEN

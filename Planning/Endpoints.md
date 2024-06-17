@@ -81,3 +81,8 @@ input: @RequestBody Record
 /record/delete:recordId
 DELETE Record
 input: @PathVariable recordId
+
+/record/calculate
+GET Record
+input: @RequestBody Record
+output: Record (with calculated date)

@@ -79,6 +79,63 @@
 
 # Service
 
-    
-    
+## Record 
 
+    Validation:
+    - Fields must be non-null with the exception of Notes. (create/update)
+    - Must have a VinId that exists. (create/update)
+    - Mileage and cost cannot be negative numbers.
+    - Cannot be a duplicate (ie all fields the same).
+    - Record must exist (delete)
+
+    Record[] getRecord(vinId)
+
+    Result createRecord(Record)
+
+    Result updateRecord(Record)
+
+    Result deleteRecord(recordId)
+
+## Owner
+
+    Validation:
+    - Cannot be a duplicate (ie same first name, last name, email).
+    - No fields cannot be null or empty.
+
+    Owner getOwner(Owner)
+
+    Owner createOwner(Owner)
+
+## Vin
+
+    Validation:
+    - fields cannot be null or empty (create/update).
+    - vin must exist (delete).
+    - mileage cannot be negative.
+
+    Result createVin(Vin)
+
+    Vin getVin(vin#)
+
+    Result updateVin(Vin)
+
+    Result deleteVin(vin#)
+
+## Reminder
+
+    Validation:
+    - fields cannot be null/empty (create/update).
+    - date must be in the future (create/update).
+    - vinId must be exist.
+
+    Reminder calculateDate(Reminder)
+    -> averages miles/day based on previous maintenance records
+    -> if no previous records uses the standard average of 12,000mi/yr
+
+    Result createReminder(Reminder)
+
+    Reminder getReminder(vinId)
+
+    Result updateReminder(Reminder)
+
+    Result deleteReminder(reminderId)

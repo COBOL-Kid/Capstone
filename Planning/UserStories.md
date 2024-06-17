@@ -6,10 +6,9 @@
 
     As a non-user, I want to land on the website’s landing page and easily navigate through the available options. When I visit the site:
 
-    The navigation bar prominently displays three options:
-    - “Signup”
-    - “About Us”
-    - “Contact”
+    The center of the page prominently displays two options:
+    - Sign Up
+    - Login
 
     Upon clicking “Signup,” I am presented with a user-friendly form that requests the following information:
     - Name
@@ -41,7 +40,7 @@
     - Each facility is accompanied by its Google ratings and a link to its website.
     - This page helps me find convenient repair services in my area.
 
-### Detailed Vehicle Summary Page:
+### Vehicles Summary Page:
 
     Clicking on a vehicle card takes me to a detailed summary page.
         The page displays:
@@ -92,14 +91,14 @@
 
 ### Add a Maintenance Item:
 
-        If I naviagted here by clicking button next to a non-complete maintenance record I see:
-        - Summary Details of record I clicked.
-        - A place to enter notes regarding this maintenance item.
+    If I naviagted here by clicking button next to a non-complete maintenance record I see:
+    - Summary Details of record I clicked.
+    - A place to enter notes regarding this maintenance item.
 
-        If I navigated here by clicking custom maintenance item:
-        - I can manually add details (description, notes, price, mileage, notes).
+    If I navigated here by clicking custom maintenance item:
+    - I can manually add details (description, notes, price, mileage, notes).
 
-        After selection, I receive a confirmation summary and can either confirm or edit my choices.
+    After selection, I receive a confirmation summary and can either confirm or edit my choices.
 
 ### Edit a Maintenance Item:
 

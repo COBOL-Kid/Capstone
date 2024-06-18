@@ -1,4 +1,10 @@
-# From Api (all path variables)
+# External Api's
+
+## From Gmaps Api
+
+GET
+
+## From Auto Api (all path variables)
 
 GET Vehicle
 input: Vin#
@@ -34,7 +40,7 @@ output: OK/NotAuthenticated
 
 GET /reminder:vinId
 input: @pathvariable vinId
-output: [reminders]/NOT_FOUND
+output: List<Reminder>/NOT_FOUND
 
 POST /reminder/create
 input: @RequestBody Reminder
@@ -50,14 +56,9 @@ output: OK/NOT_FOUND
 
 ## Vin Controller
 
-/vin/owner
 GET /vin/owner:ownerId
 input: @PathVariable ownerId
 output: List<Vins>/NOT_FOUND/FORBIDDEN
-
-GET /vin:vin#
-input: @PathVariable Vin#
-output: Vin/NOT_FOUND/FORBIDDEN
 
 POST /vin/create
 **Will need to call GET Vehicle from Api

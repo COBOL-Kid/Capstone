@@ -62,8 +62,6 @@
 
     Result createVin(Vin)
 
-    Vin getVin(vin#)
-
     List<Vin> getVinByOwnerId(ownerId)
 
     Result updateVin(Vin)
@@ -125,8 +123,6 @@
     Result createVin(Vin)
 
     List<Vin> getVinByOwnerId(ownerId)
-
-    Vin getVinByNumber(vin#)
 
     Result updateVin(Vin)
 

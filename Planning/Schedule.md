@@ -1,8 +1,8 @@
 # Schedule
 
-## Backend
-
     **Tasks Followed By Fractional Hours**
+
+## Backend
 
     POM dependencies 0.25
 
@@ -44,6 +44,26 @@
     Reminder Email Service + Testing | 1.0
     Reminder Email Scheduler + Testing | 1.0
 
+    Google Maps Api Controller | 1.0
+
 ## FrontEnd
+
+    App
+    NavBar
+    Signup/Login Form
+    Confirmation Page
+    Signup
+    Login
+    Vin Cards
+    Services Near Me
+    Account Summary
+    Vin Details List
+    Reminder List
+    Safety Recalls
+    Vehicle Summary
+    Maintenance List
+    Maintenance Form
+    Reminder Form
+    
 
     

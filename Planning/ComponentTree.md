@@ -2,7 +2,7 @@
 
     App {Owner}**
     - NavBar
-    - Login
+    - Log In
         - Account Summary {specificVin}
             - Vin Cards {onwerVins}
             - Vehicle Summary {-> specificVin, specificReminder}
@@ -27,10 +27,13 @@
     - Vin Cards
     - Reminders List
     - Maintenance List
-    -Maintenance Form
-    -Reminder Form
+    - Maintenance Form
+    - Reminder Form
+    - Signup/Login Form
     
     Pages
+    - Login
+    - Signup
     - Landing
     - Account Summary
     - Vehicle Summary

@@ -20,6 +20,14 @@
 
 # Models
 
+    ReminderEmail
+    - {Reminder}
+    - vin#
+    - {User}
+
+    SecurityKey
+    - Key
+
     Owner
     - all fields
 
@@ -157,5 +165,10 @@
     -> will fetch emails using findReminderByToday()
     -> will send the emails using sendEmail()
 
-# Global Error Handler
+# Controllers
 
+## Global Error Handler
+
+    Catch all Handler
+
+**See Endpoints for the rest of the Controllers**

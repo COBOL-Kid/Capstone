@@ -30,13 +30,11 @@ GET /owner
 input: @ Owner
 output: Owner/NotFound
 
-
 POST /owner
 input: @RequestBody Owner
 output: OK/NotAuthenticated
 
 ## Reminder Controller
-
 
 GET /reminder:vinId
 input: @pathvariable vinId

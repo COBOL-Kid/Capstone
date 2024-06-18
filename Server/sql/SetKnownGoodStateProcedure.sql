@@ -2,20 +2,18 @@ CREATE OR REPLACE PROCEDURE set_known_good_state()
 LANGUAGE 'plpgsql'
 AS $BODY$
 BEGIN
-    -- Drop constraints
+
     ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Owner";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Vehicle";
     ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_VIN";
 
-    -- Drop tables
     DROP TABLE IF EXISTS public."Owner";
     DROP TABLE IF EXISTS public."Vehicle";
     DROP TABLE IF EXISTS public."Record";
     DROP TABLE IF EXISTS public."Vin";
     DROP TABLE IF EXISTS public."Reminder";
 
-    -- Create tables
     CREATE TABLE IF NOT EXISTS public."Owner"
     (
         "OwnerId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -69,7 +67,6 @@ BEGIN
         CONSTRAINT "PK_Reminder" PRIMARY KEY ("ReminderId")
     );
 
-    -- Add constraints
     ALTER TABLE IF EXISTS public."Record"
         ADD CONSTRAINT "FK_Vin" FOREIGN KEY ("VinId")
         REFERENCES public."Vin" ("VinId") MATCH SIMPLE
@@ -98,7 +95,6 @@ BEGIN
         ON DELETE CASCADE
         NOT VALID;
 
-    -- Insert test data
     INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
     VALUES ('John', 'Doe', 'john.doe@example.com', 'johndoe', 'password123');
 

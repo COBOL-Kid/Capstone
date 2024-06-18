@@ -2,20 +2,17 @@ CREATE OR REPLACE PROCEDURE set_known_good_state()
 LANGUAGE 'plpgsql'
 AS $BODY$
 BEGIN
-    -- Drop constraints
     ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Owner";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Vehicle";
     ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_VIN";
 
-    -- Drop tables
     DROP TABLE IF EXISTS public."Owner";
     DROP TABLE IF EXISTS public."Vehicle";
     DROP TABLE IF EXISTS public."Record";
     DROP TABLE IF EXISTS public."Vin";
     DROP TABLE IF EXISTS public."Reminder";
 
-    -- Create tables
     CREATE TABLE IF NOT EXISTS public."Owner"
     (
         "OwnerId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -69,7 +66,6 @@ BEGIN
         CONSTRAINT "PK_Reminder" PRIMARY KEY ("ReminderId")
     );
 
-    -- Add constraints
     ALTER TABLE IF EXISTS public."Record"
         ADD CONSTRAINT "FK_Vin" FOREIGN KEY ("VinId")
         REFERENCES public."Vin" ("VinId") MATCH SIMPLE
@@ -98,21 +94,35 @@ BEGIN
         ON DELETE CASCADE
         NOT VALID;
 
-    -- Insert test data
-    INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
-    VALUES ('John', 'Doe', 'john.doe@example.com', 'johndoe', 'password123');
+INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
+VALUES ('John', 'Doe', 'john.doe@example.com', 'johndoe', 'password123');
 
-    INSERT INTO public."Vehicle" ("Year", "Make", "Model", "Image")
-    VALUES (2020, 'Toyota', 'Camry', 'image_url');
+INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
+VALUES ('Jane', 'Smith', 'jane.smith@example.com', 'janesmith', 'password456');
 
-    INSERT INTO public."Vin" ("Vin", "Mileage", "OwnerId", "VehicleId")
-    VALUES ('1HGCM82633A123456', 12000, 1, 1);
+INSERT INTO public."VehicleInfo" ("Year", "Make", "Model", "Image")
+VALUES (2020, 'Toyota', 'Camry', 'toyota_camry_2020.jpg');
 
-    INSERT INTO public."Record" ("VinId", "Description", "Notes", "DateCompleted", "DueMileage", "CompletedMileage", "Cost")
-    VALUES (1, 'Oil Change', 'Changed oil and filter', '2023-01-01', 15000, 12000, 50);
+INSERT INTO public."VehicleInfo" ("Year", "Make", "Model", "Image")
+VALUES (2019, 'Honda', 'Civic', 'honda_civic_2019.jpg');
 
-    INSERT INTO public."Reminder" ("Description", "ReminderDate", "VinId")
-    VALUES ('Next oil change', '2023-06-01', 1);
+INSERT INTO public."Vin" ("OwnerId", "VehicleInfoId", "Vin", "Mileage")
+VALUES (1, 1, '1HGCM82633A123456', 15000);
+
+INSERT INTO public."Vin" ("OwnerId", "VehicleInfoId", "Vin", "Mileage")
+VALUES (2, 2, '2HGCM82633A654321', 20000);
+
+INSERT INTO public."Record" ("VinId", "Description", "Notes", "DateCompleted", "DueMileage", "CompletedMileage", "Cost")
+VALUES (1, 'Oil Change', 'Changed oil and filter', '2023-01-15', 16000, 15000, 50);
+
+INSERT INTO public."Record" ("VinId", "Description", "Notes", "DateCompleted", "DueMileage", "CompletedMileage", "Cost")
+VALUES (2, 'Tire Rotation', 'Rotated all four tires', '2023-02-20', 21000, 20000, 30);
+
+INSERT INTO public."Reminder" ("VinId", "RecordId", "Description", "ReminderDate")
+VALUES (1, 1, 'Next oil change', '2023-06-15');
+
+INSERT INTO public."Reminder" ("VinId", "RecordId", "Description", "ReminderDate")
+VALUES (2, 2, 'Next tire rotation', '2023-08-20');
 
 END;
 $BODY$;

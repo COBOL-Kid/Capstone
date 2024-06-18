@@ -3,18 +3,6 @@
 BEGIN;
 
 
-ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
-
-ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Owner";
-
-ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Vehicle";
-
-ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_VIN";
-
-
-
-DROP TABLE IF EXISTS public."Owner";
-
 CREATE TABLE IF NOT EXISTS public."Owner"
 (
     "OwnerId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -26,19 +14,15 @@ CREATE TABLE IF NOT EXISTS public."Owner"
     CONSTRAINT "PK_Owner" PRIMARY KEY ("OwnerId")
 );
 
-DROP TABLE IF EXISTS public."Vehicle";
-
-CREATE TABLE IF NOT EXISTS public."Vehicle"
+CREATE TABLE IF NOT EXISTS public."VehicleInfo"
 (
-    "VehicleId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    "VehicleInfoId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
     "Year" integer NOT NULL,
     "Make" text NOT NULL,
     "Model" text NOT NULL,
     "Image" text,
     CONSTRAINT "PK_Vehicle" PRIMARY KEY ("VehicleId")
 );
-
-DROP TABLE IF EXISTS public."Record";
 
 CREATE TABLE IF NOT EXISTS public."Record"
 (
@@ -53,26 +37,23 @@ CREATE TABLE IF NOT EXISTS public."Record"
     CONSTRAINT "PK_Record" PRIMARY KEY ("RecordId")
 );
 
-DROP TABLE IF EXISTS public."Vin";
-
 CREATE TABLE IF NOT EXISTS public."Vin"
 (
     "VinId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    "OwnerId" integer NOT NULL,
+    "VehicleInfoId" integer NOT NULL,
     "Vin" text NOT NULL,
     "Mileage" integer NOT NULL,
-    "OwnerId" integer NOT NULL,
-    "VehicleId" integer NOT NULL,
     CONSTRAINT "PK_Vin" PRIMARY KEY ("VinId")
 );
-
-DROP TABLE IF EXISTS public."Reminder";
 
 CREATE TABLE IF NOT EXISTS public."Reminder"
 (
     "ReminderId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "Description" text NOT NULL,
-    "ReminderDate" date,
     "VinId" integer NOT NULL,
+    "RecordId" integer,
+    "Description" text NOT NULL,
+    "ReminderDate" date NOT NULL,
     CONSTRAINT "PK_Reminder" PRIMARY KEY ("ReminderId")
 );
 
@@ -80,21 +61,21 @@ ALTER TABLE IF EXISTS public."Record"
     ADD CONSTRAINT "FK_Vin" FOREIGN KEY ("VinId")
     REFERENCES public."Vin" ("VinId") MATCH SIMPLE
     ON UPDATE NO ACTION
-    ON DELETE CASCADE
+    ON DELETE NO ACTION
     NOT VALID;
 
 
 ALTER TABLE IF EXISTS public."Vin"
-    ADD CONSTRAINT "FK_Owner" FOREIGN KEY ("OwnerId")
+    ADD CONSTRAINT "FK_OWNER" FOREIGN KEY ("OwnerId")
     REFERENCES public."Owner" ("OwnerId") MATCH SIMPLE
     ON UPDATE NO ACTION
-    ON DELETE CASCADE
+    ON DELETE NO ACTION
     NOT VALID;
 
 
 ALTER TABLE IF EXISTS public."Vin"
-    ADD CONSTRAINT "FK_Vehicle" FOREIGN KEY ("VehicleId")
-    REFERENCES public."Vehicle" ("VehicleId") MATCH SIMPLE
+    ADD CONSTRAINT "FK_VEHICLEINFO" FOREIGN KEY ("VehicleInfoId")
+    REFERENCES public."VehicleInfo" ("VehicleInfoId") MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
@@ -104,7 +85,15 @@ ALTER TABLE IF EXISTS public."Reminder"
     ADD CONSTRAINT "FK_VIN" FOREIGN KEY ("VinId")
     REFERENCES public."Vin" ("VinId") MATCH SIMPLE
     ON UPDATE NO ACTION
-    ON DELETE CASCADE
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public."Reminder"
+    ADD CONSTRAINT "FK_Record" FOREIGN KEY ("RecordId")
+    REFERENCES public."Record" ("RecordId") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
     NOT VALID;
 
 END;

@@ -2,6 +2,7 @@ CREATE OR REPLACE PROCEDURE set_known_good_state()
 LANGUAGE 'plpgsql'
 AS $BODY$
 BEGIN
+
     ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Owner";
     ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_Vehicle";
@@ -93,9 +94,6 @@ BEGIN
         ON UPDATE NO ACTION
         ON DELETE CASCADE
         NOT VALID;
-
-INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
-VALUES ('John', 'Doe', 'john.doe@example.com', 'johndoe', 'password123');
 
 INSERT INTO public."Owner" ("FirstName", "LastName", "Email", "UserName", "Password")
 VALUES ('Jane', 'Smith', 'jane.smith@example.com', 'janesmith', 'password456');

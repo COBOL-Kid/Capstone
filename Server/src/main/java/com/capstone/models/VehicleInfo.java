@@ -2,6 +2,8 @@ package com.capstone.models;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity(name = "vehicle_info")
 public class VehicleInfo {
 
@@ -77,5 +79,18 @@ public class VehicleInfo {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VehicleInfo that = (VehicleInfo) o;
+        return vehicleInfoId == that.vehicleInfoId && year == that.year && Objects.equals(make, that.make) && Objects.equals(model, that.model) && Objects.equals(image, that.image);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(vehicleInfoId, year, make, model, image);
     }
 }

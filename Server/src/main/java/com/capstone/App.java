@@ -18,6 +18,8 @@ public class App{
         return args -> {
             VehicleInfo vehicle = new VehicleInfo(2006, "Toyota", "Tundra", "A Url");
             vehicleInfoRepository.save(vehicle);
+            vehicleInfoRepository.findVehicleInfoByVehicleInfoId(1).ifPresentOrElse(System.out::println, () -> System.out.println("Not Found."));
+
         };
     }
 }

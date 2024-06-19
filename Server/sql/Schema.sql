@@ -3,117 +3,117 @@
 BEGIN;
 
 
-ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
+ALTER TABLE IF EXISTS public.record DROP CONSTRAINT IF EXISTS "FK_vin";
 
-ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_OWNER";
+ALTER TABLE IF EXISTS public.vin DROP CONSTRAINT IF EXISTS "FK_owner";
 
-ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_VEHICLEINFO";
+ALTER TABLE IF EXISTS public.vin DROP CONSTRAINT IF EXISTS "FK_vehicle_info";
 
-ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_VIN";
+ALTER TABLE IF EXISTS public.reminder DROP CONSTRAINT IF EXISTS "FK_vin";
 
-ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_Record";
+ALTER TABLE IF EXISTS public.reminder DROP CONSTRAINT IF EXISTS "FK_record";
 
 
 
-DROP TABLE IF EXISTS public."Owner";
+DROP TABLE IF EXISTS public.owner;
 
-CREATE TABLE IF NOT EXISTS public."Owner"
+CREATE TABLE IF NOT EXISTS public.owner
 (
-    "OwnerId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "FirstName" text NOT NULL,
-    "LastName" text NOT NULL,
-    "Email" text NOT NULL,
-    "UserName" text NOT NULL,
-    "Password" text NOT NULL,
-    CONSTRAINT "PK_Owner" PRIMARY KEY ("OwnerId")
+    owner_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    first_name text NOT NULL,
+    last_name text NOT NULL,
+    email text NOT NULL,
+    user_name text NOT NULL,
+    password text NOT NULL,
+    PRIMARY KEY (owner_id)
 );
 
-DROP TABLE IF EXISTS public."VehicleInfo";
+DROP TABLE IF EXISTS public.vehicle_info;
 
-CREATE TABLE IF NOT EXISTS public."VehicleInfo"
+CREATE TABLE IF NOT EXISTS public.vehicle_info
 (
-    "VehicleInfoId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "Year" integer NOT NULL,
-    "Make" text NOT NULL,
-    "Model" text NOT NULL,
-    "Image" text,
-    PRIMARY KEY ("VehicleInfoId")
+    vehicle_info_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    year integer NOT NULL,
+    make text NOT NULL,
+    model text NOT NULL,
+    image text,
+    CONSTRAINT "PK_vehicle_info" PRIMARY KEY (vehicle_info_id)
 );
 
-DROP TABLE IF EXISTS public."Record";
+DROP TABLE IF EXISTS public.record;
 
-CREATE TABLE IF NOT EXISTS public."Record"
+CREATE TABLE IF NOT EXISTS public.record
 (
-    "RecordId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "VinId" integer NOT NULL,
-    "Description" text NOT NULL,
-    "Notes" text,
-    "DateCompleted" date NOT NULL,
-    "DueMileage" integer NOT NULL,
-    "CompletedMileage" integer,
-    "Cost" integer NOT NULL,
-    CONSTRAINT "PK_Record" PRIMARY KEY ("RecordId")
+    record_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    vin_id integer NOT NULL,
+    decription text NOT NULL,
+    notes text,
+    date_completed date NOT NULL,
+    mileage_due integer NOT NULL,
+    mileage_completed integer,
+    cost numeric(2) NOT NULL,
+    CONSTRAINT "PK_record" PRIMARY KEY (record_id)
 );
 
-DROP TABLE IF EXISTS public."Vin";
+DROP TABLE IF EXISTS public.vin;
 
-CREATE TABLE IF NOT EXISTS public."Vin"
+CREATE TABLE IF NOT EXISTS public.vin
 (
-    "VinId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "OwnerId" integer NOT NULL,
-    "VehicleInfoId" integer NOT NULL,
-    "Vin" text NOT NULL,
-    "Mileage" integer NOT NULL,
-    CONSTRAINT "PK_Vin" PRIMARY KEY ("VinId")
+    vin_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    owner_id integer NOT NULL,
+    vehicle_info_id integer NOT NULL,
+    vin text NOT NULL,
+    mileage integer NOT NULL,
+    CONSTRAINT "PK_vin" PRIMARY KEY (vin_id)
 );
 
-DROP TABLE IF EXISTS public."Reminder";
+DROP TABLE IF EXISTS public.reminder;
 
-CREATE TABLE IF NOT EXISTS public."Reminder"
+CREATE TABLE IF NOT EXISTS public.reminder
 (
-    "ReminderId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    "VinId" integer NOT NULL,
-    "RecordId" integer,
-    "Description" text NOT NULL,
-    "ReminderDate" date NOT NULL,
-    CONSTRAINT "PK_Reminder" PRIMARY KEY ("ReminderId")
+    reminder_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
+    vin_id integer NOT NULL,
+    record_id integer,
+    description text NOT NULL,
+    reminder_date date NOT NULL,
+    CONSTRAINT "PK_reminder" PRIMARY KEY (reminder_id)
 );
 
-ALTER TABLE IF EXISTS public."Record"
-    ADD CONSTRAINT "FK_Vin" FOREIGN KEY ("VinId")
-    REFERENCES public."Vin" ("VinId") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.record
+    ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
+    REFERENCES public.vin (vin_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public."Vin"
-    ADD CONSTRAINT "FK_OWNER" FOREIGN KEY ("OwnerId")
-    REFERENCES public."Owner" ("OwnerId") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.vin
+    ADD CONSTRAINT "FK_owner" FOREIGN KEY (owner_id)
+    REFERENCES public.owner (owner_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public."Vin"
-    ADD CONSTRAINT "FK_VEHICLEINFO" FOREIGN KEY ("VehicleInfoId")
-    REFERENCES public."VehicleInfo" ("VehicleInfoId") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.vin
+    ADD CONSTRAINT "FK_vehicle_info" FOREIGN KEY (vehicle_info_id)
+    REFERENCES public.vehicle_info (vehicle_info_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public."Reminder"
-    ADD CONSTRAINT "FK_VIN" FOREIGN KEY ("VinId")
-    REFERENCES public."Vin" ("VinId") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.reminder
+    ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
+    REFERENCES public.vin (vin_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
 
 
-ALTER TABLE IF EXISTS public."Reminder"
-    ADD CONSTRAINT "FK_Record" FOREIGN KEY ("RecordId")
-    REFERENCES public."Record" ("RecordId") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.reminder
+    ADD CONSTRAINT "FK_record" FOREIGN KEY (record_id)
+    REFERENCES public.record (record_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;

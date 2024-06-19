@@ -3,6 +3,20 @@
 BEGIN;
 
 
+ALTER TABLE IF EXISTS public."Record" DROP CONSTRAINT IF EXISTS "FK_Vin";
+
+ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_OWNER";
+
+ALTER TABLE IF EXISTS public."Vin" DROP CONSTRAINT IF EXISTS "FK_VEHICLEINFO";
+
+ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_VIN";
+
+ALTER TABLE IF EXISTS public."Reminder" DROP CONSTRAINT IF EXISTS "FK_Record";
+
+
+
+DROP TABLE IF EXISTS public."Owner";
+
 CREATE TABLE IF NOT EXISTS public."Owner"
 (
     "OwnerId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -14,6 +28,8 @@ CREATE TABLE IF NOT EXISTS public."Owner"
     CONSTRAINT "PK_Owner" PRIMARY KEY ("OwnerId")
 );
 
+DROP TABLE IF EXISTS public."VehicleInfo";
+
 CREATE TABLE IF NOT EXISTS public."VehicleInfo"
 (
     "VehicleInfoId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -21,8 +37,10 @@ CREATE TABLE IF NOT EXISTS public."VehicleInfo"
     "Make" text NOT NULL,
     "Model" text NOT NULL,
     "Image" text,
-    CONSTRAINT "PK_Vehicle" PRIMARY KEY ("VehicleId")
+    PRIMARY KEY ("VehicleInfoId")
 );
+
+DROP TABLE IF EXISTS public."Record";
 
 CREATE TABLE IF NOT EXISTS public."Record"
 (
@@ -37,6 +55,8 @@ CREATE TABLE IF NOT EXISTS public."Record"
     CONSTRAINT "PK_Record" PRIMARY KEY ("RecordId")
 );
 
+DROP TABLE IF EXISTS public."Vin";
+
 CREATE TABLE IF NOT EXISTS public."Vin"
 (
     "VinId" integer NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -46,6 +66,8 @@ CREATE TABLE IF NOT EXISTS public."Vin"
     "Mileage" integer NOT NULL,
     CONSTRAINT "PK_Vin" PRIMARY KEY ("VinId")
 );
+
+DROP TABLE IF EXISTS public."Reminder";
 
 CREATE TABLE IF NOT EXISTS public."Reminder"
 (

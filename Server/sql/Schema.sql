@@ -3,15 +3,18 @@
 BEGIN;
 
 
-ALTER TABLE IF EXISTS public.record DROP CONSTRAINT IF EXISTS "FK_vin";
+ALTER TABLE IF EXISTS public.maintenance_record
+    DROP CONSTRAINT IF EXISTS "FK_vin";
+
+ALTER TABLE IF EXISTS public.reminder
+    DROP CONSTRAINT IF EXISTS "FK_vin";
+
+ALTER TABLE IF EXISTS public.reminder
+    DROP CONSTRAINT IF EXISTS "FK_maintenance_record";
 
 ALTER TABLE IF EXISTS public.vin DROP CONSTRAINT IF EXISTS "FK_owner";
 
 ALTER TABLE IF EXISTS public.vin DROP CONSTRAINT IF EXISTS "FK_vehicle_info";
-
-ALTER TABLE IF EXISTS public.reminder DROP CONSTRAINT IF EXISTS "FK_vin";
-
-ALTER TABLE IF EXISTS public.reminder DROP CONSTRAINT IF EXISTS "FK_record";
 
 
 
@@ -19,72 +22,88 @@ DROP TABLE IF EXISTS public.owner;
 
 CREATE TABLE IF NOT EXISTS public.owner
 (
-    owner_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    first_name text NOT NULL,
-    last_name text NOT NULL,
-    email text NOT NULL,
-    user_name text NOT NULL,
-    password text NOT NULL,
-    PRIMARY KEY (owner_id)
+    owner_id   integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    first_name text COLLATE pg_catalog."default" NOT NULL,
+    last_name  text COLLATE pg_catalog."default" NOT NULL,
+    email      text COLLATE pg_catalog."default" NOT NULL,
+    user_name  text COLLATE pg_catalog."default" NOT NULL,
+    password   text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT owner_pkey PRIMARY KEY (owner_id)
 );
 
-DROP TABLE IF EXISTS public.vehicle_info;
+DROP TABLE IF EXISTS public.maintenance_record;
 
-CREATE TABLE IF NOT EXISTS public.vehicle_info
+CREATE TABLE IF NOT EXISTS public.maintenance_record
 (
-    vehicle_info_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    year integer NOT NULL,
-    make text NOT NULL,
-    model text NOT NULL,
-    image text,
-    CONSTRAINT "PK_vehicle_info" PRIMARY KEY (vehicle_info_id)
-);
-
-DROP TABLE IF EXISTS public.record;
-
-CREATE TABLE IF NOT EXISTS public.record
-(
-    record_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    vin_id integer NOT NULL,
-    decription text NOT NULL,
-    notes text,
-    date_completed date,
-    mileage_due integer NOT NULL,
-    mileage_completed integer,
-    cost numeric(2),
-    CONSTRAINT "PK_record" PRIMARY KEY (record_id)
-);
-
-DROP TABLE IF EXISTS public.vin;
-
-CREATE TABLE IF NOT EXISTS public.vin
-(
-    vin_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    owner_id integer NOT NULL,
-    vehicle_info_id integer NOT NULL,
-    vin text NOT NULL,
-    mileage integer NOT NULL,
-    CONSTRAINT "PK_vin" PRIMARY KEY (vin_id)
+    maintenance_record_id integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    vin_id                integer                           NOT NULL,
+    description           text COLLATE pg_catalog."default" NOT NULL,
+    notes                 text COLLATE pg_catalog."default",
+    date_completed        date,
+    mileage_due           integer                           NOT NULL,
+    mileage_completed     integer,
+    cost                  numeric(2, 0),
+    CONSTRAINT "PK_maintenance_record" PRIMARY KEY (maintenance_record_id)
 );
 
 DROP TABLE IF EXISTS public.reminder;
 
 CREATE TABLE IF NOT EXISTS public.reminder
 (
-    reminder_id integer NOT NULL GENERATED ALWAYS AS IDENTITY,
-    vin_id integer NOT NULL,
-    record_id integer,
-    description text NOT NULL,
-    reminder_date date NOT NULL,
+    reminder_id           integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    vin_id                integer                           NOT NULL,
+    maintenance_record_id integer,
+    description           text COLLATE pg_catalog."default" NOT NULL,
+    reminder_date         date                              NOT NULL,
     CONSTRAINT "PK_reminder" PRIMARY KEY (reminder_id)
 );
 
-ALTER TABLE IF EXISTS public.record
+DROP TABLE IF EXISTS public.vehicle_info;
+
+CREATE TABLE IF NOT EXISTS public.vehicle_info
+(
+    vehicle_info_id integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    year integer NOT NULL,
+    make            text COLLATE pg_catalog."default" NOT NULL,
+    model           text COLLATE pg_catalog."default" NOT NULL,
+    image           text COLLATE pg_catalog."default",
+    CONSTRAINT "PK_vehicle_info" PRIMARY KEY (vehicle_info_id)
+);
+
+DROP TABLE IF EXISTS public.vin;
+
+CREATE TABLE IF NOT EXISTS public.vin
+(
+    vin_id integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    owner_id integer NOT NULL,
+    vehicle_info_id integer NOT NULL,
+    vin    text COLLATE pg_catalog."default" NOT NULL,
+    mileage integer NOT NULL,
+    CONSTRAINT "PK_vin" PRIMARY KEY (vin_id)
+);
+
+ALTER TABLE IF EXISTS public.maintenance_record
+    ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
+        REFERENCES public.vin (vin_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.reminder
     ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
     REFERENCES public.vin (vin_id) MATCH SIMPLE
     ON UPDATE NO ACTION
         ON DELETE NO ACTION
     NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.reminder
+    ADD CONSTRAINT "FK_maintenance_record" FOREIGN KEY (maintenance_record_id)
+        REFERENCES public.maintenance_record (maintenance_record_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID;
 
 
 ALTER TABLE IF EXISTS public.vin
@@ -100,22 +119,6 @@ ALTER TABLE IF EXISTS public.vin
     REFERENCES public.vehicle_info (vehicle_info_id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
-    NOT VALID;
-
-
-ALTER TABLE IF EXISTS public.reminder
-    ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
-    REFERENCES public.vin (vin_id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-    NOT VALID;
-
-
-ALTER TABLE IF EXISTS public.reminder
-    ADD CONSTRAINT "FK_record" FOREIGN KEY (record_id)
-    REFERENCES public.record (record_id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-        ON DELETE NO ACTION
     NOT VALID;
 
 END;

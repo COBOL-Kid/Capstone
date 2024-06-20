@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
+@Table(name = "vehicle_info")
 public class VehicleInfo {
 
     @Id

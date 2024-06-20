@@ -2,19 +2,20 @@ package com.capstone.models;
 
 import jakarta.persistence.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
-public class Record {
+@Table(name = "maintenance_record")
+public class MaintenanceRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long recordId;
+    private long maintenanceRecordId;
 
     @Column(name = "vin_id",
             nullable = false,
-            columnDefinition = "text")
+            columnDefinition = "integer")
     private long vinId;
 
     @Column(name = "description",
@@ -30,7 +31,7 @@ public class Record {
     @Column(name = "date_completed",
             nullable = true,
             columnDefinition = "date")
-    private Date dateCompleted;
+    private LocalDate dateCompleted;
 
     @Column(name = "mileage_due",
             nullable = false,
@@ -44,16 +45,15 @@ public class Record {
 
     @Column(name = "cost",
             nullable = true,
-            columnDefinition = "double"
+            columnDefinition = "numeric"
     )
     private double cost;
 
 
-    public Record() {
+    public MaintenanceRecord() {
     }
 
-    public Record(long recordId, long vinId, String description, String notes, Date dateCompleted, int mileageDue, int mileageCompleted, double cost) {
-        this.recordId = recordId;
+    public MaintenanceRecord(long vinId, String description, String notes, LocalDate dateCompleted, int mileageDue, int mileageCompleted, double cost) {
         this.vinId = vinId;
         this.description = description;
         this.notes = notes;
@@ -63,12 +63,12 @@ public class Record {
         this.cost = cost;
     }
 
-    public long getRecordId() {
-        return recordId;
+    public long getMaintenanceRecordId() {
+        return maintenanceRecordId;
     }
 
-    public void setRecordId(long recordId) {
-        this.recordId = recordId;
+    public void setMaintenanceRecordId(long maintenanceRecordId) {
+        this.maintenanceRecordId = maintenanceRecordId;
     }
 
     public long getVinId() {
@@ -95,11 +95,11 @@ public class Record {
         this.notes = notes;
     }
 
-    public Date getDateCompleted() {
+    public LocalDate getDateCompleted() {
         return dateCompleted;
     }
 
-    public void setDateCompleted(Date dateCompleted) {
+    public void setDateCompleted(LocalDate dateCompleted) {
         this.dateCompleted = dateCompleted;
     }
 
@@ -131,8 +131,8 @@ public class Record {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Record record = (Record) o;
-        return getVinId() == record.getVinId() && getMileageDue() == record.getMileageDue() && getMileageCompleted() == record.getMileageCompleted() && Double.compare(getCost(), record.getCost()) == 0 && Objects.equals(getDescription(), record.getDescription()) && Objects.equals(getNotes(), record.getNotes()) && Objects.equals(getDateCompleted(), record.getDateCompleted());
+        MaintenanceRecord that = (MaintenanceRecord) o;
+        return getVinId() == that.getVinId() && getMileageDue() == that.getMileageDue() && getMileageCompleted() == that.getMileageCompleted() && Double.compare(getCost(), that.getCost()) == 0 && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getNotes(), that.getNotes()) && Objects.equals(getDateCompleted(), that.getDateCompleted());
     }
 
     @Override

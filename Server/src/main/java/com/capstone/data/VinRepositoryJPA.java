@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface VinRepositoryJPA extends JpaRepository<Vin, Long> {
 
     @Query("SELECT v FROM Vin v WHERE v.ownerId = ?1")
-    Optional<List<Vin>> getVinsByOwnerId(int ownerId);
+    List<Vin> getVinsByOwnerId(int ownerId);
 
 }

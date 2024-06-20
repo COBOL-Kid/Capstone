@@ -7,7 +7,7 @@
 
     Vin
     - all fields
-    - {vehicle}
+    - {vehicleInfo}
 
     Owner
     - all fields
@@ -33,9 +33,9 @@
 
     Vin
     - all fields
-    - {Vehicle}
+    - {vehicleInfo}
 
-    Vehicle
+    vehicleInfo
     - all fields
 
     Reminder
@@ -74,11 +74,11 @@
 
     Result updateVin(Vin)
 
-    Result deleteVin(vin#)
+    Result deleteVin(vinId)
 
-## Vehicle
+## vehicleInfo
 
-    Result getVehicle(vehicle)
+    Result getvehicleInfo(vehicleInfoId)
 
 ## Reminder
 
@@ -134,7 +134,7 @@
 
     Result updateVin(Vin)
 
-    Result deleteVin(vin#)
+    Result deleteVin(vinId)
 
 ## Reminder
 

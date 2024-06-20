@@ -1,0 +1,112 @@
+package com.capstone.models;
+
+import jakarta.persistence.*;
+
+import java.util.Objects;
+
+@Entity
+@Table(name = "owner")
+public class Owner {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long ownerId;
+
+    @Column(name = "first_name",
+            nullable = false,
+            columnDefinition = "text")
+    private String firstName;
+
+    @Column(name = "last_name",
+            nullable = false,
+            columnDefinition = "text")
+    private String lastName;
+
+    @Column(name = "email",
+            nullable = false,
+            columnDefinition = "text")
+    private String email;
+
+    @Column(name = "user_name",
+            nullable = false,
+            columnDefinition = "text")
+    private String userName;
+
+    @Column(name = "password",
+            nullable = false,
+            columnDefinition = "text")
+    private String password;
+
+    public Owner() {
+    }
+
+    public Owner(String firstName, String lastName, String email, String userName, String password) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.userName = userName;
+        this.password = password;
+    }
+
+
+    public long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Owner owner = (Owner) o;
+        return Objects.equals(getFirstName(), owner.getFirstName()) && Objects.equals(getLastName(), owner.getLastName()) && Objects.equals(getEmail(), owner.getEmail()) && Objects.equals(getUserName(), owner.getUserName()) && Objects.equals(getPassword(), owner.getPassword());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getFirstName(), getLastName(), getEmail(), getUserName(), getPassword());
+    }
+}

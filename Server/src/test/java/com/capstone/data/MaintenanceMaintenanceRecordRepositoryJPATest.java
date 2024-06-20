@@ -9,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,14 +29,13 @@ public class MaintenanceMaintenanceRecordRepositoryJPATest {
     @Test
     void findAllByVinId() {
         MaintenanceRecord expected = new MaintenanceRecord(1, "test", "test", LocalDate.now(), 10000, 10000, 12.99);
-        Optional<List<MaintenanceRecord>> actual = repository.findAllByVinId(1);
-        assertTrue(actual.isPresent());
-        assertEquals(expected, actual.get().get(0));
+        List<MaintenanceRecord> actual = repository.findAllByVinId(1);
+        assertEquals(expected, actual.get(0));
     }
 
     @Test
-    void sdhouldNotFindNonExistentVinId() {
-        Optional<List<MaintenanceRecord>> result = repository.findAllByVinId(2);
-        assertTrue(result.get().isEmpty());
+    void shouldNotFindNonExistentVinId() {
+        List<MaintenanceRecord> result = repository.findAllByVinId(2);
+        assertTrue(result.isEmpty());
     }
 }

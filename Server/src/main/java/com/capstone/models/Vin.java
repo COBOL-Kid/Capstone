@@ -98,16 +98,17 @@ public class Vin {
         this.image = image;
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vin vin1 = (Vin) o;
-        return getVinId() == vin1.getVinId() && getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getImage(), vin1.getImage());
+        return getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getImage(), vin1.getImage());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getVinId(), getOwnerId(), getVehicleInfoId(), getVin(), getMileage(), getImage());
+        return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage(), getImage());
     }
 }

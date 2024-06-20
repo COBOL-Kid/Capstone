@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.record
     date_completed date,
     mileage_due integer NOT NULL,
     mileage_completed integer,
-    cost numeric(2) NOT NULL,
+    cost numeric(2),
     CONSTRAINT "PK_record" PRIMARY KEY (record_id)
 );
 

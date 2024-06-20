@@ -16,10 +16,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class MaintenanceMaintenanceRecordRepositoryTest {
+public class MaintenanceMaintenanceRecordRepositoryJPATest {
 
     @Autowired
-    MaintenanceRecordRepository repository;
+    MaintenanceRecordRepositoryJPA repository;
 
     @BeforeEach
     void setUp() {

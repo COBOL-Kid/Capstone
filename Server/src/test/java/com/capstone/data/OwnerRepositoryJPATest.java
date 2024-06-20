@@ -14,10 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class OwnerRepositoryTest {
+class OwnerRepositoryJPATest {
 
     @Autowired
-    private OwnerRepository repository;
+    private OwnerRepositoryJPA repository;
 
     @BeforeEach
     public void setUp() {

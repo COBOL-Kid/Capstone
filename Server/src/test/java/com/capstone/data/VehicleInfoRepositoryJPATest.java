@@ -13,17 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class VehicleInfoRepositoryTest {
+public class VehicleInfoRepositoryJPATest {
 
     @Autowired
-    private VehicleInfoRepository vehicleInfoRepository;
+    private VehicleInfoRepositoryJPA vehicleInfoRepositoryJPA;
 
     @Test
     public void testFindVehicleInfoByVehicleInfoId_VehicleExists() {
         VehicleInfo vehicleInfo = new VehicleInfo(2006, "Toyota", "Tundra", "A Url");
-        vehicleInfoRepository.save(vehicleInfo);
+        vehicleInfoRepositoryJPA.save(vehicleInfo);
 
-        Optional<VehicleInfo> result = vehicleInfoRepository.findById(1L);
+        Optional<VehicleInfo> result = vehicleInfoRepositoryJPA.findById(1L);
 
         assertEquals(Optional.of(vehicleInfo), result);
     }
@@ -32,7 +32,7 @@ public class VehicleInfoRepositoryTest {
     public void testFindVehicleInfoByVehicleInfoId_VehicleDoesNotExist() {
         long vehicleInfoId = 2;
 
-        Optional<VehicleInfo> result = vehicleInfoRepository.findById(vehicleInfoId);
+        Optional<VehicleInfo> result = vehicleInfoRepositoryJPA.findById(vehicleInfoId);
 
         assertEquals(Optional.empty(), result);
     }
@@ -42,9 +42,9 @@ public class VehicleInfoRepositoryTest {
         VehicleInfo vehicleInfo = new VehicleInfo(2006, "Toyota", "Tundra", "A Url");
         VehicleInfo differentVehicleInfo = new VehicleInfo(2010, "Honda", "Accord", "Another Url");
 
-        vehicleInfoRepository.save(vehicleInfo);
-        vehicleInfoRepository.save(differentVehicleInfo);
-        Optional<VehicleInfo> result = vehicleInfoRepository.findById(vehicleInfo.getVehicleInfoId());
+        vehicleInfoRepositoryJPA.save(vehicleInfo);
+        vehicleInfoRepositoryJPA.save(differentVehicleInfo);
+        Optional<VehicleInfo> result = vehicleInfoRepositoryJPA.findById(vehicleInfo.getVehicleInfoId());
 
         assertNotEquals(Optional.of(differentVehicleInfo), result);
     }

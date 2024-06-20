@@ -74,7 +74,7 @@
 
     Result updateVin(Vin)
 
-    Result deleteVin(vin#)
+    Result deleteVin(vinId)
 
 ## vehicleInfo
 
@@ -134,7 +134,7 @@
 
     Result updateVin(Vin)
 
-    Result deleteVin(vin#)
+    Result deleteVin(vinId)
 
 ## Reminder
 

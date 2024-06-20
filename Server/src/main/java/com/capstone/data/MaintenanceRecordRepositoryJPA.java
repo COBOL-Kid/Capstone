@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
-public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRecord, Long> {
+public interface MaintenanceRecordRepositoryJPA extends JpaRepository<MaintenanceRecord, Long> {
 
     @Query("select r from MaintenanceRecord r where r.vinId = ?1")
     Optional<List<MaintenanceRecord>> findAllByVinId(long vinId);

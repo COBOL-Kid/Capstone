@@ -13,10 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class VinRepositoryTest {
+class VinRepositoryJPATest {
 
     @Autowired
-    private VinRepository repository;
+    private VinRepositoryJPA repository;
 
     @BeforeEach
     public void setUp() {
@@ -25,7 +25,7 @@ class VinRepositoryTest {
 
     @Test
     void getVinsByOwnerId() {
-        Vin expected = new Vin(1, 1, "test", 123, "image");
+        Vin expected = new Vin(1, 1, "test", 123);
         repository.save(expected);
         List<Vin> actual = repository.getVinsByOwnerId(1).get();
         assertEquals(actual.get(0), expected);
@@ -34,7 +34,7 @@ class VinRepositoryTest {
 
     @Test
     void shouldNotFindNonExistentOwnerId() {
-        Vin test = new Vin(1, 1, "test", 123, "image");
+        Vin test = new Vin(1, 1, "test", 123);
         repository.save(test);
         List<Vin> actual = repository.getVinsByOwnerId(99).get();
         assertEquals(0, actual.size());

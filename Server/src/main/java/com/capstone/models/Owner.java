@@ -9,32 +9,32 @@ public class Owner {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long ownerId;
+    private long ownerId;
 
     @Column(name = "first_name",
             nullable = false,
             columnDefinition = "text")
-    String firstName;
+    private String firstName;
 
     @Column(name = "last_name",
             nullable = false,
             columnDefinition = "text")
-    String lastName;
+    private String lastName;
 
     @Column(name = "email",
             nullable = false,
             columnDefinition = "text")
-    String email;
+    private String email;
 
     @Column(name = "user_name",
             nullable = false,
             columnDefinition = "text")
-    String userName;
+    private String userName;
 
     @Column(name = "password",
             nullable = false,
             columnDefinition = "text")
-    String password;
+    private String password;
 
     public Owner() {
     }

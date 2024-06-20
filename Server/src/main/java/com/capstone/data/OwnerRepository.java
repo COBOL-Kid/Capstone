@@ -4,8 +4,10 @@ import com.capstone.models.Owner;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface OwnerRepository extends JpaRepository<Owner, Long> {
 
     @Query(value = "SELECT o FROM Owner o WHERE o.userName = ?1")
-    Owner getOwnerByUserName(String userName);
+    Optional<Owner> getOwnerByUserName(String userName);
 }

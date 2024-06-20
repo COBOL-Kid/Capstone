@@ -1,6 +1,7 @@
 package com.capstone.data;
 
 import com.capstone.models.Vin;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -18,12 +19,18 @@ class VinRepositoryTest {
     @Autowired
     private VinRepository repository;
 
+    @BeforeEach
+    public void setUp() {
+        repository.deleteAll();
+    }
+
     @Test
     void getVinsByOwnerId() {
         Vin expected = new Vin(1, 1, "test", 123, "image");
         repository.save(expected);
         List<Vin> actual = repository.getVinsByOwnerId(1).get();
         assertEquals(actual.get(0), expected);
+        assertEquals(1, actual.size());
     }
 
     @Test

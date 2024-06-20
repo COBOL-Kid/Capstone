@@ -8,8 +8,9 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -27,16 +28,14 @@ class VinRepositoryJPATest {
     void getVinsByOwnerId() {
         Vin expected = new Vin(1, 1, "test", 123);
         repository.save(expected);
-        List<Vin> actual = repository.getVinsByOwnerId(1).get();
+        List<Vin> actual = repository.getVinsByOwnerId(1);
         assertEquals(actual.get(0), expected);
         assertEquals(1, actual.size());
     }
 
     @Test
     void shouldNotFindNonExistentOwnerId() {
-        Vin test = new Vin(1, 1, "test", 123);
-        repository.save(test);
-        List<Vin> actual = repository.getVinsByOwnerId(99).get();
-        assertEquals(0, actual.size());
+        List<Vin> actual = repository.getVinsByOwnerId(99);
+        assertTrue(actual.isEmpty());
     }
 }

@@ -21,18 +21,18 @@ public class VehicleInfoRepositoryTest {
     @Test
     public void testFindVehicleInfoByVehicleInfoId_VehicleExists() {
         VehicleInfo vehicleInfo = new VehicleInfo(2006, "Toyota", "Tundra", "A Url");
-        vehicleInfo.setVehicleInfoId(1);
+        vehicleInfoRepository.save(vehicleInfo);
 
-        Optional<VehicleInfo> result = vehicleInfoRepository.findVehicleInfoByVehicleInfoId(vehicleInfo.getVehicleInfoId());
+        Optional<VehicleInfo> result = vehicleInfoRepository.findById(1L);
 
         assertEquals(Optional.of(vehicleInfo), result);
     }
 
     @Test
     public void testFindVehicleInfoByVehicleInfoId_VehicleDoesNotExist() {
-        int vehicleInfoId = 2;
+        long vehicleInfoId = 2;
 
-        Optional<VehicleInfo> result = vehicleInfoRepository.findVehicleInfoByVehicleInfoId(vehicleInfoId);
+        Optional<VehicleInfo> result = vehicleInfoRepository.findById(vehicleInfoId);
 
         assertEquals(Optional.empty(), result);
     }
@@ -40,10 +40,11 @@ public class VehicleInfoRepositoryTest {
     @Test
     public void testFindVehicleInfoByVehicleInfoId_DifferentVehicleReturned() {
         VehicleInfo vehicleInfo = new VehicleInfo(2006, "Toyota", "Tundra", "A Url");
-
         VehicleInfo differentVehicleInfo = new VehicleInfo(2010, "Honda", "Accord", "Another Url");
 
-        Optional<VehicleInfo> result = vehicleInfoRepository.findVehicleInfoByVehicleInfoId(vehicleInfo.getVehicleInfoId());
+        vehicleInfoRepository.save(vehicleInfo);
+        vehicleInfoRepository.save(differentVehicleInfo);
+        Optional<VehicleInfo> result = vehicleInfoRepository.findById(vehicleInfo.getVehicleInfoId());
 
         assertNotEquals(Optional.of(differentVehicleInfo), result);
     }

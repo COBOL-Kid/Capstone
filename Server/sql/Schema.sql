@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.record
     vin_id integer NOT NULL,
     decription text NOT NULL,
     notes text,
-    date_completed date NOT NULL,
+    date_completed date,
     mileage_due integer NOT NULL,
     mileage_completed integer,
     cost numeric(2) NOT NULL,
@@ -83,7 +83,7 @@ ALTER TABLE IF EXISTS public.record
     ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
     REFERENCES public.vin (vin_id) MATCH SIMPLE
     ON UPDATE NO ACTION
-        ON DELETE CASCADE
+        ON DELETE NO ACTION
     NOT VALID;
 
 
@@ -91,7 +91,7 @@ ALTER TABLE IF EXISTS public.vin
     ADD CONSTRAINT "FK_owner" FOREIGN KEY (owner_id)
     REFERENCES public.owner (owner_id) MATCH SIMPLE
     ON UPDATE NO ACTION
-        ON DELETE CASCADE
+        ON DELETE NO ACTION
     NOT VALID;
 
 
@@ -107,7 +107,7 @@ ALTER TABLE IF EXISTS public.reminder
     ADD CONSTRAINT "FK_vin" FOREIGN KEY (vin_id)
     REFERENCES public.vin (vin_id) MATCH SIMPLE
     ON UPDATE NO ACTION
-        ON DELETE CASCADE
+        ON DELETE NO ACTION
     NOT VALID;
 
 
@@ -115,7 +115,7 @@ ALTER TABLE IF EXISTS public.reminder
     ADD CONSTRAINT "FK_record" FOREIGN KEY (record_id)
     REFERENCES public.record (record_id) MATCH SIMPLE
     ON UPDATE NO ACTION
-        ON DELETE CASCADE
+        ON DELETE NO ACTION
     NOT VALID;
 
 END;

@@ -14,7 +14,6 @@ public class Vin {
 
     @Column(name = "owner_id",
             nullable = false,
-            unique = true,
             columnDefinition = "integer")
     private long ownerId;
 
@@ -34,21 +33,15 @@ public class Vin {
             columnDefinition = "integer")
     private int mileage;
 
-    @Column(name = "image",
-            nullable = false,
-            columnDefinition = "text")
-    private String image;
-
 
     public Vin() {
     }
 
-    public Vin(long ownerId, long vehicleInfoId, String vin, int mileage, String image) {
+    public Vin(long ownerId, long vehicleInfoId, String vin, int mileage) {
         this.ownerId = ownerId;
         this.vehicleInfoId = vehicleInfoId;
         this.vin = vin;
         this.mileage = mileage;
-        this.image = image;
     }
 
     public long getVinId() {
@@ -91,25 +84,17 @@ public class Vin {
         this.mileage = mileage;
     }
 
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vin vin1 = (Vin) o;
-        return getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getImage(), vin1.getImage());
+        return getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage(), getImage());
+        return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage());
     }
 }

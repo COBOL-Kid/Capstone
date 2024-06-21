@@ -1,6 +1,5 @@
 package com.capstone.models;
 
-import java.util.Objects;
 import java.util.ArrayList;
 
 public class Result<T> {

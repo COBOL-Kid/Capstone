@@ -4,8 +4,10 @@ import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.MaintenanceRecord;
 import com.capstone.models.Result;
-import com.sun.tools.javac.Main;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,7 +38,40 @@ public class MaintenanceRecordService {
         if (!result.isSuccess()) {
             return result;
         }
-        result.setPayload(maintenanceRecordRepositoryJPA.save(result.getPayload()));
+        try {
+            result.setPayload(maintenanceRecordRepositoryJPA.save(result.getPayload()));
+        } catch (DataIntegrityViolationException e) {
+            result.addError("DataIntegrityViolationException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
+        return result;
+    }
+
+    @Transactional
+    public Result<MaintenanceRecord> updateMaintenanceRecord(MaintenanceRecord incomingRecord) {
+        Result<MaintenanceRecord> result = validateMaintenanceRecord(incomingRecord);
+        if (!result.isSuccess()) {
+            return result;
+        }
+        Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findById(incomingRecord.getMaintenanceRecordId());
+        if (existingRecord.isEmpty()) {
+            result.addError("MaintenanceRecord not found");
+            return result;
+        }
+        existingRecord.get().setDescription(incomingRecord.getDescription());
+        existingRecord.get().setNotes(incomingRecord.getNotes());
+        existingRecord.get().setDateCompleted(incomingRecord.getDateCompleted());
+        existingRecord.get().setMileageDue(incomingRecord.getMileageDue());
+        existingRecord.get().setMileageCompleted(incomingRecord.getMileageCompleted());
+        existingRecord.get().setCost(incomingRecord.getCost());
+        try {
+            result.setPayload(maintenanceRecordRepositoryJPA.save(existingRecord.get()));
+        } catch (DataIntegrityViolationException e) {
+            result.addError("DataIntegrityViolationException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
         return result;
     }
 
@@ -57,13 +92,6 @@ public class MaintenanceRecordService {
         Optional<MaintenanceRecord> record = maintenanceRecordRepositoryJPA.findById(result.getPayload().getVinId());
         if (record.isEmpty()) {
             result.addError("VIN number does not exist");
-        }
-    }
-
-    private void maintenanceRecordIdExists(Result<MaintenanceRecord> result) {
-        Optional<MaintenanceRecord> record = maintenanceRecordRepositoryJPA.findById(result.getPayload().getMaintenanceRecordId());
-        if (record.isEmpty()) {
-            result.addError("Maintenance record does not exist");
         }
     }
 }

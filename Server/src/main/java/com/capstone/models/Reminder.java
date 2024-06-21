@@ -84,6 +84,10 @@ public class Reminder {
         this.reminderDate = reminderDate;
     }
 
+    public boolean isInvalid() {
+        return reminderDate == null || vinId <= 0 || description == null || description.isEmpty();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

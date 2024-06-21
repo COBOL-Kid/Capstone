@@ -32,20 +32,20 @@ class ReminderServiceTest {
 
 
     @Test
-    void validGetReminderByVinIDTest() {
+    void validGetAllRemindersByVinIDTest() {
         List<Reminder> reminders = new ArrayList<>();
         reminders.add(new Reminder());
 
-        when(reminderService.getReminderByVinID(1)).thenReturn(reminders);
+        when(reminderService.getAllRemindersByVinID(1)).thenReturn(reminders);
 
-        List<Reminder> result = reminderService.getReminderByVinID(1);
+        List<Reminder> result = reminderService.getAllRemindersByVinID(1);
 
         assertFalse(result.isEmpty());
     }
 
     @Test
-    void invalidGetReminderByVinIDTest() {
-        List<Reminder> result = reminderService.getReminderByVinID(-1);
+    void invalidGetAllRemindersByVinIDTest() {
+        List<Reminder> result = reminderService.getAllRemindersByVinID(-1);
         assertTrue(result.isEmpty());
     }
 

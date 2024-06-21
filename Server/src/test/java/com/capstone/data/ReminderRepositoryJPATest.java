@@ -1,4 +1,3 @@
-
 package com.capstone.data;
 
 import com.capstone.models.Reminder;
@@ -9,9 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class ReminderRepositoryJPATest {

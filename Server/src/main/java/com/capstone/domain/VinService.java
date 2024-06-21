@@ -2,7 +2,6 @@ package com.capstone.domain;
 
 import com.capstone.data.VehicleInfoRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
-import com.capstone.models.MaintenanceRecord;
 import com.capstone.models.Result;
 import com.capstone.models.Vin;
 import jakarta.transaction.Transactional;
@@ -65,6 +64,21 @@ public class VinService {
         existingVin.setMileage(incomingVin.getMileage());
         try {
             result.setPayload(vinRepositoryJPA.save(existingVin));
+        } catch (DataIntegrityViolationException e) {
+            result.addError("DataIntegrityViolationException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
+        return result;
+    }
+
+    public Result deleteVinByid(long vinId) {
+        Result<Vin> result = vinIdExists(vinId);
+        if (!result.isSuccess()) {
+            return result;
+        }
+        try {
+            vinRepositoryJPA.deleteById(result.getPayload().getVinId());
         } catch (DataIntegrityViolationException e) {
             result.addError("DataIntegrityViolationException");
         } catch (JpaSystemException e) {

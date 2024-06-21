@@ -31,4 +31,11 @@ public class Result<T> {
     public boolean isSuccess() {
         return errors == null || errors.isEmpty();
     }
+
+    public void addError(String error) {
+        if (errors == null) {
+            errors = new ArrayList<>();
+        }
+        errors.add(error);
+    }
 }

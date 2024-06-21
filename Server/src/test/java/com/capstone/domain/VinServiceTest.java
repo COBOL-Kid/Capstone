@@ -22,14 +22,12 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class VinServiceTest {
 
-    @Autowired
-    private VinService vinService;
-
     @MockBean
     VinRepositoryJPA vinRepository;
-
     @MockBean
     VehicleInfoRepositoryJPA vehicleInfoRepository;
+    @Autowired
+    private VinService vinService;
 
     @Test
     void shouldFindVinsByOwnerId() {

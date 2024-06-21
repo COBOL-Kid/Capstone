@@ -1,0 +1,105 @@
+package com.capstone.domain;
+
+import com.capstone.data.VehicleInfoRepositoryJPA;
+import com.capstone.data.VinRepositoryJPA;
+import com.capstone.models.Result;
+import com.capstone.models.Vin;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+@SpringBootTest
+class VinServiceTest {
+
+    @Autowired
+    private VinService vinService;
+
+    @MockBean
+    VinRepositoryJPA vinRepository;
+
+    @MockBean
+    VehicleInfoRepositoryJPA vehicleInfoRepository;
+
+    @Test
+    void shouldFindVinsByOwnerId() {
+        long ownerId = 1L;
+        Vin vin = new Vin(ownerId, 1L, "VIN1234", 10000);
+        List<Vin> expectedVins = List.of(vin);
+
+        when(vinRepository.getVinsByOwnerId(ownerId)).thenReturn(expectedVins);
+
+        List<Vin> actualVins = vinService.findVinsByOwnerId(ownerId);
+
+        assertEquals(expectedVins, actualVins);
+    }
+
+    @Test
+    void shouldHandleWhenNoVinsFoundForOwnerId() {
+        long ownerId = 1L;
+
+        when(vinRepository.getVinsByOwnerId(ownerId)).thenReturn(Collections.emptyList());
+
+        List<Vin> actualVins = vinService.findVinsByOwnerId(ownerId);
+
+        assertTrue(actualVins.isEmpty());
+    }
+
+    @Test
+    void shouldCreateVinWhenValid() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+
+        when(vinRepository.save(validVin)).thenReturn(validVin);
+
+        Result<Vin> actualResult = vinService.createVin(validVin);
+
+        assertTrue(actualResult.isSuccess());
+        assertEquals(validVin, actualResult.getPayload());
+    }
+
+    @Test
+    void shouldNotCreateVinWhenInvalid() {
+        Vin invalidVin = new Vin(1L, 1L, "VIN1234", 10000);
+        invalidVin.setVin(null);
+
+        Result<Vin> actualResult = vinService.createVin(invalidVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertNotNull(actualResult.getErrors());
+        assertTrue(actualResult.getErrors().contains("Fields cannot be null or empty"));
+    }
+
+    @Test
+    void shouldHandleDataIntegrityViolationExceptionWhenCreateVin() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+
+        when(vinRepository.save(validVin)).thenThrow(DataIntegrityViolationException.class);
+
+        Result<Vin> actualResult = vinService.createVin(validVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertTrue(actualResult.getErrors().contains("DataIntegrityViolationException"));
+    }
+
+    @Test
+    void shouldHandleJpaSystemExceptionWhenCreateVin() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+
+        when(vinRepository.save(validVin)).thenThrow(JpaSystemException.class);
+
+        Result<Vin> actualResult = vinService.createVin(validVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertTrue(actualResult.getErrors().contains("JpaSystemException"));
+    }
+
+
+}

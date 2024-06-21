@@ -4,6 +4,7 @@ import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.MaintenanceRecord;
 import com.capstone.models.Result;
+import com.capstone.models.Vin;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -76,7 +77,8 @@ class MaintenanceRecordServiceTest {
     @Test
     void createMaintenanceRecord_withValidData_returnsSuccess() {
         MaintenanceRecord maintenanceRecord = makeValidMaintenanceRecord();
-        when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getVinId())).thenReturn(Optional.of(maintenanceRecord));
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(maintenanceRecord.getVinId())).thenReturn(Optional.of(vin));
         when(maintenanceRecordRepositoryJPA.save(maintenanceRecord)).thenReturn(maintenanceRecord);
         Result<MaintenanceRecord> result = maintenanceRecordService.createMaintenanceRecord(maintenanceRecord);
         assertTrue(result.isSuccess());
@@ -86,7 +88,8 @@ class MaintenanceRecordServiceTest {
     @Test
     void shouldThrowDataIntegrityViolationException_whenCreateMaintenanceRecord() {
         MaintenanceRecord record = makeValidMaintenanceRecord();
-        when(maintenanceRecordRepositoryJPA.findById(record.getVinId())).thenReturn(Optional.of(record));
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(record.getVinId())).thenReturn(Optional.of(vin));
         when(maintenanceRecordRepositoryJPA.save(record)).thenThrow(DataIntegrityViolationException.class);
         Result<MaintenanceRecord> result = maintenanceRecordService.createMaintenanceRecord(record);
 
@@ -96,7 +99,8 @@ class MaintenanceRecordServiceTest {
     @Test
     void shouldThrowJpaSystemException_whenCreateMaintenanceRecord() {
         MaintenanceRecord record = makeValidMaintenanceRecord();
-        when(maintenanceRecordRepositoryJPA.findById(record.getVinId())).thenReturn(Optional.of(record));
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(record.getVinId())).thenReturn(Optional.of(vin));
         when(maintenanceRecordRepositoryJPA.save(record)).thenThrow(JpaSystemException.class);
         Result<MaintenanceRecord> result = maintenanceRecordService.createMaintenanceRecord(record);
 

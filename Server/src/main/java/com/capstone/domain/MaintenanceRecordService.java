@@ -4,6 +4,7 @@ import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.MaintenanceRecord;
 import com.capstone.models.Result;
+import com.capstone.models.Vin;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -109,7 +110,7 @@ public class MaintenanceRecordService {
     }
 
     private void vinIdExists(Result<MaintenanceRecord> result) {
-        Optional<MaintenanceRecord> record = maintenanceRecordRepositoryJPA.findById(result.getPayload().getVinId());
+        Optional<Vin> record = vinRepositoryJPA.findById(result.getPayload().getVinId());
         if (record.isEmpty()) {
             result.addError("VIN number does not exist");
         }

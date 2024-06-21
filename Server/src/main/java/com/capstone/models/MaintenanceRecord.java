@@ -1,6 +1,8 @@
 package com.capstone.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -12,6 +14,11 @@ public class MaintenanceRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long maintenanceRecordId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "vin_id", nullable = false)
+    private Vin vin;
 
     @Column(name = "vin_id",
             nullable = false,
@@ -142,5 +149,13 @@ public class MaintenanceRecord {
     @Override
     public int hashCode() {
         return Objects.hash(getVinId(), getDescription(), getNotes(), getDateCompleted(), getMileageDue(), getMileageCompleted(), getCost());
+    }
+
+    public Vin getVin() {
+        return vin;
+    }
+
+    public void setVin(Vin vin) {
+        this.vin = vin;
     }
 }

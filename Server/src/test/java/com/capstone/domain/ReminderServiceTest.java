@@ -8,6 +8,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.orm.jpa.JpaSystemException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -114,5 +117,35 @@ class ReminderServiceTest {
         Result<Reminder> result = reminderService.updateReminder(newReminder);
 
         assertTrue(result.getErrors().contains("Reminder can only be in the future"));
+    }
+
+    @Test
+    void validDeleteReminderTest() {
+        when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
+        Result<Reminder> result = reminderService.deleteReminder(1);
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void invalidDeleteReminderBecauseReminderIdDoesNotExistTest() {
+        when(reminderRepository.findById(any())).thenReturn(Optional.empty());
+        Result<Reminder> result = reminderService.deleteReminder(-1);
+        assertTrue(result.getErrors().contains("Reminder not found"));
+    }
+
+    @Test
+    void invalidDeleteReminderCatchEmptyResultDataAccessExceptionTest() {
+        when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
+        doThrow(new EmptyResultDataAccessException(1)).when(reminderRepository).deleteById(any());
+        Result<Reminder> result = reminderService.deleteReminder(1);
+        assertTrue(result.getErrors().contains("EmptyResultDataAccessException"));
+    }
+
+    @Test
+    void invalidDeleteReminderCatchJpaSystemExceptionTest() {
+        when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
+        doThrow(new JpaSystemException(new RuntimeException())).when(reminderRepository).deleteById(any());
+        Result<Reminder> result = reminderService.deleteReminder(1);
+        assertTrue(result.getErrors().contains("JpaSystemException"));
     }
 }

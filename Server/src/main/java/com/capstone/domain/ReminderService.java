@@ -7,6 +7,7 @@ import com.capstone.models.Result;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +81,22 @@ public class ReminderService {
         return result;
     }
 
+    public Result<Reminder> deleteReminder(long reminderId) {
+        Result<Reminder> result = reminderExists(reminderId);
+        if (!result.isSuccess()) {
+            result.addError("Reminder not found");
+            return result;
+        }
+        try {
+            reminderRepository.deleteById(reminderId);
+        } catch (EmptyResultDataAccessException e) {
+            result.addError("EmptyResultDataAccessException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
+        return result;
+    }
+
     private Result<Reminder> validateReminder(Reminder reminder) {
         Result<Reminder> result = new Result<>();
         if (reminder == null) {
@@ -97,6 +114,16 @@ public class ReminderService {
         Result<Reminder> result = new Result<>();
         if (!reminder.getReminderDate().isAfter(LocalDate.now())) {
             result.addError("Reminder can only be in the future");
+        }
+        return result;
+    }
+
+    private Result<Reminder> reminderExists(long reminderId) {
+        Result<Reminder> result = new Result<>();
+        Optional<Reminder> existingReminderOpt = reminderRepository.findById(reminderId);
+        if (existingReminderOpt.isEmpty()) {
+            result.addError("Reminder not found");
+            return result;
         }
         return result;
     }

@@ -127,6 +127,10 @@ public class MaintenanceRecord {
         this.cost = cost;
     }
 
+    public boolean isInvalid() {
+        return vinId <= 0 || description.isEmpty() || mileageDue <= 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

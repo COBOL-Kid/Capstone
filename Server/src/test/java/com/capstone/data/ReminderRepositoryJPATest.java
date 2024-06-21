@@ -21,6 +21,7 @@ class ReminderRepositoryJPATest {
 
     @BeforeEach
     public void setUp() {
+        reminderRepositoryJPA.deleteAll();
         Reminder reminder = new Reminder();
         reminder.setVinId(1L);
         reminder.setReminderId(1L);
@@ -41,7 +42,7 @@ class ReminderRepositoryJPATest {
     void testGetRemindersByVinIdMatchesEmpty() {
         long testVinId = 9999L;
         List<Reminder> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
-        assertFalse(reminderList.isEmpty());
+        assertTrue(reminderList.isEmpty());
     }
 }
 

@@ -84,6 +84,10 @@ public class Vin {
         this.mileage = mileage;
     }
 
+    public boolean isInvalid() {
+        return ownerId <= 0 || vehicleInfoId <= 0 || mileage <= 0 || this.vin == null || this.vin.isEmpty();
+    }
+
 
     @Override
     public boolean equals(Object o) {

@@ -9,6 +9,6 @@ import java.util.List;
 public interface VinRepositoryJPA extends JpaRepository<Vin, Long> {
 
     @Query("SELECT v FROM Vin v WHERE v.ownerId = ?1")
-    List<Vin> getVinsByOwnerId(int ownerId);
+    List<Vin> getVinsByOwnerId(long ownerId);
 
 }

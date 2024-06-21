@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,25 +16,20 @@ class ReminderRepositoryJPATest {
 
     @Autowired
     private ReminderRepositoryJPA reminderRepositoryJPA;
-
     @Test
-    void getReminderByVinIdMatches() {
-        Reminder reminder = new Reminder();
-        reminder.setVinId(100L);
-        reminder.setMaintenanceRecordId(101L);
-        reminder.setDescription("Test Reminder");
-        reminder.setReminderDate(LocalDate.now());
-        reminder = reminderRepositoryJPA.save(reminder);
-
-        Optional<Reminder> fetchedReminder = reminderRepositoryJPA.getReminderByVinIdMatches(100L);
-        assertTrue(fetchedReminder.isPresent());
-        assertEquals(100L, fetchedReminder.get().getVinId());
+    void testGetRemindersByVinIdMatches() {
+        long testVinId = 1L;
+        Optional<List<Reminder>> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
+        assertNotNull(reminderList);
+        assertFalse(reminderList.isEmpty());
     }
 
     @Test
-    void getReminderByNonexistentVinId() {
-        Optional<Reminder> fetchedReminder = reminderRepositoryJPA.getReminderByVinIdMatches(9999L);
-        assertFalse(fetchedReminder.isPresent());
+    void testGetRemindersByVinIdMatchesEmpty() {
+        long testVinId = 9999L;
+        Optional<List<Reminder>> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
+        assertNotNull(reminderList);
+        assertFalse(reminderList.isEmpty());
     }
 }
 

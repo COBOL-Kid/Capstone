@@ -30,6 +30,7 @@ public class MaintenanceRecordService {
         return maintenanceRecordRepositoryJPA.findAllByVinId(vinId);
     }
 
+    @Transactional
     public Result<MaintenanceRecord> createMaintenanceRecord(MaintenanceRecord maintenanceRecord) {
         Result<MaintenanceRecord> result = validateMaintenanceRecord(maintenanceRecord);
         if (!result.isSuccess()) {

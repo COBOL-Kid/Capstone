@@ -3,12 +3,10 @@ package com.capstone.domain;
 import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.ReminderRepositoryJPA;
 import com.capstone.models.Reminder;
-import com.capstone.models.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReminderService {
@@ -22,7 +20,7 @@ public class ReminderService {
         this.maintenanceRecordRepository = maintenanceRecordRepository;
     }
 
-    Result<Reminder> getReminderByVinID(long vinId) {
-        return null;
+    List<Reminder> getReminderByVinID(long vinId) {
+        return reminderRepository.getRemindersByVinIdMatches(vinId);
     }
 }

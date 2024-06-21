@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface ReminderRepositoryJPA extends JpaRepository<Reminder, Long> {
 
     @Query("SELECT r FROM Reminder r WHERE r.vinId =?1")
-    Optional<List<Reminder>> getRemindersByVinIdMatches(long vinId);
+    List<Reminder> getRemindersByVinIdMatches(long vinId);
 }

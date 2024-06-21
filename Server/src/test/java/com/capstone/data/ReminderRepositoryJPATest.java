@@ -2,10 +2,12 @@
 package com.capstone.data;
 
 import com.capstone.models.Reminder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,19 +18,29 @@ class ReminderRepositoryJPATest {
 
     @Autowired
     private ReminderRepositoryJPA reminderRepositoryJPA;
+
+    @BeforeEach
+    public void setUp() {
+        Reminder reminder = new Reminder();
+        reminder.setVinId(1L);
+        reminder.setReminderId(1L);
+        reminder.setReminderDate(LocalDate.now());
+        reminder.setDescription("test");
+        reminder.setMaintenanceRecordId(1L);
+        reminderRepositoryJPA.save(reminder);
+    }
+
     @Test
     void testGetRemindersByVinIdMatches() {
         long testVinId = 1L;
-        Optional<List<Reminder>> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
-        assertNotNull(reminderList);
+        List<Reminder> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
         assertFalse(reminderList.isEmpty());
     }
 
     @Test
     void testGetRemindersByVinIdMatchesEmpty() {
         long testVinId = 9999L;
-        Optional<List<Reminder>> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
-        assertNotNull(reminderList);
+        List<Reminder> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
         assertFalse(reminderList.isEmpty());
     }
 }

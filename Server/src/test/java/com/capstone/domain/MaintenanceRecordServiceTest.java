@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -30,8 +31,7 @@ class MaintenanceRecordServiceTest {
     VinRepositoryJPA vinRepositoryJPA;
 
     private MaintenanceRecord makeValidMaintenanceRecord() {
-        MaintenanceRecord maintenanceRecord = new MaintenanceRecord(1, "description", "notes", null, 1, 1, 1.0);
-        return maintenanceRecord;
+        return new MaintenanceRecord(1, "description", "notes", null, 1, 1, 1.0);
     }
 
     @Test
@@ -160,6 +160,41 @@ class MaintenanceRecordServiceTest {
         when(maintenanceRecordRepositoryJPA.save(any())).thenThrow(JpaSystemException.class);
         Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(record);
 
+        assertTrue(result.getErrors().contains("JpaSystemException"));
+    }
+
+    @Test
+    void deleteMaintenanceRecord_nonExistentRecord_returnsFailure() {
+        long nonExistentMaintenanceRecordId = 999L;
+        when(maintenanceRecordRepositoryJPA.findById(nonExistentMaintenanceRecordId)).thenReturn(Optional.empty());
+        Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(nonExistentMaintenanceRecordId);
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrors().contains("MaintenanceRecord not found"));
+    }
+
+    @Test
+    void deleteMaintenanceRecord_existingRecord_returnsSuccess() {
+        MaintenanceRecord existingMaintenanceRecord = makeValidMaintenanceRecord();
+        when(maintenanceRecordRepositoryJPA.findById(existingMaintenanceRecord.getMaintenanceRecordId())).thenReturn(Optional.of(existingMaintenanceRecord));
+        Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(existingMaintenanceRecord.getMaintenanceRecordId());
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void shouldThrowDataIntegrityViolationException_whenDeleteMaintenanceRecord() {
+        MaintenanceRecord record = makeValidMaintenanceRecord();
+        when(maintenanceRecordRepositoryJPA.findById(record.getMaintenanceRecordId())).thenReturn(Optional.of(record));
+        doThrow(DataIntegrityViolationException.class).when(maintenanceRecordRepositoryJPA).deleteById(record.getMaintenanceRecordId());
+        Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(record.getMaintenanceRecordId());
+        assertTrue(result.getErrors().contains("DataIntegrityViolationException"));
+    }
+
+    @Test
+    void shouldThrowJpaSystemException_whenDeleteMaintenanceRecord() {
+        MaintenanceRecord record = makeValidMaintenanceRecord();
+        when(maintenanceRecordRepositoryJPA.findById(record.getMaintenanceRecordId())).thenReturn(Optional.of(record));
+        doThrow(JpaSystemException.class).when(maintenanceRecordRepositoryJPA).deleteById(record.getMaintenanceRecordId());
+        Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(record.getMaintenanceRecordId());
         assertTrue(result.getErrors().contains("JpaSystemException"));
     }
 }

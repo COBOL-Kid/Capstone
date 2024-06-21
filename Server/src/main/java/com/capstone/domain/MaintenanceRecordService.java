@@ -17,6 +17,7 @@ import java.util.Optional;
 public class MaintenanceRecordService {
 
     MaintenanceRecordRepositoryJPA maintenanceRecordRepositoryJPA;
+
     VinRepositoryJPA vinRepositoryJPA;
 
     @Autowired
@@ -67,6 +68,24 @@ public class MaintenanceRecordService {
         existingRecord.get().setCost(incomingRecord.getCost());
         try {
             result.setPayload(maintenanceRecordRepositoryJPA.save(existingRecord.get()));
+        } catch (DataIntegrityViolationException e) {
+            result.addError("DataIntegrityViolationException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
+        return result;
+    }
+
+    @Transactional
+    public Result<MaintenanceRecord> deleteMaintenanceRecord(long maintenanceRecordId) {
+        Result<MaintenanceRecord> result = new Result<>();
+        Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findById(maintenanceRecordId);
+        if (existingRecord.isEmpty()) {
+            result.addError("MaintenanceRecord not found");
+            return result;
+        }
+        try {
+            maintenanceRecordRepositoryJPA.deleteById(maintenanceRecordId);
         } catch (DataIntegrityViolationException e) {
             result.addError("DataIntegrityViolationException");
         } catch (JpaSystemException e) {

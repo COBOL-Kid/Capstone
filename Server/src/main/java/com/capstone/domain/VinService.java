@@ -48,6 +48,30 @@ public class VinService {
         return result;
     }
 
+    @Transactional
+    public Result<Vin> updateVin(Vin incomingVin) {
+        Result<Vin> result = validateVin(incomingVin);
+        if (!result.isSuccess()) {
+            return result;
+        }
+        result = vinIdExists(incomingVin.getVinId());
+        if (!result.isSuccess()) {
+            return result;
+        }
+        Vin existingVin = result.getPayload();
+        existingVin.setOwnerId(incomingVin.getOwnerId());
+        existingVin.setVehicleInfoId(incomingVin.getVehicleInfoId());
+        existingVin.setVin(incomingVin.getVin());
+        existingVin.setMileage(incomingVin.getMileage());
+        try {
+            result.setPayload(vinRepositoryJPA.save(existingVin));
+        } catch (DataIntegrityViolationException e) {
+            result.addError("DataIntegrityViolationException");
+        } catch (JpaSystemException e) {
+            result.addError("JpaSystemException");
+        }
+        return result;
+    }
 
     private Result<Vin> validateVin(Vin vin) {
         Result<Vin> result = new Result<>();
@@ -63,12 +87,14 @@ public class VinService {
         return result;
     }
 
-    private void vinIdExists(Result<MaintenanceRecord> result) {
-        Optional<Vin> record = vinRepositoryJPA.findById(result.getPayload().getVinId());
+    private Result<Vin> vinIdExists(long vinId) {
+        Optional<Vin> record = vinRepositoryJPA.findById(vinId);
+        Result<Vin> result = new Result<>();
         if (record.isEmpty()) {
             result.addError("VIN number does not exist");
+            return result;
         }
+        result.setPayload(record.get());
+        return result;
     }
-
-
 }

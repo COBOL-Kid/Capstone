@@ -13,6 +13,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -101,5 +102,70 @@ class VinServiceTest {
         assertTrue(actualResult.getErrors().contains("JpaSystemException"));
     }
 
+    @Test
+    void shouldUpdateVinWhenValidAndExists() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        validVin.setVinId(1L);
 
+        when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
+        when(vinRepository.save(validVin)).thenReturn(validVin);
+
+        Result<Vin> actualResult = vinService.updateVin(validVin);
+
+        assertTrue(actualResult.isSuccess());
+        assertEquals(validVin, actualResult.getPayload());
+    }
+
+    @Test
+    void shouldNotUpdateVinWhenInvalid() {
+        Vin invalidVin = new Vin(1L, 1L, "VIN1234", 10000);
+        invalidVin.setVin(null);
+
+        Result<Vin> actualResult = vinService.updateVin(invalidVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertNotNull(actualResult.getErrors());
+        assertTrue(actualResult.getErrors().contains("Fields cannot be null or empty"));
+    }
+
+    @Test
+    void shouldNotUpdateVinWhenNotExists() {
+        Vin nonexistentVin = new Vin(1L, 1L, "VIN1234", 10000);
+        nonexistentVin.setVinId(999L);
+
+        when(vinRepository.findById(nonexistentVin.getVinId())).thenReturn(Optional.empty());
+
+        Result<Vin> actualResult = vinService.updateVin(nonexistentVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertTrue(actualResult.getErrors().contains("VIN number does not exist"));
+    }
+
+    @Test
+    void shouldHandleDataIntegrityViolationExceptionWhenUpdateVin() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        validVin.setVinId(1L);
+
+        when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
+        when(vinRepository.save(validVin)).thenThrow(DataIntegrityViolationException.class);
+
+        Result<Vin> actualResult = vinService.updateVin(validVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertTrue(actualResult.getErrors().contains("DataIntegrityViolationException"));
+    }
+
+    @Test
+    void shouldHandleJpaSystemExceptionWhenUpdateVin() {
+        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        validVin.setVinId(1L);
+
+        when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
+        when(vinRepository.save(validVin)).thenThrow(JpaSystemException.class);
+
+        Result<Vin> actualResult = vinService.updateVin(validVin);
+
+        assertFalse(actualResult.isSuccess());
+        assertTrue(actualResult.getErrors().contains("JpaSystemException"));
+    }
 }

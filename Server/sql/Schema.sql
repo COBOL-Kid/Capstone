@@ -39,11 +39,12 @@ DROP TABLE IF EXISTS public.owner;
 
 CREATE TABLE IF NOT EXISTS public.owner
 (
-    owner_id  integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+    owner_id integer                           NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
     first_name text COLLATE pg_catalog."default" NOT NULL,
     last_name text COLLATE pg_catalog."default" NOT NULL,
-    email     text COLLATE pg_catalog."default" NOT NULL,
-    password  text COLLATE pg_catalog."default" NOT NULL,
+    email    text COLLATE pg_catalog."default" NOT NULL,
+    password text COLLATE pg_catalog."default" NOT NULL,
+    role     text                              NOT NULL,
     CONSTRAINT owner_pkey PRIMARY KEY (owner_id),
     CONSTRAINT "UNIQUE_email" UNIQUE (email)
 );

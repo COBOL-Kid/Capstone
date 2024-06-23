@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface OwnerRepositoryJPA extends JpaRepository<Owner, Long> {
 
-    @Query(value = "SELECT o FROM Owner o WHERE o.userName = ?1")
-    Optional<Owner> getOwnerByUserName(String userName);
+    @Query(value = "SELECT o FROM Owner o WHERE o.email = ?1")
+    Optional<Owner> getOwnerByEmail(String email);
 }

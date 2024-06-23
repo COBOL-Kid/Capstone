@@ -1,8 +1,6 @@
 package com.capstone.models;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.Objects;
 
@@ -13,16 +11,6 @@ public class Vin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long vinId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "vehicle_info_id", nullable = false)
-    private VehicleInfo vehicleInfo;
 
     @Column(name = "owner_id",
             nullable = false,
@@ -112,21 +100,5 @@ public class Vin {
     @Override
     public int hashCode() {
         return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage());
-    }
-
-    public Owner getOwner() {
-        return owner;
-    }
-
-    public void setOwner(Owner owner) {
-        this.owner = owner;
-    }
-
-    public VehicleInfo getVehicleInfo() {
-        return vehicleInfo;
-    }
-
-    public void setVehicleInfo(VehicleInfo vehicleInfo) {
-        this.vehicleInfo = vehicleInfo;
     }
 }

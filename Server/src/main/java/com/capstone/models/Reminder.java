@@ -1,8 +1,6 @@
 package com.capstone.models;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -14,15 +12,6 @@ public class Reminder {
     @Id
     @GeneratedValue
     private long reminderId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "vin_id", nullable = false)
-    private Vin vin;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maintenance_record_id")
-    private MaintenanceRecord maintenanceRecord;
 
     @Column(name = "vin_id",
             nullable = false,
@@ -110,21 +99,5 @@ public class Reminder {
     @Override
     public int hashCode() {
         return Objects.hash(getVinId(), getMaintenanceRecordId(), getDescription(), getReminderDate());
-    }
-
-    public Vin getVin() {
-        return vin;
-    }
-
-    public void setVin(Vin vin) {
-        this.vin = vin;
-    }
-
-    public MaintenanceRecord getMaintenanceRecord() {
-        return maintenanceRecord;
-    }
-
-    public void setMaintenanceRecord(MaintenanceRecord maintenanceRecord) {
-        this.maintenanceRecord = maintenanceRecord;
     }
 }

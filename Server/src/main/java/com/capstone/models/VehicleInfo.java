@@ -46,7 +46,7 @@ public class VehicleInfo {
         return vehicleInfoId;
     }
 
-    public void setVehicleInfoId(int vehicleInfoId) {
+    public void setVehicleInfoId(long vehicleInfoId) {
         this.vehicleInfoId = vehicleInfoId;
     }
 

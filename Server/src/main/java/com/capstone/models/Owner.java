@@ -48,7 +48,6 @@ public class Owner {
         this.password = password;
     }
 
-
     public long getOwnerId() {
         return ownerId;
     }

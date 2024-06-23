@@ -16,7 +16,6 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    // todo: move into environment variables
     private static final String secretKey = System.getenv("SECRET_KEY");
 
     public String extractUserEmail(String token) {

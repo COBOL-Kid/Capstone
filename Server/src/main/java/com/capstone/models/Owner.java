@@ -40,7 +40,16 @@ public class Owner implements UserDetails {
     @Column(name = "password",
             nullable = false,
             columnDefinition = "text")
+
     private String password;
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     @Enumerated(EnumType.STRING)
     private Role role;

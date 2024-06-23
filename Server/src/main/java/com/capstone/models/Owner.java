@@ -32,11 +32,6 @@ public class Owner implements UserDetails {
             columnDefinition = "text")
     private String email;
 
-    @Column(name = "user_name",
-            nullable = false,
-            columnDefinition = "text")
-    private String userName;
-
     @Column(name = "password",
             nullable = false,
             columnDefinition = "text")
@@ -57,11 +52,10 @@ public class Owner implements UserDetails {
     public Owner() {
     }
 
-    public Owner(String firstName, String lastName, String email, String userName, String password) {
+    public Owner(String firstName, String lastName, String email, String password) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.userName = userName;
         this.password = password;
     }
 
@@ -95,14 +89,6 @@ public class Owner implements UserDetails {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
     }
 
     @Override
@@ -149,11 +135,11 @@ public class Owner implements UserDetails {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Owner owner = (Owner) o;
-        return Objects.equals(getFirstName(), owner.getFirstName()) && Objects.equals(getLastName(), owner.getLastName()) && Objects.equals(getEmail(), owner.getEmail()) && Objects.equals(getUserName(), owner.getUserName()) && Objects.equals(getPassword(), owner.getPassword());
+        return Objects.equals(getFirstName(), owner.getFirstName()) && Objects.equals(getLastName(), owner.getLastName()) && Objects.equals(getEmail(), owner.getEmail()) && Objects.equals(getPassword(), owner.getPassword());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getFirstName(), getLastName(), getEmail(), getUserName(), getPassword());
+        return Objects.hash(getFirstName(), getLastName(), getEmail(), getPassword());
     }
 }

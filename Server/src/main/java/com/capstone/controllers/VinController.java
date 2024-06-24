@@ -21,8 +21,8 @@ public class VinController {
         this.vinService = vinService;
     }
 
-    @GetMapping("/{vinID}")
-    public ResponseEntity<?> getAllVins(Long vinId) {
+    @GetMapping("/{vinId}")
+    public ResponseEntity<?> getAllVins(@PathVariable Long vinId) {
         List<Vin> vinList = vinService.findVinsByOwnerId(vinId);
         if (vinList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

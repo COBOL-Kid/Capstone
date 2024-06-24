@@ -58,9 +58,6 @@ public class VinService {
             return result;
         }
         Vin existingVin = result.getPayload();
-        existingVin.setOwnerId(incomingVin.getOwnerId());
-        existingVin.setVehicleInfoId(incomingVin.getVehicleInfoId());
-        existingVin.setVin(incomingVin.getVin());
         existingVin.setMileage(incomingVin.getMileage());
         try {
             result.setPayload(vinRepositoryJPA.save(existingVin));

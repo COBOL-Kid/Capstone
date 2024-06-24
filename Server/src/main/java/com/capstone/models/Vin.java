@@ -17,11 +17,6 @@ public class Vin {
             columnDefinition = "integer")
     private Long ownerId;
 
-    @Column(name = "vehicle_info_id",
-            nullable = false,
-            columnDefinition = "integer")
-    private Long vehicleInfoId;
-
     @Column(name = "vin",
             nullable = false,
             unique = true,
@@ -33,15 +28,26 @@ public class Vin {
             columnDefinition = "integer")
     private int mileage;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vehicle_info_id",
+            nullable = false,
+            referencedColumnName = "vehicleInfoId",
+            foreignKey = @ForeignKey(name = "vehicle_info_id_fk"))
+    private VehicleInfo vehicleInfo;
 
     public Vin() {
     }
 
-    public Vin(Long ownerId, Long vehicleInfoId, String vin, int mileage) {
+    public Vin(Long ownerId, String vin, int mileage, VehicleInfo vehicleInfo) {
         this.ownerId = ownerId;
-        this.vehicleInfoId = vehicleInfoId;
         this.vin = vin;
         this.mileage = mileage;
+        this.vehicleInfo = vehicleInfo;
+    }
+
+
+    public boolean isInvalid() {
+        return ownerId <= 0 || vehicleInfo == null || mileage <= 0 || this.vin == null || this.vin.isEmpty();
     }
 
     public Long getVinId() {
@@ -60,14 +66,6 @@ public class Vin {
         this.ownerId = ownerId;
     }
 
-    public Long getVehicleInfoId() {
-        return vehicleInfoId;
-    }
-
-    public void setVehicleInfoId(Long vehicleInfoId) {
-        this.vehicleInfoId = vehicleInfoId;
-    }
-
     public String getVin() {
         return vin;
     }
@@ -84,21 +82,27 @@ public class Vin {
         this.mileage = mileage;
     }
 
-    public boolean isInvalid() {
-        return ownerId <= 0 || vehicleInfoId <= 0 || mileage <= 0 || this.vin == null || this.vin.isEmpty();
+    public VehicleInfo getVehicleInfo() {
+        return vehicleInfo;
     }
 
+    public void setVehicleInfo(VehicleInfo vehicleInfo) {
+        this.vehicleInfo = vehicleInfo;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vin vin1 = (Vin) o;
-        return Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVehicleInfoId(), vin1.getVehicleInfoId()) && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin());
+        return getMileage() == vin1.getMileage() && Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getVehicleInfo(), vin1.getVehicleInfo());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage());
+        return Objects.hash(getOwnerId(), getVin(), getMileage(), getVehicleInfo());
     }
 }
+
+
+

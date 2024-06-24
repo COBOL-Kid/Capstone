@@ -3,6 +3,7 @@ package com.capstone.domain;
 import com.capstone.data.VehicleInfoRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.Result;
+import com.capstone.models.VehicleInfo;
 import com.capstone.models.Vin;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ class VinServiceTest {
     @Test
     void shouldFindVinsByOwnerId() {
         Long ownerId = 1L;
-        Vin vin = new Vin(ownerId, 1L, "VIN1234", 10000);
+        Vin vin = createValidVin();
         List<Vin> expectedVins = List.of(vin);
 
         when(vinRepository.getVinsByOwnerId(ownerId)).thenReturn(expectedVins);
@@ -55,7 +56,7 @@ class VinServiceTest {
 
     @Test
     void shouldCreateVinWhenValid() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
 
         when(vinRepository.save(validVin)).thenReturn(validVin);
 
@@ -67,7 +68,7 @@ class VinServiceTest {
 
     @Test
     void shouldNotCreateVinWhenInvalid() {
-        Vin invalidVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin invalidVin = createValidVin();
         invalidVin.setVin(null);
 
         Result<Vin> actualResult = vinService.createVin(invalidVin);
@@ -79,7 +80,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleDataIntegrityViolationExceptionWhenCreateVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
 
         when(vinRepository.save(validVin)).thenThrow(DataIntegrityViolationException.class);
 
@@ -91,7 +92,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleJpaSystemExceptionWhenCreateVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
 
         when(vinRepository.save(validVin)).thenThrow(JpaSystemException.class);
 
@@ -103,7 +104,7 @@ class VinServiceTest {
 
     @Test
     void shouldUpdateVinWhenValidAndExists() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin =createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -117,7 +118,7 @@ class VinServiceTest {
 
     @Test
     void shouldNotUpdateVinWhenInvalid() {
-        Vin invalidVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin invalidVin =createValidVin();
         invalidVin.setVin(null);
 
         Result<Vin> actualResult = vinService.updateVin(invalidVin);
@@ -129,7 +130,7 @@ class VinServiceTest {
 
     @Test
     void shouldNotUpdateVinWhenNotExists() {
-        Vin nonexistentVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin nonexistentVin =createValidVin();
         nonexistentVin.setVinId(999L);
 
         when(vinRepository.findById(nonexistentVin.getVinId())).thenReturn(Optional.empty());
@@ -142,7 +143,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleDataIntegrityViolationExceptionWhenUpdateVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -156,7 +157,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleJpaSystemExceptionWhenUpdateVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -170,7 +171,7 @@ class VinServiceTest {
 
     @Test
     void shouldDeleteVinWhenExists() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -194,7 +195,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleDataIntegrityViolationExceptionWhenDeleteVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -208,7 +209,7 @@ class VinServiceTest {
 
     @Test
     void shouldHandleJpaSystemExceptionWhenDeleteVin() {
-        Vin validVin = new Vin(1L, 1L, "VIN1234", 10000);
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -218,5 +219,9 @@ class VinServiceTest {
 
         assertFalse(actualResult.isSuccess());
         assertTrue(actualResult.getErrors().contains("JpaSystemException"));
+    }
+
+    private Vin createValidVin() {
+        return new Vin(1L, "test", 1337, new VehicleInfo(1997, "test", "test", "test"));
     }
 }

@@ -3,6 +3,7 @@ import NavBar from "./Components/NavBar.jsx";
 import Landing from "./Pages/Landing.jsx";
 import React from "react";
 import AuthenticationForm from "./Components/AuthenticationForm.jsx";
+import {FleetOverview} from "./Pages/FleetOverview.jsx";
 
 function App() {
     const initialUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null
@@ -15,6 +16,7 @@ function App() {
                 <Route path="/" element={<Landing/>}/>
                 <Route path="/login" element={<AuthenticationForm setUser={setUser}/>}/>
                 <Route path="/signup" element={<AuthenticationForm setUser={setUser}/>}/>
+                <Route path="/fleet_overview" element={<FleetOverview/>}/>
             </Routes>
         </BrowserRouter>
     )

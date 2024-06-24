@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Typography, Box, Button } from '@mui/material';
-import Image from '../assets/CarMaintenance.jpg'; // replace with pathway to your image
+import Image from '../assets/CarMaintenance.jpg';
 
 const LandingPage = () => {
   return (

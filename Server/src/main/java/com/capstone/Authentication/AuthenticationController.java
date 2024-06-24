@@ -1,6 +1,5 @@
-package com.capstone.controllers;
+package com.capstone.Authentication;
 
-import com.capstone.domain.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -9,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/test")
+@RequestMapping("/api/auth")
 public class AuthenticationController {
 
     private final AuthenticationService service;

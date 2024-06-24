@@ -1,12 +1,14 @@
 import React from "react";
-import {useLocation, useNavigate} from "react-router-dom";
+import {useLocation} from "react-router-dom";
 import {Button, Container, TextField} from "@mui/material";
 import Box from '@mui/material/Box';
 
 function AuthenticationForm() {
-    const navigate = useNavigate();
+
     const location = useLocation();
     const isSignup = location.pathname === '/signup';
+
+
 
     const handleSubmit = (event) => {
         event.preventDefault();

@@ -3,9 +3,11 @@ import NavBar from "./Components/NavBar.jsx";
 import Landing from "./Pages/Landing.jsx";
 import React from "react";
 import AuthenticationForm from "./Components/AuthenticationForm.jsx";
+import Cookies from "universal-cookie";
 
 function App() {
-    const initialUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+    const cookies = new Cookies();
+    const initialUser = cookies.get("user") ? JSON.parse(cookies.get("user")) : null;
     const [user, setUser] = React.useState(initialUser);
 
     return (

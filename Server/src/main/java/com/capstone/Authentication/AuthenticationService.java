@@ -10,6 +10,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class AuthenticationService {
 
@@ -36,7 +39,11 @@ public class AuthenticationService {
         owner.setRole(Role.USER);
 
         repository.save(owner);
-        String jwtToken = jwtService.generateToken(owner);
+
+        Map<String, Object> extraClaims = buildExtraClaims(owner);
+
+        String jwtToken = jwtService.generateToken(extraClaims, owner);
+
         AuthenticationResponse newResponse = new AuthenticationResponse();
         newResponse.setToken(jwtToken);
         return newResponse;
@@ -46,10 +53,22 @@ public class AuthenticationService {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         Owner owner = repository.getOwnerByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
-        String jwtToken = jwtService.generateToken(owner);
+
+        Map<String, Object> extraClaims = buildExtraClaims(owner);
+
+        String jwtToken = jwtService.generateToken(extraClaims, owner);
+
         AuthenticationResponse response = new AuthenticationResponse();
         response.setToken(jwtToken);
         return response;
+    }
+
+    private Map<String, Object> buildExtraClaims(Owner owner) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("firstName", owner.getFirstName());
+        extraClaims.put("lastName", owner.getLastName());
+        extraClaims.put("ownerId", owner.getOwnerId());
+        return extraClaims;
     }
 
 }

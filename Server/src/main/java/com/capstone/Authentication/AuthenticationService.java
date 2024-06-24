@@ -1,8 +1,5 @@
-package com.capstone.domain;
+package com.capstone.Authentication;
 
-import com.capstone.controllers.AuthenticationRequest;
-import com.capstone.controllers.AuthenticationResponse;
-import com.capstone.controllers.RegisterRequest;
 import com.capstone.data.OwnerRepositoryJPA;
 import com.capstone.models.Owner;
 import com.capstone.models.Role;

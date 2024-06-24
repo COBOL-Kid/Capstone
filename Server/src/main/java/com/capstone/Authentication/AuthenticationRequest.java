@@ -1,4 +1,4 @@
-package com.capstone.controllers;
+package com.capstone.Authentication;
 
 import java.util.Objects;
 

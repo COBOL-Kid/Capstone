@@ -2,15 +2,28 @@ import {useEffect, useState} from 'react';
 import {Button, Typography} from '@mui/material';
 import {Box} from '@mui/system';
 import VehicleCards from "../Components/VehicleCards.jsx";
+import {Errors} from "../Components/Errors.jsx";
 
 function FleetOverview({user}) {
 
     const [vehicles, setVehicles] = useState([]);
+    const [errors, setErrors] = useState([]);
 
     useEffect(() => {
-        fetch('/api/vehicles')
-            .then(response => response.json())
-            .then(data => setVehicles(data));
+        fetch(`http://localhost:8080/api/vin/${user.ownerId}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${user.jwt}`
+                }
+            })
+            .then(response => {
+                if (response.status === 200) {
+                    response.json().then(json => setVehicles(json));
+                } else {
+                    response.json().then(json => setErrors(json));
+                }
+            })
     }, []);
 
     return (
@@ -22,11 +35,12 @@ function FleetOverview({user}) {
             p={2}
         >
             <Typography variant="h2" align="center">
-                My Title
+                Fleet Summary
             </Typography>
-            <VehicleCards/>
+            <Errors errors={errors}/>
+            <VehicleCards vehicles={vehicles}/>
             <Button variant="contained" size="large" style={{alignSelf: 'center'}}>
-                My Large Button
+                Add A Vehicle
             </Button>
         </Box>
     )

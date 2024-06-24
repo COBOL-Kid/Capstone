@@ -6,23 +6,21 @@ import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-export default function VehicleCards() {
+function VehicleCards({vehicles}) {
 
-
-    return (
-        <Card sx={{ maxWidth: 345 }}>
+    return vehicles.map((vehicle) => (
+        <Card sx={{ maxWidth: 345 }} key={vehicle.id}>
             <CardMedia
                 sx={{ height: 140 }}
-                image="/static/images/cards/contemplative-reptile.jpg"
-                title="green iguana"
+                image={vehicle.image}
+                title={vehicle.name}
             />
             <CardContent>
                 <Typography gutterBottom variant="h5" component="div">
-                    Lizard
+                    {vehicle.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Lizards are a widespread group of squamate reptiles, with over 6,000
-                    species, ranging across all continents except Antarctica
+                    {vehicle.description}
                 </Typography>
             </CardContent>
             <CardActions>
@@ -30,5 +28,5 @@ export default function VehicleCards() {
                 <Button size="small">Learn More</Button>
             </CardActions>
         </Card>
-    );
+    ));
 }

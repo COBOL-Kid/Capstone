@@ -11,7 +11,6 @@ partner-token:
 ###
 
 GET http://localhost:8080/honestcar/external/test/1GNALDEK9FZ108495
-Content-Type: application/json
 
 ###
 

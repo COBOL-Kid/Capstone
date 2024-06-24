@@ -22,7 +22,7 @@ class OwnerRepositoryJPATest {
     @BeforeEach
     public void setUp() {
         repository.deleteAll();
-        repository.save(new Owner("test", "test", "test", "test", "test"));
+        repository.save(new Owner("test", "test", "test", "test"));
     }
 
     @Test
@@ -33,7 +33,7 @@ class OwnerRepositoryJPATest {
 
     @Test
     public void shouldFindUserByUsername() {
-        Owner expected = new Owner("test", "test", "test", "test", "test");
+        Owner expected = new Owner("test", "test", "test", "test");
         Owner actual = repository.getOwnerByEmail("test").get();
         assertEquals(expected, actual);
     }

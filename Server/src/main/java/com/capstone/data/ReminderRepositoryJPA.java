@@ -9,6 +9,6 @@ import java.util.List;
 public interface ReminderRepositoryJPA extends JpaRepository<Reminder, Long> {
 
     @Query("SELECT r FROM Reminder r WHERE r.vinId =?1")
-    List<Reminder> getRemindersByVinIdMatches(long vinId);
+    List<Reminder> getRemindersByVinIdMatches(Long vinId);
 
 }

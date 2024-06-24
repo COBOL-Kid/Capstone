@@ -30,12 +30,12 @@ public class ReminderService {
         this.vinRepository = vinRepository;
     }
 
-    public List<Reminder> getAllRemindersByVinID(long vinId) {
+    public List<Reminder> getAllRemindersByVinID(Long vinId) {
         return reminderRepository.getRemindersByVinIdMatches(vinId);
     }
 
     //TODO figure out how to get list of emails that need to be sent every day
-//    public List<Reminder> getUpcomingReminders(long vinId) {
+//    public List<Reminder> getUpcomingReminders(Long vinId) {
 //        List<Reminder> allReminders = getAllRemindersByVinID(vinId);
 //        if (allReminders.isEmpty()) {
 //            return List.of();
@@ -105,7 +105,7 @@ public class ReminderService {
     }
 
     @Transactional
-    public Result<Reminder> deleteReminder(long reminderId) {
+    public Result<Reminder> deleteReminder(Long reminderId) {
         Result<Reminder> result = reminderExists(reminderId);
         if (!result.isSuccess()) {
             result.addError("Reminder not found");
@@ -142,7 +142,7 @@ public class ReminderService {
         return result;
     }
 
-    private Result<Reminder> reminderExists(long reminderId) {
+    private Result<Reminder> reminderExists(Long reminderId) {
         Result<Reminder> result = new Result<>();
         Optional<Reminder> existingReminderOpt = reminderRepository.findById(reminderId);
         if (existingReminderOpt.isEmpty()) {

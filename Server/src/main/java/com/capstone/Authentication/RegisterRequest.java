@@ -10,6 +10,16 @@ public class RegisterRequest {
     private String password;
 
 
+    public RegisterRequest() {
+    }
+
+    public RegisterRequest(String firstname, String lastname, String email, String password) {
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.email = email;
+        this.password = password;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -21,16 +31,6 @@ public class RegisterRequest {
     @Override
     public int hashCode() {
         return Objects.hash(getFirstname(), getLastname(), getEmail(), getPassword());
-    }
-
-    public RegisterRequest() {
-    }
-
-    public RegisterRequest(String firstname, String lastname, String email, String password) {
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.email = email;
-        this.password = password;
     }
 
     public String getFirstname() {

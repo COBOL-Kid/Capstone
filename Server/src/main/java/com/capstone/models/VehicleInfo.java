@@ -10,7 +10,7 @@ public class VehicleInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long vehicleInfoId;
+    private Long vehicleInfoId;
 
     @Column(name = "year",
             nullable = false,
@@ -42,11 +42,11 @@ public class VehicleInfo {
         this.image = image;
     }
 
-    public long getVehicleInfoId() {
+    public Long getVehicleInfoId() {
         return vehicleInfoId;
     }
 
-    public void setVehicleInfoId(long vehicleInfoId) {
+    public void setVehicleInfoId(Long vehicleInfoId) {
         this.vehicleInfoId = vehicleInfoId;
     }
 
@@ -88,7 +88,7 @@ public class VehicleInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         VehicleInfo that = (VehicleInfo) o;
-        return getVehicleInfoId() == that.getVehicleInfoId() && getYear() == that.getYear() && Objects.equals(getMake(), that.getMake()) && Objects.equals(getModel(), that.getModel()) && Objects.equals(getImage(), that.getImage());
+        return Objects.equals(getVehicleInfoId(), that.getVehicleInfoId()) && getYear() == that.getYear() && Objects.equals(getMake(), that.getMake()) && Objects.equals(getModel(), that.getModel()) && Objects.equals(getImage(), that.getImage());
     }
 
     @Override

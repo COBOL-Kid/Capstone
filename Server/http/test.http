@@ -36,5 +36,5 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:8080/api/demo/hello
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlbWFpbEBlbWFpbC5jb20iLCJpYXQiOjE3MTkyMTE2NDUsImV4cCI6MTcxOTIxMzA4NX0.9NIB3obhydBh-PMIhBe2fnAlo-pqHN_ImXaKfITJoiI
+GET http://localhost:8080/api/vin/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5MjUzMzI0LCJleHAiOjE3MTkyNTQ3NjR9.ng8V8fAdeXInSVEBsIo0g5nMwQI6Irr-rvqMN5kxLPk

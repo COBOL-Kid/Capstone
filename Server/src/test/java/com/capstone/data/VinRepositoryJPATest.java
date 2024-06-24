@@ -26,16 +26,16 @@ class VinRepositoryJPATest {
 
     @Test
     void getVinsByOwnerId() {
-        Vin expected = new Vin(1, 1, "test", 123);
+        Vin expected = new Vin(1L, 1L, "test", 123);
         repository.save(expected);
-        List<Vin> actual = repository.getVinsByOwnerId(1);
+        List<Vin> actual = repository.getVinsByOwnerId(1L);
         assertEquals(actual.get(0), expected);
         assertEquals(1, actual.size());
     }
 
     @Test
     void shouldNotFindNonExistentOwnerId() {
-        List<Vin> actual = repository.getVinsByOwnerId(99);
+        List<Vin> actual = repository.getVinsByOwnerId(99L);
         assertTrue(actual.isEmpty());
     }
 }

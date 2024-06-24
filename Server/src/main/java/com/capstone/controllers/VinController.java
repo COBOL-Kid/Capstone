@@ -5,7 +5,6 @@ import com.capstone.models.Result;
 import com.capstone.models.Vin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +22,7 @@ public class VinController {
     }
 
     @GetMapping("/{vinID}")
-    public ResponseEntity<?> getAllVins(long vinId) {
+    public ResponseEntity<?> getAllVins(Long vinId) {
         List<Vin> vinList = vinService.findVinsByOwnerId(vinId);
         if (vinList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

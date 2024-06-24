@@ -10,17 +10,17 @@ public class Vin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long vinId;
+    private Long vinId;
 
     @Column(name = "owner_id",
             nullable = false,
             columnDefinition = "integer")
-    private long ownerId;
+    private Long ownerId;
 
     @Column(name = "vehicle_info_id",
             nullable = false,
             columnDefinition = "integer")
-    private long vehicleInfoId;
+    private Long vehicleInfoId;
 
     @Column(name = "vin",
             nullable = false,
@@ -37,34 +37,34 @@ public class Vin {
     public Vin() {
     }
 
-    public Vin(long ownerId, long vehicleInfoId, String vin, int mileage) {
+    public Vin(Long ownerId, Long vehicleInfoId, String vin, int mileage) {
         this.ownerId = ownerId;
         this.vehicleInfoId = vehicleInfoId;
         this.vin = vin;
         this.mileage = mileage;
     }
 
-    public long getVinId() {
+    public Long getVinId() {
         return vinId;
     }
 
-    public void setVinId(long vinId) {
+    public void setVinId(Long vinId) {
         this.vinId = vinId;
     }
 
-    public long getOwnerId() {
+    public Long getOwnerId() {
         return ownerId;
     }
 
-    public void setOwnerId(long ownerId) {
+    public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
     }
 
-    public long getVehicleInfoId() {
+    public Long getVehicleInfoId() {
         return vehicleInfoId;
     }
 
-    public void setVehicleInfoId(long vehicleInfoId) {
+    public void setVehicleInfoId(Long vehicleInfoId) {
         this.vehicleInfoId = vehicleInfoId;
     }
 
@@ -94,7 +94,7 @@ public class Vin {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vin vin1 = (Vin) o;
-        return getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin());
+        return Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVehicleInfoId(), vin1.getVehicleInfoId()) && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin());
     }
 
     @Override

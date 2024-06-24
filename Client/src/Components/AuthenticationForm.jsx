@@ -43,6 +43,7 @@ function AuthenticationForm({setUser}) {
                                 userObject.jwt = json.token;
                                 setUser(userObject);
                                 localStorage.setItem("user", JSON.stringify(userObject));
+                                navigate("/fleet_overview");
                             })
                     } else {
                         return Promise.reject();
@@ -67,6 +68,7 @@ function AuthenticationForm({setUser}) {
                                 userObject.jwt = json.token;
                                 setUser(userObject);
                                 localStorage.setItem("user", JSON.stringify(userObject));
+                                navigate("/fleet_overview");
                             })
                     } else {
                         return Promise.reject();
@@ -75,7 +77,6 @@ function AuthenticationForm({setUser}) {
                 setErrors(["Something Went Wrong"])
             })
         }
-        navigate("/fleet_overview");
     }
 
     return (

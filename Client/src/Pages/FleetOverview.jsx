@@ -25,7 +25,7 @@ function FleetOverview({user}) {
                 } else {
                     response.json().then(json => setErrors(json));
                 }
-            })
+            }).catch(errors => setErrors(["Something Went Wrong"]));
     }, []);
 
     return (

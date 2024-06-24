@@ -1,6 +1,5 @@
 package com.capstone.configuration;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -8,11 +7,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${api.authorization}")
-    private String authorization;
+    private final String authorization = System.getenv("API_AUTH");
 
-    @Value("${api.partnerToken}")
-    private String partnerToken;
+    private final String partnerToken = System.getenv("PARTNER_TOKEN");
 
     @Bean
     public WebClient webClient() {

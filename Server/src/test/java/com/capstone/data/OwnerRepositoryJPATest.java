@@ -22,19 +22,19 @@ class OwnerRepositoryJPATest {
     @BeforeEach
     public void setUp() {
         repository.deleteAll();
-        repository.save(new Owner("test", "test", "test", "test", "test"));
+        repository.save(new Owner("test", "test", "test", "test"));
     }
 
     @Test
     public void shouldNotFindNonExistentUsername() {
-        Optional<Owner> result = repository.getOwnerByUserName("not_existent_username");
+        Optional<Owner> result = repository.getOwnerByEmail("not_existent_username");
         assertFalse(result.isPresent());
     }
 
     @Test
     public void shouldFindUserByUsername() {
-        Owner expected = new Owner("test", "test", "test", "test", "test");
-        Owner actual = repository.getOwnerByUserName("test").get();
+        Owner expected = new Owner("test", "test", "test", "test");
+        Owner actual = repository.getOwnerByEmail("test").get();
         assertEquals(expected, actual);
     }
 

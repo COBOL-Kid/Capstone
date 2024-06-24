@@ -26,7 +26,7 @@ public class VinController {
     public ResponseEntity<?> getAllVins(long vinId) {
         List<Vin> vinList = vinService.findVinsByOwnerId(vinId);
         if (vinList.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity<>(vinList, HttpStatus.OK);
         }

@@ -6,7 +6,7 @@ import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-function VehicleCards({vehicles}) {
+export default function VehicleCards({vehicles}) {
 
     return vehicles.map((vehicle) => (
         <Card sx={{ maxWidth: 345 }} key={vehicle.id}>

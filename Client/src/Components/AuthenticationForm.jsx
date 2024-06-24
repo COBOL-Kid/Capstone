@@ -75,7 +75,7 @@ function AuthenticationForm({setUser}) {
                 setErrors(["Something Went Wrong"])
             })
         }
-        navigate("/");
+        navigate("/fleet_overview");
     }
 
     return (

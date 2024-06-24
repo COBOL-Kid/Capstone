@@ -20,6 +20,8 @@ function FleetOverview({user}) {
             .then(response => {
                 if (response.status === 200) {
                     response.json().then(json => setVehicles(json));
+                } else if (response.status === 204) {
+                    setVehicles([])
                 } else {
                     response.json().then(json => setErrors(json));
                 }
@@ -38,7 +40,13 @@ function FleetOverview({user}) {
                 Fleet Summary
             </Typography>
             <Errors errors={errors}/>
-            <VehicleCards vehicles={vehicles}/>
+            {vehicles.length === 0 ? (
+                <Typography variant="h4" align="center">
+                    No Vehicles Currently
+                </Typography>
+            ) : (
+                <VehicleCards vehicles={vehicles}/>
+            )}
             <Button variant="contained" size="large" style={{alignSelf: 'center'}}>
                 Add A Vehicle
             </Button>

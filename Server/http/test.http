@@ -37,4 +37,4 @@ Content-Type: application/json
 ###
 
 GET http://localhost:8080/api/demo/hello
-Authorization: Bearer {{$auth.token("")}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlbWFpbEBlbWFpbC5jb20iLCJpYXQiOjE3MTkyMTE2NDUsImV4cCI6MTcxOTIxMzA4NX0.9NIB3obhydBh-PMIhBe2fnAlo-pqHN_ImXaKfITJoiI

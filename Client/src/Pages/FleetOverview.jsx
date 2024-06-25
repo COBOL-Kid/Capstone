@@ -1,3 +1,5 @@
+import {useNavigate} from "react-router-dom";
+
 import {useEffect, useState} from 'react';
 import {Button, Typography} from '@mui/material';
 import {Box} from '@mui/system';
@@ -6,6 +8,7 @@ import {Errors} from "../Components/Errors.jsx";
 
 function FleetOverview({user}) {
 
+    const navigate = useNavigate();
     const [vehicles, setVehicles] = useState([]);
     const [errors, setErrors] = useState([]);
 
@@ -47,7 +50,7 @@ function FleetOverview({user}) {
             ) : (
                 <VehicleCards vehicles={vehicles}/>
             )}
-            <Button variant="contained" size="large" style={{alignSelf: 'center'}}>
+            <Button variant="contained" size="large" style={{alignSelf: 'center'}} onClick={() => navigate("/add_vehicle")}>
                 Add A Vehicle
             </Button>
         </Box>

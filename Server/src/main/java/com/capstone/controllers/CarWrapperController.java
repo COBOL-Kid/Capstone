@@ -14,7 +14,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 @RestController
-@RequestMapping("/honestcar/external/")
+@RequestMapping("/api/external/")
 public class CarWrapperController {
 
     private final WebClient webClient;
@@ -24,7 +24,7 @@ public class CarWrapperController {
         this.webClient = webClient;
     }
 
-    @GetMapping("/test/{vin}")
+    @GetMapping("/find_vin/{vin}")
     public Mono<VehicleInfo> getVehicleInfo(@PathVariable String vin) {
         if (vin == null) {
             return Mono.error(new IllegalArgumentException("VIN cannot be null"));

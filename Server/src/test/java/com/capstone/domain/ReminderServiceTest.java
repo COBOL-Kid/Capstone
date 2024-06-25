@@ -36,22 +36,22 @@ class ReminderServiceTest {
         List<Reminder> reminders = new ArrayList<>();
         reminders.add(new Reminder());
 
-        when(reminderService.getAllRemindersByVinID(1)).thenReturn(reminders);
+        when(reminderService.getAllRemindersByVinID(1L)).thenReturn(reminders);
 
-        List<Reminder> result = reminderService.getAllRemindersByVinID(1);
+        List<Reminder> result = reminderService.getAllRemindersByVinID(1L);
 
         assertFalse(result.isEmpty());
     }
 
     @Test
     void invalidGetAllRemindersByVinIDTest() {
-        List<Reminder> result = reminderService.getAllRemindersByVinID(-1);
+        List<Reminder> result = reminderService.getAllRemindersByVinID(-1L);
         assertTrue(result.isEmpty());
     }
 
     @Test
     void validCreateReminderTest() {
-        Reminder reminder = new Reminder(1, 1, "description", LocalDate.of(2026, 8, 17));
+        Reminder reminder = new Reminder(1L, 1L, "description", LocalDate.of(2026, 8, 17));
         when(reminderRepository.save(reminder)).thenReturn(reminder);
         Result<Reminder> result = reminderService.createReminder(reminder);
         assertTrue(result.isSuccess());
@@ -74,15 +74,15 @@ class ReminderServiceTest {
 
     @Test
     void invalidCreateReminderBecauseDateIsNotInFutureTest() {
-        Reminder reminder = new Reminder(1, 1, "description", LocalDate.now());
+        Reminder reminder = new Reminder(1L, 1L, "description", LocalDate.now());
         Result<Reminder> result = reminderService.createReminder(reminder);
         assertTrue(result.getErrors().contains("Reminder can only be in the future"));
     }
 
     @Test
     void validUpdateReminderTest() {
-        Reminder oldReminder = new Reminder(1, 1, "description", LocalDate.of(2025, 8, 18));
-        Reminder newReminder = new Reminder(2, 2, "new description", LocalDate.of(2027, 8, 18));
+        Reminder oldReminder = new Reminder(1L, 1L, "description", LocalDate.of(2025, 8, 18));
+        Reminder newReminder = new Reminder(2L, 2L, "new description", LocalDate.of(2027, 8, 18));
         when(reminderRepository.findById(any())).thenReturn(Optional.of(oldReminder));
         when(reminderRepository.save(oldReminder)).thenReturn(newReminder);
 
@@ -110,7 +110,7 @@ class ReminderServiceTest {
 
     @Test
     void invalidUpdateReminderBecauseDateIsNotInFutureTest() {
-        Reminder newReminder = new Reminder(1, 1, "description", LocalDate.of(1999, 12, 12));
+        Reminder newReminder = new Reminder(1L, 1L, "description", LocalDate.of(1999, 12, 12));
 
         when(reminderRepository.getReferenceById(any())).thenReturn(newReminder);
 
@@ -122,14 +122,14 @@ class ReminderServiceTest {
     @Test
     void validDeleteReminderTest() {
         when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
-        Result<Reminder> result = reminderService.deleteReminder(1);
+        Result<Reminder> result = reminderService.deleteReminder(1L);
         assertTrue(result.isSuccess());
     }
 
     @Test
     void invalidDeleteReminderBecauseReminderIdDoesNotExistTest() {
         when(reminderRepository.findById(any())).thenReturn(Optional.empty());
-        Result<Reminder> result = reminderService.deleteReminder(-1);
+        Result<Reminder> result = reminderService.deleteReminder(-1L);
         assertTrue(result.getErrors().contains("Reminder not found"));
     }
 
@@ -137,7 +137,7 @@ class ReminderServiceTest {
     void invalidDeleteReminderCatchEmptyResultDataAccessExceptionTest() {
         when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
         doThrow(new EmptyResultDataAccessException(1)).when(reminderRepository).deleteById(any());
-        Result<Reminder> result = reminderService.deleteReminder(1);
+        Result<Reminder> result = reminderService.deleteReminder(1L);
         assertTrue(result.getErrors().contains("EmptyResultDataAccessException"));
     }
 
@@ -145,7 +145,7 @@ class ReminderServiceTest {
     void invalidDeleteReminderCatchJpaSystemExceptionTest() {
         when(reminderRepository.findById(any())).thenReturn(Optional.of(new Reminder()));
         doThrow(new JpaSystemException(new RuntimeException())).when(reminderRepository).deleteById(any());
-        Result<Reminder> result = reminderService.deleteReminder(1);
+        Result<Reminder> result = reminderService.deleteReminder(1L);
         assertTrue(result.getErrors().contains("JpaSystemException"));
     }
 }

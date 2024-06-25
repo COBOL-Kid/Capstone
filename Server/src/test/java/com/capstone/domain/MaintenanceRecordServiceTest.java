@@ -32,7 +32,7 @@ class MaintenanceRecordServiceTest {
     VinRepositoryJPA vinRepositoryJPA;
 
     private MaintenanceRecord makeValidMaintenanceRecord() {
-        return new MaintenanceRecord(1, "description", "notes", null, 1, 1, 1.0);
+        return new MaintenanceRecord(1L, "description", "notes", null, 1, 1, 1.0);
     }
 
     @Test
@@ -44,8 +44,8 @@ class MaintenanceRecordServiceTest {
 
     @Test
     void shouldNotFindNonExistentVinId() {
-        when(maintenanceRecordRepositoryJPA.findAllByVinId(1)).thenReturn(List.of());
-        assertEquals(0, maintenanceRecordService.findAllMaintenanceRecordsByVinId(1).size());
+        when(maintenanceRecordRepositoryJPA.findAllByVinId(1L)).thenReturn(List.of());
+        assertEquals(0, maintenanceRecordService.findAllMaintenanceRecordsByVinId(1L).size());
     }
 
     @Test
@@ -169,7 +169,7 @@ class MaintenanceRecordServiceTest {
 
     @Test
     void deleteMaintenanceRecord_nonExistentRecord_returnsFailure() {
-        long nonExistentMaintenanceRecordId = 999L;
+        Long nonExistentMaintenanceRecordId = 999L;
         when(maintenanceRecordRepositoryJPA.findById(nonExistentMaintenanceRecordId)).thenReturn(Optional.empty());
         Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(nonExistentMaintenanceRecordId);
         assertFalse(result.isSuccess());

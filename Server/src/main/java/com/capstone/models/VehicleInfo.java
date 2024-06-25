@@ -1,7 +1,10 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -10,7 +13,7 @@ public class VehicleInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long vehicleInfoId;
+    private Long vehicleInfoId;
 
     @Column(name = "year",
             nullable = false,
@@ -32,6 +35,11 @@ public class VehicleInfo {
             columnDefinition = "text")
     private String image;
 
+    @JsonManagedReference
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "vehicleInfo")
+    private List<Vin> vins = new ArrayList<>();
+
+
     public VehicleInfo() {
     }
 
@@ -42,11 +50,11 @@ public class VehicleInfo {
         this.image = image;
     }
 
-    public long getVehicleInfoId() {
+    public Long getVehicleInfoId() {
         return vehicleInfoId;
     }
 
-    public void setVehicleInfoId(long vehicleInfoId) {
+    public void setVehicleInfoId(Long vehicleInfoId) {
         this.vehicleInfoId = vehicleInfoId;
     }
 
@@ -82,17 +90,34 @@ public class VehicleInfo {
         this.image = image;
     }
 
+    public boolean isEmpty() {
+        return (make == null||make.isEmpty()) && (model == null || model.isEmpty()) && (image == null || image.isEmpty()) && year == 0;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         VehicleInfo that = (VehicleInfo) o;
-        return getVehicleInfoId() == that.getVehicleInfoId() && getYear() == that.getYear() && Objects.equals(getMake(), that.getMake()) && Objects.equals(getModel(), that.getModel()) && Objects.equals(getImage(), that.getImage());
+        return Objects.equals(getVehicleInfoId(), that.getVehicleInfoId()) && getYear() == that.getYear() && Objects.equals(getMake(), that.getMake()) && Objects.equals(getModel(), that.getModel()) && Objects.equals(getImage(), that.getImage());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(getVehicleInfoId(), getYear(), getMake(), getModel(), getImage());
+    }
+
+    public List<Vin> getVins() {
+        return vins;
+    }
+
+    public void addVin(Vin vin) {
+        if (!vins.contains(vin)) {
+            vins.add(vin);
+        }
+    }
+
+    public void removeVin(Vin vin) {
+        vins.remove(vin);
     }
 }

@@ -23,19 +23,19 @@ public class MaintenanceMaintenanceRecordRepositoryJPATest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-        repository.save(new MaintenanceRecord(1, "test", "test", LocalDate.now(), 10000, 10000, 12.99));
+        repository.save(new MaintenanceRecord(1L, "test", "test", LocalDate.now(), 10000, 10000, 12.99));
     }
 
     @Test
     void findAllByVinId() {
-        MaintenanceRecord expected = new MaintenanceRecord(1, "test", "test", LocalDate.now(), 10000, 10000, 12.99);
-        List<MaintenanceRecord> actual = repository.findAllByVinId(1);
+        MaintenanceRecord expected = new MaintenanceRecord(1L, "test", "test", LocalDate.now(), 10000, 10000, 12.99);
+        List<MaintenanceRecord> actual = repository.findAllByVinId(1L);
         assertEquals(expected, actual.get(0));
     }
 
     @Test
     void shouldNotFindNonExistentVinId() {
-        List<MaintenanceRecord> result = repository.findAllByVinId(2);
+        List<MaintenanceRecord> result = repository.findAllByVinId(2L);
         assertTrue(result.isEmpty());
     }
 }

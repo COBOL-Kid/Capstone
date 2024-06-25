@@ -15,7 +15,7 @@ public class Owner implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long ownerId;
+    private Long ownerId;
 
     @Column(name = "first_name",
             nullable = false,
@@ -37,15 +37,6 @@ public class Owner implements UserDetails {
             columnDefinition = "text")
 
     private String password;
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -59,11 +50,19 @@ public class Owner implements UserDetails {
         this.password = password;
     }
 
-    public long getOwnerId() {
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public Long getOwnerId() {
         return ownerId;
     }
 
-    public void setOwnerId(long ownerId) {
+    public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
     }
 
@@ -101,6 +100,10 @@ public class Owner implements UserDetails {
         return password;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     @Override
     public String getUsername() {
         return email;
@@ -124,10 +127,6 @@ public class Owner implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     @Override

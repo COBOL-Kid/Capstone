@@ -9,6 +9,6 @@ import java.util.List;
 public interface MaintenanceRecordRepositoryJPA extends JpaRepository<MaintenanceRecord, Long> {
 
     @Query("select r from MaintenanceRecord r where r.vinId = ?1")
-    List<MaintenanceRecord> findAllByVinId(long vinId);
+    List<MaintenanceRecord> findAllByVinId(Long vinId);
 
 }

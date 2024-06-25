@@ -1,5 +1,6 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -10,17 +11,12 @@ public class Vin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long vinId;
+    private Long vinId;
 
     @Column(name = "owner_id",
             nullable = false,
             columnDefinition = "integer")
-    private long ownerId;
-
-    @Column(name = "vehicle_info_id",
-            nullable = false,
-            columnDefinition = "integer")
-    private long vehicleInfoId;
+    private Long ownerId;
 
     @Column(name = "vin",
             nullable = false,
@@ -33,39 +29,43 @@ public class Vin {
             columnDefinition = "integer")
     private int mileage;
 
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "vehicle_info_id",
+            nullable = true,
+            referencedColumnName = "vehicleInfoId",
+            foreignKey = @ForeignKey(name = "vehicle_info_id_fk"))
+    private VehicleInfo vehicleInfo;
 
     public Vin() {
     }
 
-    public Vin(long ownerId, long vehicleInfoId, String vin, int mileage) {
+    public Vin(Long ownerId, String vin, int mileage, VehicleInfo vehicleInfo) {
         this.ownerId = ownerId;
-        this.vehicleInfoId = vehicleInfoId;
         this.vin = vin;
         this.mileage = mileage;
+        this.vehicleInfo = vehicleInfo;
     }
 
-    public long getVinId() {
+
+    public boolean isInvalid() {
+        return ownerId <= 0 || vehicleInfo == null || vehicleInfo.isEmpty() || mileage <= 0 || this.vin == null || this.vin.isEmpty();
+    }
+
+    public Long getVinId() {
         return vinId;
     }
 
-    public void setVinId(long vinId) {
+    public void setVinId(Long vinId) {
         this.vinId = vinId;
     }
 
-    public long getOwnerId() {
+    public Long getOwnerId() {
         return ownerId;
     }
 
-    public void setOwnerId(long ownerId) {
+    public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
-    }
-
-    public long getVehicleInfoId() {
-        return vehicleInfoId;
-    }
-
-    public void setVehicleInfoId(long vehicleInfoId) {
-        this.vehicleInfoId = vehicleInfoId;
     }
 
     public String getVin() {
@@ -84,21 +84,27 @@ public class Vin {
         this.mileage = mileage;
     }
 
-    public boolean isInvalid() {
-        return ownerId <= 0 || vehicleInfoId <= 0 || mileage <= 0 || this.vin == null || this.vin.isEmpty();
+    public VehicleInfo getVehicleInfo() {
+        return vehicleInfo;
     }
 
+    public void setVehicleInfo(VehicleInfo vehicleInfo) {
+        this.vehicleInfo = vehicleInfo;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vin vin1 = (Vin) o;
-        return getOwnerId() == vin1.getOwnerId() && getVehicleInfoId() == vin1.getVehicleInfoId() && getMileage() == vin1.getMileage() && Objects.equals(getVin(), vin1.getVin());
+        return getMileage() == vin1.getMileage() && Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getVehicleInfo(), vin1.getVehicleInfo());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOwnerId(), getVehicleInfoId(), getVin(), getMileage());
+        return Objects.hash(getOwnerId(), getVin(), getMileage(), getVehicleInfo());
     }
 }
+
+
+

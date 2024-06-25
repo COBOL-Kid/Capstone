@@ -8,14 +8,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 @RestController
-@RequestMapping("/honestcar/external/")
+@RequestMapping("/api/external/")
 public class CarWrapperController {
 
     private final WebClient webClient;
@@ -25,7 +24,7 @@ public class CarWrapperController {
         this.webClient = webClient;
     }
 
-    @GetMapping("/test/{vin}")
+    @GetMapping("/find_vin/{vin}")
     public Mono<VehicleInfo> getVehicleInfo(@PathVariable String vin) {
         if (vin == null) {
             return Mono.error(new IllegalArgumentException("VIN cannot be null"));

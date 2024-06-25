@@ -32,14 +32,14 @@ class ReminderRepositoryJPATest {
 
     @Test
     void testGetRemindersByVinIdMatches() {
-        long testVinId = 1L;
+        Long testVinId = 1L;
         List<Reminder> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
         assertFalse(reminderList.isEmpty());
     }
 
     @Test
     void testGetRemindersByVinIdMatchesEmpty() {
-        long testVinId = 9999L;
+        Long testVinId = 9999L;
         List<Reminder> reminderList = reminderRepositoryJPA.getRemindersByVinIdMatches(testVinId);
         assertTrue(reminderList.isEmpty());
     }

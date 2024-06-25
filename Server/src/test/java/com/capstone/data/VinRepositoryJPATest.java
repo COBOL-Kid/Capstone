@@ -1,5 +1,6 @@
 package com.capstone.data;
 
+import com.capstone.models.VehicleInfo;
 import com.capstone.models.Vin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,16 +27,16 @@ class VinRepositoryJPATest {
 
     @Test
     void getVinsByOwnerId() {
-        Vin expected = new Vin(1, 1, "test", 123);
+        Vin expected = new Vin(1L, "test", 1337, new VehicleInfo(1997, "test", "test", "test"));
         repository.save(expected);
-        List<Vin> actual = repository.getVinsByOwnerId(1);
+        List<Vin> actual = repository.getVinsByOwnerId(1L);
         assertEquals(actual.get(0), expected);
         assertEquals(1, actual.size());
     }
 
     @Test
     void shouldNotFindNonExistentOwnerId() {
-        List<Vin> actual = repository.getVinsByOwnerId(99);
+        List<Vin> actual = repository.getVinsByOwnerId(99L);
         assertTrue(actual.isEmpty());
     }
 }

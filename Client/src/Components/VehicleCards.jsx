@@ -9,9 +9,9 @@ import Typography from '@mui/material/Typography';
 export default function VehicleCards({vehicles}) {
 
     return vehicles.map((vehicle) => (
-        <Card sx={{ maxWidth: 345 }} key={vehicle.id}>
+        <Card sx={{maxWidth: 345}} key={vehicle.id}>
             <CardMedia
-                sx={{ height: 140 }}
+                sx={{height: 140}}
                 image={vehicle.image}
                 title={vehicle.name}
             />

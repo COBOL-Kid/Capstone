@@ -24,9 +24,9 @@ export default function NavBar() {
         <AppBar position="static">
             <Toolbar>
                 <IconButton edge="start" color="inherit" aria-label="Logo">
-                    <LogoIcon />
+                    <LogoIcon/>
                 </IconButton>
-                <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
+                <Typography variant="h6" style={{flexGrow: 1, textAlign: 'center'}}>
                     Website Title
                 </Typography>
                 <div>
@@ -37,7 +37,7 @@ export default function NavBar() {
                         onClick={handleMenu}
                         color="inherit"
                     >
-                        <MenuIcon />
+                        <MenuIcon/>
                     </IconButton>
                     <Menu
                         id="menu-appbar"

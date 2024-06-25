@@ -1,6 +1,6 @@
-import { List, ListItem } from '@mui/material';
+import {List, ListItem} from '@mui/material';
 
-export const Errors = ({ errors }) => {
+export const Errors = ({errors}) => {
     if (!errors) {
         return null;
     }

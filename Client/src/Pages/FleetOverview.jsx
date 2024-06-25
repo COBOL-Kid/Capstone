@@ -50,7 +50,8 @@ function FleetOverview({user}) {
             ) : (
                 <VehicleCards vehicles={vehicles}/>
             )}
-            <Button variant="contained" size="large" style={{alignSelf: 'center'}} onClick={() => navigate("/add_vehicle")}>
+            <Button variant="contained" size="large" style={{alignSelf: 'center'}}
+                    onClick={() => navigate("/add_vehicle")}>
                 Add A Vehicle
             </Button>
         </Box>

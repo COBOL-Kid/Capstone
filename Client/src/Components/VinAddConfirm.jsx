@@ -19,7 +19,8 @@ export default function VinAddConfirm({vehicleData, user, setErrors}) {
         }).then(response => {
             if (response.status === 201) {
                 navigate("/fleet_overview");
-            } if (response.status === 403) {
+            }
+            if (response.status === 403) {
                 localStorage.removeItem("user")
                 navigate("/");
             } else {

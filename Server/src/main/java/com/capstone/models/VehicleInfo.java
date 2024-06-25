@@ -1,7 +1,10 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -31,6 +34,11 @@ public class VehicleInfo {
             nullable = false,
             columnDefinition = "text")
     private String image;
+
+    @JsonManagedReference
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "vehicleInfo")
+    private List<Vin> vins = new ArrayList<>();
+
 
     public VehicleInfo() {
     }
@@ -82,6 +90,9 @@ public class VehicleInfo {
         this.image = image;
     }
 
+    public boolean isEmpty() {
+        return (make == null||make.isEmpty()) && (model == null || model.isEmpty()) && (image == null || image.isEmpty()) && year == 0;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -94,5 +105,19 @@ public class VehicleInfo {
     @Override
     public int hashCode() {
         return Objects.hash(getVehicleInfoId(), getYear(), getMake(), getModel(), getImage());
+    }
+
+    public List<Vin> getVins() {
+        return vins;
+    }
+
+    public void addVin(Vin vin) {
+        if (!vins.contains(vin)) {
+            vins.add(vin);
+        }
+    }
+
+    public void removeVin(Vin vin) {
+        vins.remove(vin);
     }
 }

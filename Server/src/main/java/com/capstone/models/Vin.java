@@ -1,5 +1,6 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -28,9 +29,10 @@ public class Vin {
             columnDefinition = "integer")
     private int mileage;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "vehicle_info_id",
-            nullable = false,
+            nullable = true,
             referencedColumnName = "vehicleInfoId",
             foreignKey = @ForeignKey(name = "vehicle_info_id_fk"))
     private VehicleInfo vehicleInfo;
@@ -47,7 +49,7 @@ public class Vin {
 
 
     public boolean isInvalid() {
-        return ownerId <= 0 || vehicleInfo == null || mileage <= 0 || this.vin == null || this.vin.isEmpty();
+        return ownerId <= 0 || vehicleInfo == null || vehicleInfo.isEmpty() || mileage <= 0 || this.vin == null || this.vin.isEmpty();
     }
 
     public Long getVinId() {

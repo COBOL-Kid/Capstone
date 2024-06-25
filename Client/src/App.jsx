@@ -5,7 +5,6 @@ import React from "react";
 import AuthenticationForm from "./Components/AuthenticationForm.jsx";
 import FleetOverview from "./Pages/FleetOverview.jsx";
 import AddVehicleForm from "./Components/AddVehicleForm.jsx";
-import VinAddConfirm from "./Components/VinAddConfirm.jsx";
 
 function App() {
     const initialUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null
@@ -20,7 +19,6 @@ function App() {
                 <Route path="/signup" element={<AuthenticationForm setUser={setUser}/>}/>
                 <Route path="/fleet_overview" element={<FleetOverview user={user}/>}/>
                 <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
-                <Route path="/vin_add_confirm" element={<VinAddConfirm/>}/>
             </Routes>
         </BrowserRouter>
     );

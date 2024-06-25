@@ -39,6 +39,4 @@ public class VinController {
         }
         return new ResponseEntity<>(vinResult.getPayload(), HttpStatus.CREATED);
     }
-
-
 }

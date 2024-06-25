@@ -32,7 +32,7 @@ export default function AddVehicleForm({user}) {
         } else {
             setIsVehicleInfoUpdated(false);
         }
-    },[vehicleData.vehicleInfo]);
+    }, [initialVehicleData.vehicleInfo, vehicleData.vehicleInfo]);
 
     const handleInputChange = (event) => {
         setVehicleData({
@@ -59,9 +59,11 @@ export default function AddVehicleForm({user}) {
                         ...vehicleData,
                         vehicleInfo: data
                     });
-                }).catch(error => {
-                    setErrors([error.toString()])
-                });
+                })
+            }
+            if (response.status === 403) {
+                localStorage.removeItem("user")
+                navigate("/")
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
@@ -106,7 +108,7 @@ export default function AddVehicleForm({user}) {
                 </Button>
 
                 {isVehicleInfoUpdated &&
-                    <VinAddConfirm vehicleData={vehicleData}/>
+                    <VinAddConfirm vehicleData={vehicleData} user={user} setErrors={setErrors}/>
                 }
             </Box>
         </Container>

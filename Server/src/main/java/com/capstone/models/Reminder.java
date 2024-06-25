@@ -10,18 +10,18 @@ import java.util.Objects;
 public class Reminder {
 
     @Id
-    @GeneratedValue
-    private long reminderId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long reminderId;
 
     @Column(name = "vin_id",
             nullable = false,
             columnDefinition = "integer")
-    private long vinId;
+    private Long vinId;
 
     @Column(name = "maintenance_record_id",
             nullable = true,
             columnDefinition = "integer")
-    private long maintenanceRecordId;
+    private Long maintenanceRecordId;
 
     @Column(name = "description",
             nullable = false,
@@ -37,34 +37,34 @@ public class Reminder {
     public Reminder() {
     }
 
-    public Reminder(long vinId, long maintenanceRecordId, String description, LocalDate reminderDate) {
+    public Reminder(Long vinId, Long maintenanceRecordId, String description, LocalDate reminderDate) {
         this.vinId = vinId;
         this.maintenanceRecordId = maintenanceRecordId;
         this.description = description;
         this.reminderDate = reminderDate;
     }
 
-    public long getReminderId() {
+    public Long getReminderId() {
         return reminderId;
     }
 
-    public void setReminderId(long reminderId) {
+    public void setReminderId(Long reminderId) {
         this.reminderId = reminderId;
     }
 
-    public long getVinId() {
+    public Long getVinId() {
         return vinId;
     }
 
-    public void setVinId(long vinId) {
+    public void setVinId(Long vinId) {
         this.vinId = vinId;
     }
 
-    public long getMaintenanceRecordId() {
+    public Long getMaintenanceRecordId() {
         return maintenanceRecordId;
     }
 
-    public void setMaintenanceRecordId(long maintenanceRecordId) {
+    public void setMaintenanceRecordId(Long maintenanceRecordId) {
         this.maintenanceRecordId = maintenanceRecordId;
     }
 
@@ -93,7 +93,7 @@ public class Reminder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Reminder reminder = (Reminder) o;
-        return getVinId() == reminder.getVinId() && getMaintenanceRecordId() == reminder.getMaintenanceRecordId() && Objects.equals(getDescription(), reminder.getDescription()) && Objects.equals(getReminderDate(), reminder.getReminderDate());
+        return Objects.equals(getVinId(), reminder.getVinId()) && Objects.equals(getMaintenanceRecordId(), reminder.getMaintenanceRecordId()) && Objects.equals(getDescription(), reminder.getDescription()) && Objects.equals(getReminderDate(), reminder.getReminderDate());
     }
 
     @Override

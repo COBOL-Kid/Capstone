@@ -46,8 +46,8 @@ export default function NavBar() {
                         open={Boolean(anchorEl)}
                         onClose={handleClose}
                     >
-                        <MenuItem component={Link} to="/" onClick={handleClose}>Page 1</MenuItem>
-                        <MenuItem component={Link} to="/" onClick={handleClose}>Page 2</MenuItem>
+                        <MenuItem component={Link} to="/" onClick={handleClose}>Home</MenuItem>
+                        <MenuItem component={Link} to="/fleet_overview" onClick={handleClose}>Fleet Summary</MenuItem>
                     </Menu>
                 </div>
             </Toolbar>

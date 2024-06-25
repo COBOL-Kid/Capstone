@@ -27,7 +27,7 @@ public class MaintenanceRecordService {
         this.vinRepositoryJPA = vinRepositoryJPA;
     }
 
-    public List<MaintenanceRecord> findAllMaintenanceRecordsByVinId(long vinId) {
+    public List<MaintenanceRecord> findAllMaintenanceRecordsByVinId(Long vinId) {
         return maintenanceRecordRepositoryJPA.findAllByVinId(vinId);
     }
 
@@ -79,7 +79,7 @@ public class MaintenanceRecordService {
     }
 
     @Transactional
-    public Result<MaintenanceRecord> deleteMaintenanceRecord(long maintenanceRecordId) {
+    public Result<MaintenanceRecord> deleteMaintenanceRecord(Long maintenanceRecordId) {
         Result<MaintenanceRecord> result = new Result<>();
         Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findById(maintenanceRecordId);
         if (existingRecord.isEmpty()) {

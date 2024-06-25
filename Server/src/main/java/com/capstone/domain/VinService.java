@@ -27,7 +27,7 @@ public class VinService {
         this.vehicleInfoRepositoryJPA = vehicleInfoRepositoryJPA;
     }
 
-    public List<Vin> findVinsByOwnerId(long ownerId) {
+    public List<Vin> findVinsByOwnerId(Long ownerId) {
         return vinRepositoryJPA.getVinsByOwnerId(ownerId);
     }
 
@@ -58,9 +58,6 @@ public class VinService {
             return result;
         }
         Vin existingVin = result.getPayload();
-        existingVin.setOwnerId(incomingVin.getOwnerId());
-        existingVin.setVehicleInfoId(incomingVin.getVehicleInfoId());
-        existingVin.setVin(incomingVin.getVin());
         existingVin.setMileage(incomingVin.getMileage());
         try {
             result.setPayload(vinRepositoryJPA.save(existingVin));
@@ -72,7 +69,7 @@ public class VinService {
         return result;
     }
 
-    public Result deleteVinByid(long vinId) {
+    public Result<Vin> deleteVinByid(Long vinId) {
         Result<Vin> result = vinIdExists(vinId);
         if (!result.isSuccess()) {
             return result;
@@ -101,7 +98,7 @@ public class VinService {
         return result;
     }
 
-    private Result<Vin> vinIdExists(long vinId) {
+    private Result<Vin> vinIdExists(Long vinId) {
         Optional<Vin> record = vinRepositoryJPA.findById(vinId);
         Result<Vin> result = new Result<>();
         if (record.isEmpty()) {

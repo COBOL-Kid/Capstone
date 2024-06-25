@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import {Errors} from "./Errors.jsx";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import VinAddConfirm from "./VinAddConfirm.jsx";
+import VinConfirm from "./VinConfirm.jsx";
 
 export default function AddVehicleForm({user}) {
 
@@ -111,7 +111,7 @@ export default function AddVehicleForm({user}) {
                 </Button>
 
                 {isVehicleInfoUpdated &&
-                    <VinAddConfirm vehicleData={vehicleData} user={user} setErrors={setErrors}/>
+                    <VinConfirm vehicleData={vehicleData} user={user} setErrors={setErrors}/>
                 }
             </Box>
         </Container>

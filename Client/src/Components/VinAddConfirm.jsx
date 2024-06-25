@@ -36,12 +36,12 @@ export default function VinAddConfirm({vehicleData, user, setErrors}) {
             <CardMedia
                 component="img"
                 height="140"
-                image={vehicleData.vehicleInfo.image}
+                image={vehicleData.image}
                 alt="vehicle image"
             />
             <CardContent>
                 <Typography variant="h5" component="div">
-                    {vehicleData.vehicleInfo.make} {vehicleData.vehicleInfo.model} ({vehicleData.vehicleInfo.year})
+                    {vehicleData.make} {vehicleData.model} ({vehicleData.year})
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                     VIN: {vehicleData.vin}

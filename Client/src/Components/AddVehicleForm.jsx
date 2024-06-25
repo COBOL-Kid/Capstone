@@ -11,15 +11,15 @@ export default function AddVehicleForm({user}) {
     const navigate = useNavigate();
 
     const initialVehicleData = {
+        vinId: 0,
         ownerId: user.ownerId,
         vin: "",
         mileage: 1,
-        vehicleInfo: {
-            year: 1,
-            make: "",
-            model: "",
-            image: ""
-        }
+        year: 1,
+        make: "",
+        model: "",
+        image: ""
+
     }
 
     const [errors, setErrors] = useState([]);
@@ -27,12 +27,12 @@ export default function AddVehicleForm({user}) {
     const [isVehicleInfoUpdated, setIsVehicleInfoUpdated] = useState(false);
 
     useEffect(() => {
-        if (vehicleData.vehicleInfo !== initialVehicleData.vehicleInfo) {
+        if (vehicleData.year !== initialVehicleData.year) {
             setIsVehicleInfoUpdated(true);
         } else {
             setIsVehicleInfoUpdated(false);
         }
-    }, [initialVehicleData.vehicleInfo, vehicleData.vehicleInfo]);
+    }, [vehicleData]);
 
     const handleInputChange = (event) => {
         setVehicleData({
@@ -57,7 +57,10 @@ export default function AddVehicleForm({user}) {
                 response.json().then(data => {
                     setVehicleData({
                         ...vehicleData,
-                        vehicleInfo: data
+                        year: data.year,
+                        make: data.make,
+                        model: data.model,
+                        image: data.image,
                     });
                 })
             }

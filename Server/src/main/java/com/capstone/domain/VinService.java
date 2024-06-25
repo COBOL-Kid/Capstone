@@ -1,6 +1,5 @@
 package com.capstone.domain;
 
-import com.capstone.data.VehicleInfoRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.Result;
 import com.capstone.models.Vin;
@@ -19,12 +18,10 @@ public class VinService {
 
     VinRepositoryJPA vinRepositoryJPA;
 
-    VehicleInfoRepositoryJPA vehicleInfoRepositoryJPA;
 
     @Autowired
-    public VinService(VinRepositoryJPA vinRepositoryJPA, VehicleInfoRepositoryJPA vehicleInfoRepositoryJPA) {
+    public VinService(VinRepositoryJPA vinRepositoryJPA) {
         this.vinRepositoryJPA = vinRepositoryJPA;
-        this.vehicleInfoRepositoryJPA = vehicleInfoRepositoryJPA;
     }
 
     public List<Vin> findVinsByOwnerId(Long ownerId) {

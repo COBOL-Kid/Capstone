@@ -31,7 +31,7 @@ export default function VinConfirm({vehicleData, user, setErrors}) {
                 }
             }).catch(error => {
                 setErrors([error.toString()])
-                navigate("/add_vehicle");
+                navigate("/fleet_overview");
             })
         } else {
             fetch(`http://localhost:8080/api/vin/${vehicleData.vinId}`, {
@@ -42,7 +42,7 @@ export default function VinConfirm({vehicleData, user, setErrors}) {
                 }
             }).then(response => {
                 if (response.status === 200) {
-                    navigate("/vehicle_overview");
+                    navigate("/fleet_overview");
                 }
                 if (response.status === 403) {
                     localStorage.removeItem("user")
@@ -52,7 +52,7 @@ export default function VinConfirm({vehicleData, user, setErrors}) {
                 }
             }).catch(error => {
                 setErrors([error.toString()])
-                navigate("/vehicle_overview");
+                navigate("/fleet_overview");
             })
         }
     }

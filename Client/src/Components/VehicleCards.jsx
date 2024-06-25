@@ -5,8 +5,11 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import {useNavigate} from "react-router-dom";
 
-export default function VehicleCards({vehicles}) {
+export default function VehicleCards({vehicles, setChosenVehicle}) {
+
+    const navigate = useNavigate();
 
     return vehicles.map((vehicle) => (
         <Card sx={{ maxWidth: 345 }} key={vehicle.id}>
@@ -24,7 +27,10 @@ export default function VehicleCards({vehicles}) {
                 </Typography>
             </CardContent>
             <CardActions>
-                <Button size="large">See Details</Button>
+                <Button size="large" onClick={() => {
+                    setChosenVehicle(vehicle);
+                    navigate("/vehicle_overview")
+                }}>See Details</Button>
             </CardActions>
         </Card>
     ));

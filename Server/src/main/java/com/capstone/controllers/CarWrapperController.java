@@ -1,7 +1,7 @@
 package com.capstone.controllers;
 
-import com.capstone.models.Response;
 import com.capstone.models.VehicleInfo;
+import com.capstone.models.VinResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,8 +36,8 @@ public class CarWrapperController {
                         .build())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse -> Mono.error(new Exception("Error while calling external service")))
-                .bodyToMono(Response.class)
-                .map(Response::getData)
+                .bodyToMono(VinResponse.class)
+                .map(VinResponse::getData)
                 .map(vehicleInfo -> Tuples.of(vin, vehicleInfo))
                 .flatMap(this::updateVehicleInfo);
     }
@@ -49,12 +49,24 @@ public class CarWrapperController {
                         .path("/image")
                         .queryParam("vin", vin)
                         .build())
-                .retrieve().bodyToMono(Response.class)
-                .map(Response::getData)
+                .retrieve().bodyToMono(VinResponse.class)
+                .map(VinResponse::getData)
                 .map(additionalData -> {
                     vehicleInfo.setImage(additionalData.getImage());
                     return vehicleInfo;
                 });
+    }
+
+    @GetMapping("/find_maintenance/{vin}")
+    public Mono<Object> getData(@PathVariable String vin) {
+        return this.webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/maintlist")
+                        .queryParam("vin", vin)
+                        .build())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, clientResponse -> Mono.error(new Exception("Error while calling external service")))
+                .bodyToMono(Object.class);
     }
 }
 

@@ -10,7 +10,18 @@ partner-token: 599b87f24bd2477d81afbf9123e1b5a2
 
 ###
 
-GET http://localhost:8080/honestcar/external/test/1GNALDEK9FZ108495
+
+GET http://localhost:8080/api/external/find_vin/1GNALDEK9FZ108495
+
+###
+
+GET http://api.carmd.com/v3.0/maintlist?vin=1GNALDEK9FZ108495
+authorization: Basic NGFmYzRkYmEtZmZhNS00NjA5LWE2YTktNzRlZjk5YTgwYzdh
+partner-token: 599b87f24bd2477d81afbf9123e1b5a2
+
+###
+
+GET http://localhost:8080/api/external/find_maintenance/1GNALDEK9FZ108495
 
 ###
 

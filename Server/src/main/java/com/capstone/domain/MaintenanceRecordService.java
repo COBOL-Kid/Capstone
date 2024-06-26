@@ -63,10 +63,8 @@ public class MaintenanceRecordService {
             return result;
         }
         existingRecord.get().setDescription(incomingRecord.getDescription());
-        existingRecord.get().setNotes(incomingRecord.getNotes());
         existingRecord.get().setDateCompleted(incomingRecord.getDateCompleted());
         existingRecord.get().setMileageDue(incomingRecord.getMileageDue());
-        existingRecord.get().setMileageCompleted(incomingRecord.getMileageCompleted());
         existingRecord.get().setCost(incomingRecord.getCost());
         try {
             result.setPayload(maintenanceRecordRepositoryJPA.save(existingRecord.get()));

@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,7 +33,7 @@ class MaintenanceRecordServiceTest {
     VinRepositoryJPA vinRepositoryJPA;
 
     private MaintenanceRecord makeValidMaintenanceRecord() {
-        return new MaintenanceRecord(1L, "description", "notes", null, 1, 1, 1.0);
+        return new MaintenanceRecord(1L, "description", LocalDate.now(), 1, 1.0);
     }
 
     @Test

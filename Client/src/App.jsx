@@ -24,7 +24,7 @@ function App() {
                        element={<FleetOverview user={user} vehicles={vehicles} setVehicles={setVehicles}
                                                setChosenVehicle={setChosenVehicle}/>}/>
                 <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
-                <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle}/>}/>
+                <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}/>}/>
             </Routes>
         </BrowserRouter>
     );

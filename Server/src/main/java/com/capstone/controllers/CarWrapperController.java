@@ -61,12 +61,15 @@ public class CarWrapperController {
                 });
     }
 
-    @GetMapping("/find_maintenance/{vin}")
-    public Mono<List<Maintenance>> getData(@PathVariable String vin) {
+    @GetMapping("/find_maintenance/{vin}/{mileage}")
+    public Mono<List<Maintenance>> getData(
+            @PathVariable String vin,
+            @PathVariable String mileage) { // add mileage path variable here
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/maintlist")
+                        .path("/maint")
                         .queryParam("vin", vin)
+                        .queryParam("mileage", mileage) // add mileage query parameter here
                         .build())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse -> Mono.error(new Exception("Error while calling external service")))

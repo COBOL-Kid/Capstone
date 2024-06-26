@@ -11,7 +11,7 @@ export default function MaintenanceList() {
     const [data, setData] = useState([]);
 
     useEffect(() => {
-        fetch(`http://localhost:8080/api/external/find_maintenance/1GNALDEK9FZ108495`,
+        fetch(`http://localhost:8080/api/external/find_maintenance/1GNALDEK9FZ108495/10000`,
             { method: "GET", headers: { contentType: 'application/json' } }
         )
             .then(response => response.json())

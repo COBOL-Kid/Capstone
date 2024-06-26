@@ -34,6 +34,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception ex) {
-        return new ResponseEntity<String>("Sometimes things just don't go as planned...", HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<String>("Sometimes things just don't go as planned.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

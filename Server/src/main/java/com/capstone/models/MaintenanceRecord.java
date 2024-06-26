@@ -23,11 +23,6 @@ public class MaintenanceRecord {
             columnDefinition = "text")
     private String description;
 
-    @Column(name = "notes",
-            nullable = true,
-            columnDefinition = "text")
-    private String notes;
-
     @Column(name = "date_completed",
             nullable = true,
             columnDefinition = "date")
@@ -37,11 +32,6 @@ public class MaintenanceRecord {
             nullable = false,
             columnDefinition = "int")
     private int mileageDue;
-
-    @Column(name = "mileage_completed",
-            nullable = false,
-            columnDefinition = "int")
-    private int mileageCompleted;
 
     @Column(name = "cost",
             nullable = true,
@@ -53,13 +43,11 @@ public class MaintenanceRecord {
     public MaintenanceRecord() {
     }
 
-    public MaintenanceRecord(Long vinId, String description, String notes, LocalDate dateCompleted, int mileageDue, int mileageCompleted, double cost) {
+    public MaintenanceRecord(Long vinId, String description, LocalDate dateCompleted, int mileageDue, double cost) {
         this.vinId = vinId;
         this.description = description;
-        this.notes = notes;
         this.dateCompleted = dateCompleted;
         this.mileageDue = mileageDue;
-        this.mileageCompleted = mileageCompleted;
         this.cost = cost;
     }
 
@@ -87,14 +75,6 @@ public class MaintenanceRecord {
         this.description = description;
     }
 
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
     public LocalDate getDateCompleted() {
         return dateCompleted;
     }
@@ -111,14 +91,6 @@ public class MaintenanceRecord {
         this.mileageDue = mileageDue;
     }
 
-    public int getMileageCompleted() {
-        return mileageCompleted;
-    }
-
-    public void setMileageCompleted(int mileageCompleted) {
-        this.mileageCompleted = mileageCompleted;
-    }
-
     public double getCost() {
         return cost;
     }
@@ -131,16 +103,17 @@ public class MaintenanceRecord {
         return vinId <= 0 || description == null || description.isEmpty() || mileageDue <= 0;
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MaintenanceRecord that = (MaintenanceRecord) o;
-        return Objects.equals(getVinId(), that.getVinId()) && getMileageDue() == that.getMileageDue() && getMileageCompleted() == that.getMileageCompleted() && Double.compare(getCost(), that.getCost()) == 0 && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getNotes(), that.getNotes()) && Objects.equals(getDateCompleted(), that.getDateCompleted());
+        return getMileageDue() == that.getMileageDue() && Double.compare(getCost(), that.getCost()) == 0 && Objects.equals(getVinId(), that.getVinId()) && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getDateCompleted(), that.getDateCompleted());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getVinId(), getDescription(), getNotes(), getDateCompleted(), getMileageDue(), getMileageCompleted(), getCost());
+        return Objects.hash(getVinId(), getDescription(), getDateCompleted(), getMileageDue(), getCost());
     }
 }

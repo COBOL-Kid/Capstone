@@ -1,15 +1,15 @@
 package com.capstone.models;
 
-public class Response {
+public class VinResponse {
 
     private VehicleInfo data;
 
 
-    public Response(VehicleInfo data) {
+    public VinResponse(VehicleInfo data) {
         this.data = data;
     }
 
-    public Response() {
+    public VinResponse() {
     }
 
     public VehicleInfo getData() {

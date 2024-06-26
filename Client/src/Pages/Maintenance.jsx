@@ -17,7 +17,7 @@ import {useNavigate} from "react-router-dom";
 import {Errors} from "../Components/Errors.jsx";
 
 
-export default function MaintenanceList({chosenVehicle, user, setReminders}) {
+export default function Maintenance({chosenVehicle, user, setReminders}) {
     const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
     const [errors, setErrors] = useState([]);
     const [completedMaintenance, setCompletedMaintenance] = useState([]);

@@ -6,7 +6,7 @@ import {Box} from '@mui/system';
 import VehicleCards from "../Components/VehicleCards.jsx";
 import {Errors} from "../Components/Errors.jsx";
 
-function FleetOverview({user, vehicles, setVehicles, setChosenVehicle}) {
+export default function FleetOverview({user, vehicles, setVehicles, setChosenVehicle}) {
 
     const navigate = useNavigate();
     const [errors, setErrors] = useState([]);
@@ -55,5 +55,3 @@ function FleetOverview({user, vehicles, setVehicles, setChosenVehicle}) {
         </Box>
     )
 }
-
-export default FleetOverview;

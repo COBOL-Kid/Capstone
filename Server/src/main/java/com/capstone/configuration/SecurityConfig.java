@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/external/**").permitAll()
                         .requestMatchers("/api/maintenance/**").hasAuthority("USER")
                         .requestMatchers("/api/vin/**").hasAuthority("USER")
-                        .requestMatchers("/api/reminder/**").hasAuthority("USER")
+                        .requestMatchers("/api/reminder/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(sessionManagement -> sessionManagement
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

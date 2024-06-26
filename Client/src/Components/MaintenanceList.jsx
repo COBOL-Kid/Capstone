@@ -3,21 +3,50 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import {Box, Button, Typography} from "@mui/material";
+import {useNavigate} from "react-router-dom";
+import {Errors} from "./Errors.jsx";
 
 
-export default function MaintenanceList({chosenVehicle}) {
-    const [completeMaint, setCompleteMaint] = useState([]);
+export default function MaintenanceList({chosenVehicle, user}) {
+    const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
+    const [errors, setErrors] = useState([]);
+    const [completedMaintenance, setCompletedMaintenance] = useState([]);
+    const navigate = useNavigate();
 
-    // todo add error handling
     useEffect(() => {
-        fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`, {},
+        fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`,
             {method: "GET", headers: {contentType: 'application/json'}}
         )
-            .then(response => response.json())
-            .then(data => {
-                setCompleteMaint(data);
-                console.log(data);
-            })
+            .then(response => {
+                if (response.status === 200) {
+                    response.json()
+                        .then(data => {
+                            setUpcomingMaintenance(data);
+                            console.log(data);
+                        })
+                } else if (response.status === 403) {
+                    localStorage.removeItem("user");
+                    navigate("/");
+                }
+            }).catch(errors => setErrors(["Something Went Wrong"]))
+
+        fetch(`http://localhost:8080/api/maintenance/${chosenVehicle.vinId}`, {
+            method: "GET", headers: {
+                contentType: 'application/json',
+                Authorization: `Bearer ${user.jwt}`
+            }
+        }).then(response => {
+            if (response.status === 200) {
+                response.json().then(data => {
+                    setCompletedMaintenance(data);
+                })
+            } else if (response.status === 204) {
+                setCompletedMaintenance([])
+            } else if (response.status === 403) {
+                localStorage.removeItem("user");
+                navigate("/");
+            }
+        }).catch(errors => setErrors(["Something Went Wrong"]))
     }, []);
 
     function handleAddClick() {
@@ -29,9 +58,10 @@ export default function MaintenanceList({chosenVehicle}) {
             <Typography variant="h4" sx={{textAlign: 'center', mt: 2}}>
                 Upcoming Maintenance
             </Typography>
+            <Errors/>
             <Box sx={{width: '100%', maxHeight: '45vh', overflow: 'auto'}}>
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
-                    {completeMaint.map((item, index) => (
+                    {upcomingMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
                                       <Button variant="contained" color="success" onClick={() => handleAddClick(item)}>

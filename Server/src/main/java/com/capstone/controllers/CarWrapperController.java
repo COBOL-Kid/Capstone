@@ -1,5 +1,7 @@
 package com.capstone.controllers;
 
+import com.capstone.models.ApiResponse;
+import com.capstone.models.Maintenance;
 import com.capstone.models.VehicleInfo;
 import com.capstone.models.VinResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/external/")
@@ -58,7 +62,7 @@ public class CarWrapperController {
     }
 
     @GetMapping("/find_maintenance/{vin}")
-    public Mono<Object> getData(@PathVariable String vin) {
+    public Mono<List<Maintenance>> getData(@PathVariable String vin) {
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/maintlist")
@@ -66,7 +70,8 @@ public class CarWrapperController {
                         .build())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse -> Mono.error(new Exception("Error while calling external service")))
-                .bodyToMono(Object.class);
+                .bodyToMono(ApiResponse.class)
+                .map(apiResponse -> apiResponse.getData());
     }
 }
 

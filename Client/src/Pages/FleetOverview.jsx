@@ -6,10 +6,9 @@ import {Box} from '@mui/system';
 import VehicleCards from "../Components/VehicleCards.jsx";
 import {Errors} from "../Components/Errors.jsx";
 
-function FleetOverview({user}) {
+function FleetOverview({user, vehicles, setVehicles, setChosenVehicle}) {
 
     const navigate = useNavigate();
-    const [vehicles, setVehicles] = useState([]);
     const [errors, setErrors] = useState([]);
 
     useEffect(() => {
@@ -48,7 +47,7 @@ function FleetOverview({user}) {
                     No Vehicles Currently
                 </Typography>
             ) : (
-                <VehicleCards vehicles={vehicles}/>
+                <VehicleCards vehicles={vehicles} setChosenVehicle={setChosenVehicle}/>
             )}
             <Button variant="contained" size="large" style={{alignSelf: 'center'}} onClick={() => navigate("/add_vehicle")}>
                 Add A Vehicle

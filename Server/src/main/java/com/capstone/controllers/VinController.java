@@ -39,4 +39,23 @@ public class VinController {
         }
         return new ResponseEntity<>(vinResult.getPayload(), HttpStatus.CREATED);
     }
+
+    @PutMapping
+    public ResponseEntity<?> updateVin(@RequestBody Vin vin) {
+        Result<Vin> vinResult = vinService.updateVin(vin);
+        if (!vinResult.isSuccess()) {
+            return new ResponseEntity<>(vinResult.getErrors(), HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(vinResult.getPayload(), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{vinId}")
+    public ResponseEntity<?> deleteVin(@PathVariable Long vinId) {
+        Result<Vin> result = vinService.deleteVinByid(vinId);
+        if (result.isSuccess()) {
+            return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
+        }
+    }
 }

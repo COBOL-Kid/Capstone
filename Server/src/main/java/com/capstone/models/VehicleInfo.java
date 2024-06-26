@@ -1,42 +1,28 @@
 package com.capstone.models;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Entity
-@Table(name = "vehicle_info")
+
 public class VehicleInfo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long vehicleInfoId;
 
-    @Column(name = "year",
-            nullable = false,
-            columnDefinition = "integer")
+
     private int year;
 
-    @Column(name = "make",
-            nullable = false,
-            columnDefinition = "text")
+
     private String make;
 
-    @Column(name = "model",
-            nullable = false,
-            columnDefinition = "text")
+
     private String model;
 
-    @Column(name = "image",
-            nullable = false,
-            columnDefinition = "text")
+
     private String image;
 
-    @JsonManagedReference
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "vehicleInfo")
+
     private List<Vin> vins = new ArrayList<>();
 
 

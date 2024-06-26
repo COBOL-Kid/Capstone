@@ -32,8 +32,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/external/**").permitAll()
+                        .requestMatchers("/api/maintenance/**").permitAll()
                         .requestMatchers("/api/vin/**").hasAuthority("USER")
-                        .requestMatchers("/api/maintenance/**").hasAuthority("USER")
                         .anyRequest().authenticated())
                 .sessionManagement(sessionManagement -> sessionManagement
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

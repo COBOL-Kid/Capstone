@@ -6,7 +6,7 @@ import {Grid, Paper} from '@mui/material';
 import {Errors} from "../Components/Errors.jsx";
 import UpdateMileageForm from "../Components/UpdateMileageForm.jsx";
 import VinConfirm from "../Components/VinConfirm.jsx";
-import MaintenanceList from "../Components/MaintenanceList.jsx";
+import MaintenanceList from "./MaintenanceList.jsx";
 import {useNavigate} from "react-router-dom";
 
 export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
@@ -57,7 +57,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                                     Delete Vehicle
                                 </Button>
                             }
-                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={() => navigate("/test")}>
+                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={() => navigate("/maintenance_list")}>
                                 View Maintenance
                             </Button>
                         </Box>

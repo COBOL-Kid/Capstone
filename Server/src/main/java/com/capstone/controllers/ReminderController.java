@@ -31,7 +31,7 @@ public class ReminderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addReminder(@RequestBody Reminder reminder) {
+    public ResponseEntity<?> createReminder(@RequestBody Reminder reminder) {
         Result<Reminder> result = reminderService.createReminder(reminder);
         if (result.isSuccess()) {
             return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED);

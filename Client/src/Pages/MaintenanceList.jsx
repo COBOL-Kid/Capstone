@@ -2,22 +2,37 @@ import {useEffect, useState} from 'react';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import {Box, Button, Typography} from "@mui/material";
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    TextField,
+    Typography
+} from "@mui/material";
 import {useNavigate} from "react-router-dom";
-import {Errors} from "./Errors.jsx";
+import {Errors} from "../Components/Errors.jsx";
 
 
-export default function MaintenanceList({chosenVehicle, user}) {
+export default function MaintenanceList({chosenVehicle, user, setReminders}) {
     const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
     const [errors, setErrors] = useState([]);
     const [completedMaintenance, setCompletedMaintenance] = useState([]);
+    const [reminderDialogOpen, setReminderDialogOpen] = useState({});
+    const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
     const today = new Date();
 
-    const date = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDate = new Date();
+    const todayYear = todayDate.getFullYear();
+    const todayMonth = String(todayDate.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(todayDate.getDate()).padStart(2, '0');
+    const minDateString = `${todayYear}-${todayMonth}-${todayDay}`;
 
-    const dateCompleted = `${today.getFullYear()}-${month}-${date}`;
+    const dateCompleted = `${today.getFullYear()}-${todayMonth}-${todayDay}`;
 
     const maintenanceItem = {
         "vinId": chosenVehicle.vinId,
@@ -25,6 +40,56 @@ export default function MaintenanceList({chosenVehicle, user}) {
         "dateCompleted": dateCompleted,
         "mileageDue": 0,
         "cost": 0.0
+    }
+
+    const reminder = {
+        "reminderId": 0,
+        "vinId": chosenVehicle.vinId,
+        "description": "",
+        "reminderDate": ""
+    }
+
+    const handleReminderClick = itemName => {
+        setReminderDialogOpen(prevState => ({...prevState, [itemName]: true}));
+    }
+
+    const handleReminderDialogClose = itemName => {
+        setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
+    }
+
+    const handleReminderDateChange = (date, itemName) => {
+        setReminderDate(prevState => ({...prevState, [itemName]: date}));
+    }
+
+    const handleReminderConfirm = itemName => {
+        reminder.description = itemName;
+        let selectedDate = new Date(reminderDate[itemName]);
+        let year = selectedDate.getFullYear();
+        let month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        let date = String(selectedDate.getDate()).padStart(2, '0');
+        reminder.reminderDate = `${year}-${month}-${date}`;
+
+        setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
+
+        fetch("http://localhost:8080/api/reminder", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${user.jwt}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(reminder)
+        }).then(response => {
+            if (response.status === 201) {
+                navigate("/maintenance_list");
+            } else if (response.status === 403) {
+                localStorage.removeItem("user");
+                navigate("/");
+            } else {
+                Promise.reject(`Problem with response. Status: ${response.status}`);
+            }
+        }).catch(errors => setErrors(errors));
+        console.log(`Item: ${itemName}, Date: ${reminderDate[itemName]}`);
+        setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
     }
 
     useEffect(() => {
@@ -40,6 +105,8 @@ export default function MaintenanceList({chosenVehicle, user}) {
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
                     navigate("/");
+                } else {
+                    Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
             }).catch(errors => setErrors(["Something Went Wrong"]))
 
@@ -59,7 +126,7 @@ export default function MaintenanceList({chosenVehicle, user}) {
                 localStorage.removeItem("user");
                 navigate("/");
             } else {
-                setErrors()
+                Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors))
     }, []);
@@ -75,7 +142,7 @@ export default function MaintenanceList({chosenVehicle, user}) {
         })
             .then(response => {
                 if (response.status === 201) {
-                    navigate("/test");
+                    navigate("/maintenance_list");
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
@@ -93,15 +160,51 @@ export default function MaintenanceList({chosenVehicle, user}) {
                     {upcomingMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
-                                      <Button variant="contained" color="success" onClick={() => {
-                                          maintenanceItem.description = item.desc;
-                                          maintenanceItem.mileageDue = item.due_mileage;
-                                          maintenanceItem.cost = item.repair.total_cost;
-                                          handleAddClick(maintenanceItem);
-                                      }
-                                      }>
-                                          Add
-                                      </Button>
+                                      <>
+                                          <Button variant="contained" color="success" onClick={() => {
+                                              maintenanceItem.description = item.desc;
+                                              maintenanceItem.mileageDue = item.due_mileage;
+                                              maintenanceItem.cost = item.repair.total_cost;
+                                              handleAddClick(maintenanceItem);
+                                          }}>
+                                              Add
+                                          </Button>
+                                          <Button variant="contained" color="primary"
+                                                  onClick={() => handleReminderClick(item.desc)}
+                                                  style={{marginLeft: '10px'}}>
+                                              Reminder
+                                          </Button>
+
+                                          <Dialog open={reminderDialogOpen[item.desc]}
+                                                  onClose={() => handleReminderDialogClose(item.desc)}>
+                                              <DialogTitle>Add Reminder</DialogTitle>
+                                              <DialogContent>
+                                                  <DialogContentText>
+                                                      Please enter the reminder date
+                                                  </DialogContentText>
+                                                  <TextField
+                                                      autoFocus
+                                                      margin="dense"
+                                                      id="reminderDate"
+                                                      type="date"
+                                                      fullWidth
+                                                      value={reminderDate[item.desc] || ''}
+                                                      min={minDateString}
+                                                      onChange={event => handleReminderDateChange(event.target.value, item.desc)}
+                                                  />
+                                              </DialogContent>
+                                              <DialogActions>
+                                                  <Button onClick={() => handleReminderDialogClose(item.desc)}
+                                                          color="primary">
+                                                      Cancel
+                                                  </Button>
+                                                  <Button onClick={() => handleReminderConfirm(item.desc)}
+                                                          color="primary">
+                                                      Confirm
+                                                  </Button>
+                                              </DialogActions>
+                                          </Dialog>
+                                      </>
                                   }
                                   sx={{
                                       bgcolor: 'background.paper',

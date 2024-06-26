@@ -8,6 +8,7 @@ import {Box, Button, Typography} from "@mui/material";
 export default function MaintenanceList({chosenVehicle}) {
     const [completeMaint, setCompleteMaint] = useState([]);
 
+    // todo add error handling
     useEffect(() => {
         fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`, {},
             {method: "GET", headers: {contentType: 'application/json'}}

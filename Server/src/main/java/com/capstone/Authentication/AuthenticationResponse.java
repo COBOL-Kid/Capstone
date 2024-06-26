@@ -3,7 +3,7 @@ package com.capstone.Authentication;
 import java.util.Objects;
 
 public class AuthenticationResponse {
-    // todo: add a user as a payload returned
+
     private String token;
 
     public AuthenticationResponse() {

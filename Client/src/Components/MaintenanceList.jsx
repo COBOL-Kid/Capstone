@@ -5,16 +5,16 @@ import ListItemText from '@mui/material/ListItemText';
 import {Box, Button, Typography} from "@mui/material";
 
 
-export default function MaintenanceList() {
-    const [data, setData] = useState([]);
+export default function MaintenanceList({chosenVehicle}) {
+    const [completeMaint, setCompleteMaint] = useState([]);
 
     useEffect(() => {
-        fetch(`http://localhost:8080/api/external/find_maintenance/1GNALDEK9FZ108495/10000`,
+        fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`, {},
             {method: "GET", headers: {contentType: 'application/json'}}
         )
             .then(response => response.json())
             .then(data => {
-                setData(data);
+                setCompleteMaint(data);
                 console.log(data);
             })
     }, []);
@@ -30,7 +30,7 @@ export default function MaintenanceList() {
             </Typography>
             <Box sx={{width: '100%', maxHeight: '45vh', overflow: 'auto'}}>
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
-                    {data.map((item, index) => (
+                    {completeMaint.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
                                       <Button variant="contained" color="success" onClick={() => handleAddClick(item)}>

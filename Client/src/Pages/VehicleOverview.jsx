@@ -6,12 +6,15 @@ import {Grid, Paper} from '@mui/material';
 import {Errors} from "../Components/Errors.jsx";
 import UpdateMileageForm from "../Components/UpdateMileageForm.jsx";
 import VinConfirm from "../Components/VinConfirm.jsx";
+import MaintenanceList from "../Components/MaintenanceList.jsx";
+import {useNavigate} from "react-router-dom";
 
 export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
 
     const [isDeleteClicked, setIsDeleteClicked] = useState(false);
     const [isUpdateClicked, setIsUpdateClicked] = useState(false);
     const [errors, setErrors] = useState([]);
+    const navigate = useNavigate();
 
     const handleDeleteClick = () => {
         setIsDeleteClicked(true);
@@ -54,6 +57,9 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                                     Delete Vehicle
                                 </Button>
                             }
+                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={() => navigate("/test")}>
+                                View Maintenance
+                            </Button>
                         </Box>
                     </Paper>
                 </Grid>

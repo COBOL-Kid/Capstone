@@ -6,6 +6,7 @@ import AuthenticationForm from "./Components/AuthenticationForm.jsx";
 import FleetOverview from "./Pages/FleetOverview.jsx";
 import AddVehicleForm from "./Components/AddVehicleForm.jsx";
 import VehicleOverview from "./Pages/VehicleOverview.jsx";
+import MaintenanceList from "./Components/MaintenanceList.jsx";
 
 function App() {
     const initialUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null
@@ -25,6 +26,7 @@ function App() {
                                                setChosenVehicle={setChosenVehicle}/>}/>
                 <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
                 <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}/>}/>
+                <Route path="/test" element={<MaintenanceList/>}/>
             </Routes>
         </BrowserRouter>
     );

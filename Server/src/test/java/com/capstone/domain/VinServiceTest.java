@@ -1,6 +1,5 @@
 package com.capstone.domain;
 
-import com.capstone.data.VehicleInfoRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.Result;
 import com.capstone.models.VehicleInfo;
@@ -25,8 +24,6 @@ class VinServiceTest {
 
     @MockBean
     VinRepositoryJPA vinRepository;
-    @MockBean
-    VehicleInfoRepositoryJPA vehicleInfoRepository;
     @Autowired
     private VinService vinService;
 
@@ -222,6 +219,6 @@ class VinServiceTest {
     }
 
     private Vin createValidVin() {
-        return new Vin(1L, "test", 1337, new VehicleInfo(1997, "test", "test", "test"));
+        return new Vin();
     }
 }

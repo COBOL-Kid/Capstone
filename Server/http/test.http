@@ -37,8 +37,12 @@ Content-Type: application/json
 ###
 
 GET http://localhost:8080/api/vin/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5MjkzMDQyLCJleHAiOjE3MTkyOTQ0ODJ9.HtyymVWJ42QUalpfsD7qcSc80rDr8luHChlwLss_GyQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoidGVzdCIsImlhdCI6MTcxOTMxMzg1MiwiZXhwIjoxNzE5MzE1MjkyfQ.W3KrwnzZMT0ENw16p4opUfz6ysiAikwGMaS1Ll8OBlE
 ###
 
-http://localhost:8080/api/external/find_vin/1GNALDEK9FZ108495
+GET http://localhost:8080/api/external/find_vin/1GNALDEK9FZ108495
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5MjkyOTczLCJleHAiOjE3MTkyOTQ0MTN9.bL614reOPGdzvVRx3GzT1dQ2peZw9gh3AGDxIsURsgo
+
+###
+
+

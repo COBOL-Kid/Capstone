@@ -2,14 +2,14 @@ package com.capstone.models;
 
 import java.util.List;
 
-public class ApiResponse {
+public class MaintenanceResponse {
 
     private List<Maintenance> data;
 
-    public ApiResponse() {
+    public MaintenanceResponse() {
     }
 
-    public ApiResponse(List<Maintenance> data) {
+    public MaintenanceResponse(List<Maintenance> data) {
         this.data = data;
     }
 

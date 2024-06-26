@@ -56,4 +56,29 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hb
 
 ###
 
+POST http://localhost:8080/api/vin
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5Mzg2NzI3LCJleHAiOjE3MTkzODgxNjd9.HH-s1x3pSXJHkq3OACLUDxRl4yyx2B7tpl7X_KlsRFM
 
+{
+  "ownerId": 1,
+  "vin": "test",
+  "mileage" : 1337,
+  "year" : 1999,
+  "make": "test",
+  "model" : "test",
+  "image" : "test"
+}
+
+###
+
+POST http://localhost:8080/api/maintenance
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5Mzg2NzI3LCJleHAiOjE3MTkzODgxNjd9.HH-s1x3pSXJHkq3OACLUDxRl4yyx2B7tpl7X_KlsRFM
+
+{
+  "vinId": 1,
+  "description": "test",
+  "mileageDue": 1337,
+  "cost" : 10.00
+}

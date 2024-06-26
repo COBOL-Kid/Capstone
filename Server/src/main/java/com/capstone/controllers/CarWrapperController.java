@@ -1,6 +1,6 @@
 package com.capstone.controllers;
 
-import com.capstone.models.ApiResponse;
+import com.capstone.models.MaintenanceResponse;
 import com.capstone.models.Maintenance;
 import com.capstone.models.VehicleInfo;
 import com.capstone.models.VinResponse;
@@ -73,8 +73,8 @@ public class CarWrapperController {
                         .build())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse -> Mono.error(new Exception("Error while calling external service")))
-                .bodyToMono(ApiResponse.class)
-                .map(apiResponse -> apiResponse.getData());
+                .bodyToMono(MaintenanceResponse.class)
+                .map(maintenanceResponse -> maintenanceResponse.getData());
     }
 }
 

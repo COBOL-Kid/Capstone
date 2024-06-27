@@ -52,6 +52,35 @@ public class MaintenanceRecordService {
     }
 
     @Transactional
+    public Result<MaintenanceRecord> createNotYetExistentMaintenanceRecords(List<MaintenanceRecord> records) {
+        Result<MaintenanceRecord> masterResult = new Result<>();
+        for (MaintenanceRecord record : records) {
+            Result<MaintenanceRecord> result = validateMaintenanceRecord(record);
+            if (!result.isSuccess()) {
+                return result;
+            }
+            vinIdExists(result);
+            if (!result.isSuccess()) {
+                return result;
+            }
+            Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDue(record.getDescription(), record.getMileageDue());
+            if (existingRecord.isEmpty()) {
+                try {
+                    result.setPayload(maintenanceRecordRepositoryJPA.save(result.getPayload()));
+                } catch (DataIntegrityViolationException e) {
+                    result.addError("DataIntegrityViolationException");
+                } catch (JpaSystemException e) {
+                    result.addError("JpaSystemException");
+                }
+            }
+            if (!result.isSuccess()) {
+                masterResult.setErrors(result.getErrors());
+            }
+        }
+        return masterResult;
+    }
+
+    @Transactional
     public Result<MaintenanceRecord> updateMaintenanceRecord(MaintenanceRecord incomingRecord) {
         Result<MaintenanceRecord> result = validateMaintenanceRecord(incomingRecord);
         if (!result.isSuccess()) {

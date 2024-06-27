@@ -60,6 +60,7 @@ class MaintenanceRecordServiceTest {
     @Test
     void createMaintenanceRecord_withInvalidData_returnsFailure() {
         MaintenanceRecord maintenanceRecord = new MaintenanceRecord();
+        maintenanceRecord.setVinId(1L);  // Set the vinId to ensure it is not null
         when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getVinId())).thenReturn(Optional.of(maintenanceRecord));
         Result<MaintenanceRecord> result = maintenanceRecordService.createMaintenanceRecord(maintenanceRecord);
         assertFalse(result.isSuccess());
@@ -129,7 +130,7 @@ class MaintenanceRecordServiceTest {
     @Test
     void updateMaintenanceRecord_withInvalidData_returnsFailure() {
         MaintenanceRecord maintenanceRecord = new MaintenanceRecord();
-        maintenanceRecord.setMaintenanceRecordId(1L);
+        maintenanceRecord.setVinId(1L);
         when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getMaintenanceRecordId())).thenReturn(Optional.of(maintenanceRecord));
         Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(maintenanceRecord);
         assertFalse(result.isSuccess());
@@ -200,6 +201,58 @@ class MaintenanceRecordServiceTest {
         when(maintenanceRecordRepositoryJPA.findById(record.getMaintenanceRecordId())).thenReturn(Optional.of(record));
         doThrow(JpaSystemException.class).when(maintenanceRecordRepositoryJPA).deleteById(record.getMaintenanceRecordId());
         Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(record.getMaintenanceRecordId());
+        assertTrue(result.getErrors().contains("JpaSystemException"));
+    }
+
+    @Test
+    void createNotYetExistentMaintenanceRecords_existingRecord_returnsSuccess() {
+        List<MaintenanceRecord> records = List.of(makeValidMaintenanceRecord());
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(records.get(0).getVinId())).thenReturn(Optional.of(vin));
+        when(maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDue(records.get(0).getDescription(), records.get(0).getMileageDue())).thenReturn(Optional.empty());
+        when(maintenanceRecordRepositoryJPA.save(records.get(0))).thenReturn(records.get(0));
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(records);
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void createNotYetExistentMaintenanceRecords_NonExistentVin_returnsFailure() {
+        List<MaintenanceRecord> records = List.of(makeValidMaintenanceRecord());
+        when(vinRepositoryJPA.findById(records.get(0).getVinId())).thenReturn(Optional.empty());
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(records);
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrors().contains("VIN number does not exist"));
+    }
+
+    @Test
+    void createNotYetExistentMaintenanceRecords_NonValidMaintenanceRecord_returnsFailure() {
+        MaintenanceRecord invalidMaintenanceRecord = new MaintenanceRecord();
+        List<MaintenanceRecord> records = List.of(invalidMaintenanceRecord);
+        when(maintenanceRecordRepositoryJPA.findById(records.get(0).getVinId())).thenReturn(Optional.of(invalidMaintenanceRecord));
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(records);
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrors().contains("Maintenance record contains null or invalid values"));
+    }
+
+    @Test
+    void createNotYetExistentMaintenanceRecords_DataIntegrityViolationException_returnsFailure() {
+        List<MaintenanceRecord> records = List.of(makeValidMaintenanceRecord());
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(records.get(0).getVinId())).thenReturn(Optional.of(vin));
+        when(maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDue(records.get(0).getDescription(), records.get(0).getMileageDue())).thenReturn(Optional.empty());
+        when(maintenanceRecordRepositoryJPA.save(records.get(0))).thenThrow(DataIntegrityViolationException.class);
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(records);
+        assertTrue(result.getErrors().contains("DataIntegrityViolationException"));
+    }
+
+    @Test
+    void createNotYetExistentMaintenanceRecords_JpaSystemException_returnsFailure() {
+        List<MaintenanceRecord> records = List.of(makeValidMaintenanceRecord());
+        Vin vin = new Vin();
+        when(vinRepositoryJPA.findById(records.get(0).getVinId())).thenReturn(Optional.of(vin));
+        when(maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDue(records.get(0).getDescription(), records.get(0).getMileageDue())).thenReturn(Optional.empty());
+        when(maintenanceRecordRepositoryJPA.save(records.get(0))).thenThrow(JpaSystemException.class);
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(records);
         assertTrue(result.getErrors().contains("JpaSystemException"));
     }
 }

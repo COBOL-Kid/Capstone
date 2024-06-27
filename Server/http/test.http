@@ -84,7 +84,8 @@ Authorization: Bearer {{AUTH}}
   "vinId": 1,
   "description": "test",
   "mileageDue": 1337,
-  "cost": 10.00
+  "cost": 10.00iuy56789,
+
 }
 
 ###

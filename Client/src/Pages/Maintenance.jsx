@@ -24,6 +24,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
     const [reminderDialogOpen, setReminderDialogOpen] = useState({});
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
+    const [change, setChange] = useState(false);
 
     const todayDate = new Date();
     const todayYear = todayDate.getFullYear();
@@ -87,7 +88,6 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors));
-        console.log(`Item: ${itemName}, Date: ${reminderDate[itemName]}`);
         setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
     }
 
@@ -130,7 +130,8 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors))
-    }, []);
+    }, [change]);
+
 
     function handleAddClick(maintenanceItem) {
         fetch("http://localhost:8080/api/maintenance", {
@@ -143,7 +144,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
         })
             .then(response => {
                 if (response.status === 201) {
-                    navigate("/maintenance_list");
+                    setChange(prevChange => !prevChange);  // Change state to force the list to be refreshed
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }

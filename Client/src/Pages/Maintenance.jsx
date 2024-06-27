@@ -15,6 +15,9 @@ import {
 } from "@mui/material";
 import {useNavigate} from "react-router-dom";
 import {Errors} from "../Components/Errors.jsx";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 
 export default function Maintenance({chosenVehicle, user, setReminders}) {
@@ -177,14 +180,14 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                         <ListItem key={index}
                                   secondaryAction={
                                       <>
-                                          <Button variant="contained" color="success" onClick={() => {
+                                          <IconButton color= "primary" aria-label="add" onClick={() => {
                                               maintenanceItem.description = item.desc;
                                               maintenanceItem.mileageDue = item.due_mileage;
                                               maintenanceItem.cost = item.repair.total_cost;
                                               handleAddClick(maintenanceItem);
                                           }}>
-                                              Add
-                                          </Button>
+                                              <AddCircleIcon />
+                                          </IconButton>
                                           <Button variant="contained" color="primary"
                                                   onClick={() => handleReminderClick(item.desc)}
                                                   style={{marginLeft: '10px'}}>
@@ -262,6 +265,11 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
                     {completedMaintenance.map((item, index) => (
                         <ListItem key={index}
+                                  secondaryAction={
+                                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item.id)}>
+                                          <DeleteIcon />
+                                      </IconButton>
+                                  }
                                   sx={{
                                       bgcolor: 'background.paper',
                                       border: 1,

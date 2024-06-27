@@ -20,7 +20,7 @@ import IconButton from "@mui/material/IconButton";
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 
-export default function Maintenance({chosenVehicle, user, setReminders}) {
+export default function Maintenance({chosenVehicle, user}) {
     const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
     const [errors, setErrors] = useState([]);
     const [completedMaintenance, setCompletedMaintenance] = useState([]);

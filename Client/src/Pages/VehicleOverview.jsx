@@ -9,18 +9,17 @@ import VinConfirm from "../Components/VinConfirm.jsx";
 import {useNavigate} from "react-router-dom";
 import ReminderList from "../Components/ReminderList.jsx";
 
-export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, reminders, setReminders}) {
+export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
 
     const [isDeleteClicked, setIsDeleteClicked] = useState(false);
     const [isUpdateClicked, setIsUpdateClicked] = useState(false);
     const [errors, setErrors] = useState([]);
+    const [change, setChange] = useState(true);
+    const [reminders, setReminders] = useState([])
     const navigate = useNavigate();
 
-    useEffect(() => {
-        fetchReminders();
-    }, []);
 
-    function fetchReminders() {
+    useEffect(() => {
         fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vinId}`, {
             method: 'GET',
             header: {
@@ -31,14 +30,16 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                 response.json().then(data => {
                     setReminders(data);
                 })
+            } else if (response.status === 204) {
+                setReminders([]);
             } else if (response.status === 403) {
                 localStorage.removeItem("user");
-                navigate("/")
+                navigate("/");
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors));
-    }
+    }, [change])
 
     const handleDeleteClick = () => {
         setIsDeleteClicked(true);
@@ -123,7 +124,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                     <List>
                         {reminders.map(reminder => (
                             <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}
-                                          fetchReminders={fetchReminders}/>
+                                          setChange={setChange}/>
                         ))}
                     </List>
                     : <Typography variant="body2" gutterBottom align="left">

@@ -13,7 +13,6 @@ function App() {
     const [user, setUser] = React.useState(initialUser);
     const [vehicles, setVehicles] = useState([]);
     const [chosenVehicle, setChosenVehicle] = useState({})
-    const [reminders, setReminders] = useState([]);
 
     return (
 
@@ -29,11 +28,10 @@ function App() {
                 <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
                 <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle}
                                                                           setChosenVehicle={setChosenVehicle}
-                                                                          reminders={reminders}
-                                                                          setReminders={setReminders}/>}/>
+                />}/>
                 <Route path="/maintenance_list"
                        element={<Maintenance chosenVehicle={chosenVehicle} user={user}
-                                             setReminders={setReminders}/>}/>
+                       />}/>
             </Routes>
         </BrowserRouter>
 

@@ -9,7 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import {Link, useNavigate} from "react-router-dom";
 
 
-export default function NavBar({user}) {
+export default function NavBar({user, logout}) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const navigate = useNavigate();
     const handleMenu = (event) => {
@@ -53,8 +53,8 @@ export default function NavBar({user}) {
                                     Fleet Summary
                                 </MenuItem>
                                 <MenuItem component={Link} to="/" onClick={() => {
-                                    localStorage.removeItem("user");
                                     handleClose();
+                                    logout();
                                 }}>
                                     Log Out
                                 </MenuItem>

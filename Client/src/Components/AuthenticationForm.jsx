@@ -77,7 +77,7 @@ function AuthenticationForm({setUser}) {
                         return Promise.reject();
                     }
                 }).catch(error => {
-                setErrors(["Something Went Wrong"])
+                setErrors(["Invalid User"])
             })
         }
     }

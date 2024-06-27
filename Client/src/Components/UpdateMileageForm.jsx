@@ -6,7 +6,7 @@ import VinConfirm from "./VinConfirm.jsx";
 import React from "react";
 import {useNavigate} from "react-router-dom";
 
-export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setErrors, user}) {
+export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setErrors, user, setIsUpdateClicked}) {
 
     const navigate = useNavigate();
 
@@ -23,18 +23,17 @@ export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setE
             if (response.status === 200) {
                 response.json().then(data => {
                     setChosenVehicle(data);
-                    navigate("/fleet_overview")
+                    setIsUpdateClicked(false)
                 })
-            }
-            if (response.status === 403) {
+            } else if (response.status === 403) {
                 localStorage.removeItem("user")
                 navigate("/")
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
-                navigate("/fleet_overview");
+                setIsUpdateClicked(false)
             }
         }).catch(error => {
-            setErrors([error.toString()]);
+            setErrors(error);
         });
     }
 

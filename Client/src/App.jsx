@@ -16,6 +16,7 @@ function App() {
     const [reminders, setReminders] = useState([]);
 
     return (
+
         <BrowserRouter>
             <NavBar/>
             <Routes>
@@ -31,9 +32,11 @@ function App() {
                                                                           reminders={reminders}
                                                                           setReminders={setReminders}/>}/>
                 <Route path="/maintenance_list"
-                       element={<Maintenance chosenVehicle={chosenVehicle} user={user} setReminders={setReminders}/>}/>
+                       element={<Maintenance chosenVehicle={chosenVehicle} user={user}
+                                             setReminders={setReminders}/>}/>
             </Routes>
         </BrowserRouter>
+
     );
 }
 

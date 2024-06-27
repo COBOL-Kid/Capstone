@@ -6,7 +6,6 @@ import Typography from '@mui/material/Typography';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
-import LogoIcon from '@mui/icons-material/Flare';
 import {Link, useNavigate} from "react-router-dom";
 
 export default function NavBar() {
@@ -25,10 +24,10 @@ export default function NavBar() {
         <AppBar position="static">
             <Toolbar>
                 <IconButton edge="start" color="inherit" aria-label="Logo">
-                    <img src={"/public/honestCar.png"}  alt="logo" style={{width: "40px", height: "40px"}}/>
+                    <img src={"/honestCar.png"}  alt="logo" style={{width: "40px", height: "40px"}}/>
                 </IconButton>
                 <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
-                    Honest Car
+                    HonestCar
                 </Typography>
                 <div>
                     <IconButton

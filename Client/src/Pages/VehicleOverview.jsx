@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import {Box} from '@mui/system';
-import {Grid, List, Paper} from '@mui/material';
+import {Dialog, DialogContent, DialogTitle, Grid, List, Paper} from '@mui/material';
 import {Errors} from "../Components/Errors.jsx";
 import UpdateMileageForm from "../Components/UpdateMileageForm.jsx";
 import VinConfirm from "../Components/VinConfirm.jsx";
@@ -54,7 +54,8 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                 <Grid item xs={8}>
                     <List>
                         {reminders.map(reminder => (
-                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors} fetchReminders={fetchReminders}/>
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}
+                                          fetchReminders={fetchReminders}/>
                         ))}
                     </List>
                     <Errors errors={errors}/>
@@ -72,26 +73,40 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                             Mileage: {chosenVehicle.mileage}
                         </Typography>
                         <Box pt={2}>
-                            {isUpdateClicked ?
-                                <UpdateMileageForm chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}
-                                                   setErrors={setErrors} user={user}
-                                /> :
-                                <Button variant="contained" color="primary"
-                                        onClick={handleUpdateClick}> {/* todo add onClick handler */}
-                                    Update Mileage
-                                </Button>
-                            }
-                            {isDeleteClicked ?
-                                <VinConfirm vehicleData={chosenVehicle} user={user} setErrors={setErrors}/>
-                                :
-                                <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={handleDeleteClick}>
-                                    Delete Vehicle
-                                </Button>
-                            }
-                            <Button variant="contained" color="secondary" sx={{ml: 1}}
+                            <Button variant="contained" color="primary" sx={{ml: 1}}
                                     onClick={() => navigate("/maintenance_list")}>
                                 View Maintenance
                             </Button>
+                            <Dialog open={isUpdateClicked} onClose={() => setIsUpdateClicked(false)}>
+                                <DialogTitle>Update Mileage</DialogTitle>
+                                <DialogContent>
+                                    <UpdateMileageForm
+                                        chosenVehicle={chosenVehicle}
+                                        setChosenVehicle={setChosenVehicle}
+                                        setErrors={setErrors}
+                                        user={user}
+                                        setIsUpdateClicked={setIsUpdateClicked}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                            <Button variant="contained" color="primary"
+                                    onClick={handleUpdateClick}>
+                                Update Mileage
+                            </Button>
+                            <Dialog open={isDeleteClicked} onClose={() => setIsDeleteClicked(false)}>
+                                <DialogTitle>Confirm VIN</DialogTitle>
+                                <DialogContent>
+                                    <VinConfirm
+                                        vehicleData={chosenVehicle}
+                                        user={user}
+                                        setErrors={setErrors}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={handleDeleteClick}>
+                                Delete Vehicle
+                            </Button>
+
                         </Box>
                     </Paper>
                 </Grid>

@@ -18,7 +18,7 @@ function App() {
     return (
 
         <BrowserRouter>
-            <NavBar/>
+            <NavBar user={user}/>
             <Routes>
                 <Route path="/" element={<Landing/>}/>
                 <Route path="/login" element={<AuthenticationForm setUser={setUser}/>}/>

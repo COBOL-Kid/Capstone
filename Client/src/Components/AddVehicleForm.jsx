@@ -41,10 +41,6 @@ export default function AddVehicleForm({user}) {
         });
     };
 
-    useEffect(() => {
-        console.log(vehicleData);
-    }, [vehicleData]);
-
     const handleSubmit = (event) => {
         event.preventDefault();
         fetch(`http://localhost:8080/api/external/find_vin/${vehicleData.vin}`, {
@@ -111,7 +107,9 @@ export default function AddVehicleForm({user}) {
                 </Button>
 
                 {isVehicleInfoUpdated &&
-                    <VinConfirm vehicleData={vehicleData} user={user} setErrors={setErrors}/>
+                    <Box sx={{mt: 2}}>
+                        <VinConfirm vehicleData={vehicleData} user={user} setErrors={setErrors}/>
+                    </Box>
                 }
             </Box>
         </Container>

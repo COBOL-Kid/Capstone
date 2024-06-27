@@ -61,7 +61,7 @@ export default function VinConfirm({vehicleData, user, setErrors}) {
         <Card>
             <CardMedia
                 component="img"
-                height="140"
+                height="200"
                 image={vehicleData.image}
                 alt="vehicle image"
             />

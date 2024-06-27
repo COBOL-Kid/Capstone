@@ -1,16 +1,14 @@
 import {Button, Container, TextField} from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import {Errors} from "./Errors.jsx";
-import VinConfirm from "./VinConfirm.jsx";
 import React from "react";
 import {useNavigate} from "react-router-dom";
 
-export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setErrors, user}) {
+export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setErrors, user, setIsUpdateClicked}) {
 
     const navigate = useNavigate();
 
-    function handleSubmit(event){
+    function handleSubmit(event) {
         event.preventDefault();
         fetch("http://localhost:8080/api/vin", {
             method: "PUT",
@@ -23,22 +21,21 @@ export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setE
             if (response.status === 200) {
                 response.json().then(data => {
                     setChosenVehicle(data);
-                    navigate("/fleet_overview")
+                    setIsUpdateClicked(false)
                 })
-            }
-            if (response.status === 403) {
+            } else if (response.status === 403) {
                 localStorage.removeItem("user")
                 navigate("/")
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
-                navigate("/fleet_overview");
+                setIsUpdateClicked(false)
             }
         }).catch(error => {
-            setErrors([error.toString()]);
+            setErrors(error);
         });
     }
 
-    function handleInputChange(e){
+    function handleInputChange(e) {
         setChosenVehicle({...chosenVehicle, mileage: e.target.value});
         console.log(chosenVehicle)
     }

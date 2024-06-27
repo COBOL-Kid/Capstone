@@ -28,7 +28,6 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
     const [change, setChange] = useState(false);
-    const [updatedUpcomingMaint, setUpdatedUpcomingMain] = useState([]);
     const [filteredUpcomingMaintenance, setFilteredUpcomingMaintenance] = useState([]);
 
     const todayDate = new Date();
@@ -149,11 +148,30 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
         })
             .then(response => {
                 if (response.status === 201) {
-                    setChange(prevChange => !prevChange);  // Change state to force the list to be refreshed
+                    setChange(prevChange => !prevChange);
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
             }).catch(errors => setErrors(errors))
+    }
+
+    function handleDeleteClick(item) {
+        fetch(`http://localhost:8080/api/maintenance/${item.maintenanceRecordId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": 'application/json',
+                Authorization: `Bearer ${user.jwt}`
+            }
+        }).then(response => {
+            if (response.status === 200) {
+                setChange(prevChange => !prevChange);
+            } else if (response.status === 403) {
+                localStorage.removeItem("user");
+                navigate("/");
+            } else {
+                Promise.reject(`Problem with response. Status: ${response.status}`);
+            }
+        }).catch(errors => setErrors(errors))
     }
 
     useEffect(() => {
@@ -266,7 +284,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                     {completedMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
-                                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item.id)}>
+                                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item)}>
                                           <DeleteIcon />
                                       </IconButton>
                                   }

@@ -10,7 +10,7 @@ import {Link, useNavigate} from "react-router-dom";
 
 export default function NavBar() {
     const [anchorEl, setAnchorEl] = React.useState(null);
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -27,7 +27,7 @@ export default function NavBar() {
                     <img src={"/honestCar.png"} alt="logo" style={{width: "40px", height: "40px"}}/>
                 </IconButton>
                 <Typography variant="h6" style={{flexGrow: 1, textAlign: 'center'}}>
-                    HonestCar
+                    Honest Car
                 </Typography>
                 <div>
                     <IconButton

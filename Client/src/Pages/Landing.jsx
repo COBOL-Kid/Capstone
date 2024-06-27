@@ -10,7 +10,7 @@ const LandingPage = () => {
         <Container>
             <Box sx={{my: 2, textAlign: 'center'}}>
                 <Typography variant="h2" component="h1" gutterBottom>
-                    HonestCar
+                    Honest Car
                 </Typography>
                 <Box
                     component="img"

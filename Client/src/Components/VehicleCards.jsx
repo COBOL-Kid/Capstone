@@ -11,6 +11,7 @@ import {Box} from "@mui/system";
 export default function VehicleCards({vehicles, setChosenVehicle}) {
 
     const navigate = useNavigate();
+
     return (
         <Box sx={{display: 'flex', flexWrap:'wrap', gap: '16px'}}>
             {vehicles.map((vehicle) => (

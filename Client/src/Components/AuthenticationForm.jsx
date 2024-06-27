@@ -97,16 +97,24 @@ function AuthenticationForm({setUser}) {
                 < Errors errors={errors}/>
                 {isSignup && (
                     <>
-                        <TextField label="First Name" fullWidth required mx={2} value={firstName}
-                                   onChange={(e) => setFirstName(e.target.value)}/>
-                        <TextField label="Last Name" fullWidth required mx={2} value={lastName}
-                                   onChange={(e) => setLastName(e.target.value)}/>
+                        <Box mt={2}>
+                            <TextField label="First Name" fullWidth required mx={2} value={firstName}
+                                       onChange={(e) => setFirstName(e.target.value)}/>
+                        </Box>
+                        <Box mt={2}>
+                            <TextField label="Last Name" fullWidth required mx={2} value={lastName}
+                                       onChange={(e) => setLastName(e.target.value)}/>
+                        </Box>
                     </>
                 )}
-                <TextField label="Email" fullWidth required mx={2} value={userEmail}
-                           onChange={(e) => setUserEmail(e.target.value)}/>
-                <TextField label="Password" type="password" fullWidth required mx={2} value={userPassword}
-                           onChange={(e) => setUserPassword(e.target.value)}/>
+                <Box mt={2}>
+                    <TextField label="Email" fullWidth required mx={2} value={userEmail}
+                               onChange={(e) => setUserEmail(e.target.value)}/>
+                </Box>
+                <Box mt={2}>
+                    <TextField label="Password" type="password" fullWidth required mx={2} value={userPassword}
+                               onChange={(e) => setUserPassword(e.target.value)}/>
+                </Box>
                 <Button type="submit" fullWidth variant="contained" color="primary" sx={{mt: 2}}>
                     {isSignup ? "Signup" : "Login"}
                 </Button>

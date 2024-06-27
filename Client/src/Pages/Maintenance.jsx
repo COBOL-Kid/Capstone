@@ -15,15 +15,20 @@ import {
 } from "@mui/material";
 import {useNavigate} from "react-router-dom";
 import {Errors} from "../Components/Errors.jsx";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 
-export default function Maintenance({chosenVehicle, user, setReminders}) {
+export default function Maintenance({chosenVehicle, user}) {
     const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
     const [errors, setErrors] = useState([]);
     const [completedMaintenance, setCompletedMaintenance] = useState([]);
     const [reminderDialogOpen, setReminderDialogOpen] = useState({});
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
+    const [change, setChange] = useState(false);
+    const [filteredUpcomingMaintenance, setFilteredUpcomingMaintenance] = useState([]);
 
     const todayDate = new Date();
     const todayYear = todayDate.getFullYear();
@@ -67,9 +72,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
         let month = String(selectedDate.getMonth() + 1).padStart(2, '0');
         let date = String(selectedDate.getDate()).padStart(2, '0');
         reminder.reminderDate = `${year}-${month}-${date}`;
-
         setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
-
         fetch("http://localhost:8080/api/reminder", {
             method: "POST",
             headers: {
@@ -80,6 +83,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
         }).then(response => {
             if (response.status === 201) {
                 navigate("/maintenance_list");
+                alert('Reminder added'); // Added alert here
             } else if (response.status === 403) {
                 localStorage.removeItem("user");
                 navigate("/");
@@ -87,7 +91,6 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors));
-        console.log(`Item: ${itemName}, Date: ${reminderDate[itemName]}`);
         setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
     }
 
@@ -130,7 +133,8 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors))
-    }, []);
+    }, [change]);
+
 
     function handleAddClick(maintenanceItem) {
         fetch("http://localhost:8080/api/maintenance", {
@@ -143,12 +147,43 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
         })
             .then(response => {
                 if (response.status === 201) {
-                    navigate("/maintenance_list");
+                    setChange(prevChange => !prevChange);
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
             }).catch(errors => setErrors(errors))
     }
+
+    function handleDeleteClick(item) {
+        fetch(`http://localhost:8080/api/maintenance/${item.maintenanceRecordId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": 'application/json',
+                Authorization: `Bearer ${user.jwt}`
+            }
+        }).then(response => {
+            if (response.status === 200) {
+                setChange(prevChange => !prevChange);
+            } else if (response.status === 403) {
+                localStorage.removeItem("user");
+                navigate("/");
+            } else {
+                Promise.reject(`Problem with response. Status: ${response.status}`);
+            }
+        }).catch(errors => setErrors(errors))
+    }
+
+    useEffect(() => {
+        const newUpcomingMaintenance = [];
+        upcomingMaintenance.forEach((maintenanceItem) => {
+            if (!completedMaintenance.some(item => item.description === maintenanceItem.desc && item.mileageDue === maintenanceItem.due_mileage)) {
+                newUpcomingMaintenance.push(maintenanceItem);
+            }
+        });
+
+        setFilteredUpcomingMaintenance(newUpcomingMaintenance);
+    }, [upcomingMaintenance, completedMaintenance]);
+
 
     return (
         <>
@@ -158,18 +193,18 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
             <Errors errors={errors}/>
             <Box sx={{width: '100%', maxHeight: '45vh', overflow: 'auto'}}>
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
-                    {upcomingMaintenance.map((item, index) => (
+                    {filteredUpcomingMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
                                       <>
-                                          <Button variant="contained" color="success" onClick={() => {
+                                          <IconButton color= "primary" aria-label="add" onClick={() => {
                                               maintenanceItem.description = item.desc;
                                               maintenanceItem.mileageDue = item.due_mileage;
                                               maintenanceItem.cost = item.repair.total_cost;
                                               handleAddClick(maintenanceItem);
                                           }}>
-                                              Add
-                                          </Button>
+                                              <AddCircleIcon />
+                                          </IconButton>
                                           <Button variant="contained" color="primary"
                                                   onClick={() => handleReminderClick(item.desc)}
                                                   style={{marginLeft: '10px'}}>
@@ -247,6 +282,11 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
                     {completedMaintenance.map((item, index) => (
                         <ListItem key={index}
+                                  secondaryAction={
+                                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item)}>
+                                          <DeleteIcon />
+                                      </IconButton>
+                                  }
                                   sx={{
                                       bgcolor: 'background.paper',
                                       border: 1,

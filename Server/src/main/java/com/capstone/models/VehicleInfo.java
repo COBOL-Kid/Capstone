@@ -77,7 +77,7 @@ public class VehicleInfo {
     }
 
     public boolean isEmpty() {
-        return (make == null||make.isEmpty()) && (model == null || model.isEmpty()) && (image == null || image.isEmpty()) && year == 0;
+        return (make == null || make.isEmpty()) && (model == null || model.isEmpty()) && (image == null || image.isEmpty()) && year == 0;
     }
 
     @Override

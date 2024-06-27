@@ -2,7 +2,6 @@ package com.capstone.domain;
 
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.Result;
-import com.capstone.models.VehicleInfo;
 import com.capstone.models.Vin;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,7 +100,7 @@ class VinServiceTest {
 
     @Test
     void shouldUpdateVinWhenValidAndExists() {
-        Vin validVin =createValidVin();
+        Vin validVin = createValidVin();
         validVin.setVinId(1L);
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
@@ -115,7 +114,7 @@ class VinServiceTest {
 
     @Test
     void shouldNotUpdateVinWhenInvalid() {
-        Vin invalidVin =createValidVin();
+        Vin invalidVin = createValidVin();
         invalidVin.setVin(null);
 
         Result<Vin> actualResult = vinService.updateVin(invalidVin);
@@ -127,7 +126,7 @@ class VinServiceTest {
 
     @Test
     void shouldNotUpdateVinWhenNotExists() {
-        Vin nonexistentVin =createValidVin();
+        Vin nonexistentVin = createValidVin();
         nonexistentVin.setVinId(999L);
 
         when(vinRepository.findById(nonexistentVin.getVinId())).thenReturn(Optional.empty());

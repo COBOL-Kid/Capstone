@@ -1,7 +1,7 @@
 package com.capstone.controllers;
 
-import com.capstone.models.MaintenanceResponse;
 import com.capstone.models.Maintenance;
+import com.capstone.models.MaintenanceResponse;
 import com.capstone.models.VehicleInfo;
 import com.capstone.models.VinResponse;
 import org.springframework.beans.factory.annotation.Autowired;

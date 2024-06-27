@@ -8,47 +8,59 @@ import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
 import {Link, useNavigate} from "react-router-dom";
 
-export default function NavBar() {
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const navigate = useNavigate()
 
+export default function NavBar({user, logout}) {
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const navigate = useNavigate();
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
     };
-
     const handleClose = () => {
         setAnchorEl(null);
     };
-
     return (
         <AppBar position="static">
             <Toolbar>
                 <IconButton edge="start" color="inherit" aria-label="Logo">
-                    <img src={"/honestCar.png"} alt="logo" style={{width: "40px", height: "40px"}}/>
+                    <img src={"/honestCar.png"} alt="logo" style={{width: '40px', height: '40px'}}/>
                 </IconButton>
                 <Typography variant="h6" style={{flexGrow: 1, textAlign: 'center'}}>
-                    HonestCar
+                    Honest Car
                 </Typography>
                 <div>
-                    <IconButton
-                        aria-label="account of current user"
-                        aria-controls="menu-appbar"
-                        aria-haspopup="true"
-                        onClick={handleMenu}
-                        color="inherit"
-                    >
-                        <MenuIcon/>
-                    </IconButton>
-                    <Menu
-                        id="menu-appbar"
-                        anchorEl={anchorEl}
-                        keepMounted
-                        open={Boolean(anchorEl)}
-                        onClose={handleClose}
-                    >
-                        <MenuItem component={Link} to="/" onClick={handleClose}>Home</MenuItem>
-                        <MenuItem component={Link} to="/fleet_overview" onClick={handleClose}>Fleet Summary</MenuItem>
-                    </Menu>
+                    {user && (
+                        <React.Fragment>
+                            <IconButton
+                                aria-label="account of current user"
+                                aria-controls="menu-appbar"
+                                aria-haspopup="true"
+                                onClick={handleMenu}
+                                color="inherit"
+                            >
+                                <MenuIcon/>
+                            </IconButton>
+                            <Menu
+                                id="menu-appbar"
+                                anchorEl={anchorEl}
+                                keepMounted
+                                open={Boolean(anchorEl)}
+                                onClose={handleClose}
+                            >
+                                <MenuItem component={Link} to="/" onClick={handleClose}>
+                                    Home
+                                </MenuItem>
+                                <MenuItem component={Link} to="/fleet_overview" onClick={handleClose}>
+                                    Fleet Summary
+                                </MenuItem>
+                                <MenuItem component={Link} to="/" onClick={() => {
+                                    handleClose();
+                                    logout();
+                                }}>
+                                    Log Out
+                                </MenuItem>
+                            </Menu>
+                        </React.Fragment>
+                    )}
                 </div>
             </Toolbar>
         </AppBar>

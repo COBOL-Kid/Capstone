@@ -22,9 +22,9 @@ export default function NavBar({user}) {
         <AppBar position="static">
             <Toolbar>
                 <IconButton edge="start" color="inherit" aria-label="Logo">
-                    <img src={"/honestCar.png"} alt="logo" style={{ width: '40px', height: '40px' }} />
+                    <img src={"/honestCar.png"} alt="logo" style={{width: '40px', height: '40px'}}/>
                 </IconButton>
-                <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
+                <Typography variant="h6" style={{flexGrow: 1, textAlign: 'center'}}>
                     Honest Car
                 </Typography>
                 <div>
@@ -37,7 +37,7 @@ export default function NavBar({user}) {
                                 onClick={handleMenu}
                                 color="inherit"
                             >
-                                <MenuIcon />
+                                <MenuIcon/>
                             </IconButton>
                             <Menu
                                 id="menu-appbar"
@@ -51,6 +51,12 @@ export default function NavBar({user}) {
                                 </MenuItem>
                                 <MenuItem component={Link} to="/fleet_overview" onClick={handleClose}>
                                     Fleet Summary
+                                </MenuItem>
+                                <MenuItem component={Link} to="/" onClick={() => {
+                                    localStorage.removeItem("user");
+                                    handleClose();
+                                }}>
+                                    Log Out
                                 </MenuItem>
                             </Menu>
                         </React.Fragment>

@@ -52,12 +52,6 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
         <Box sx={{flexGrow: 1}}>
             <Grid container spacing={2}>
                 <Grid item xs={8}>
-                    <List>
-                        {reminders.map(reminder => (
-                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}
-                                          fetchReminders={fetchReminders}/>
-                        ))}
-                    </List>
                     <Errors errors={errors}/>
                     <Paper sx={{p: 2}}>
                         <Typography variant="h5" gutterBottom>
@@ -121,6 +115,21 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                     <img src={chosenVehicle.image} alt={chosenVehicle.model} style={{width: '100%'}}/>
                 </Grid>
             </Grid>
+            <Box my={4}>
+                <Typography variant="h5" gutterBottom align="left">
+                    Reminders
+                </Typography>
+                {reminders.length > 0 ?
+                    <List>
+                        {reminders.map(reminder => (
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}
+                                          fetchReminders={fetchReminders}/>
+                        ))}
+                    </List>
+                    : <Typography variant="body2" gutterBottom align="left">
+                        No Reminders
+                    </Typography>}
+            </Box>
         </Box>
     )
 }

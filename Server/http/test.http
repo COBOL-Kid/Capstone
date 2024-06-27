@@ -1,4 +1,4 @@
-@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5NDY0ODUxLCJleHAiOjE3MTk0NjYyOTF9.tFwmKd5T9wnseQ2zbbSu0Vg4HLBVPBUG-Sr9DZDzBWE
+@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5NDgyMjQ1LCJleHAiOjE3MTk0ODM2ODV9.2_RkFU-uurTXUsYm0aIJ84Y96R9sNl44WbLmUor_zWk
 ###
 
 GET http://localhost:8080/api/demo/hello
@@ -86,6 +86,12 @@ Authorization: Bearer {{AUTH}}
   "mileageDue": 1337,
   "cost": 10.00
 }
+
+###
+
+DELETE http://localhost:8080/api/maintenance/1
+Content-Type: application/json
+Authorization: Bearer {{AUTH}}
 
 ###
 

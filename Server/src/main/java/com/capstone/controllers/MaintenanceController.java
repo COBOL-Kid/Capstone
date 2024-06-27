@@ -39,4 +39,15 @@ public class MaintenanceController {
             return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    @DeleteMapping("/{maintenanceRecordId}")
+    public ResponseEntity<?> deleteMaintenanceRecord(@PathVariable Long maintenanceRecordId) {
+        Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(maintenanceRecordId);
+        if (result.isSuccess()) {
+            return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }

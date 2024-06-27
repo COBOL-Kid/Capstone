@@ -18,6 +18,7 @@ public class Reminder {
             columnDefinition = "integer")
     private Long vinId;
 
+    // todo remove this variable
     @Column(name = "maintenance_record_id",
             nullable = true,
             columnDefinition = "integer")

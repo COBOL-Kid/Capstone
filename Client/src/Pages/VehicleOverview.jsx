@@ -73,40 +73,47 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
                             Mileage: {chosenVehicle.mileage}
                         </Typography>
                         <Box pt={2}>
-                            <Button variant="contained" color="primary" sx={{ml: 1}}
-                                    onClick={() => navigate("/maintenance_list")}>
-                                View Maintenance
-                            </Button>
-                            <Dialog open={isUpdateClicked} onClose={() => setIsUpdateClicked(false)}>
-                                <DialogTitle>Update Mileage</DialogTitle>
-                                <DialogContent>
-                                    <UpdateMileageForm
-                                        chosenVehicle={chosenVehicle}
-                                        setChosenVehicle={setChosenVehicle}
-                                        setErrors={setErrors}
-                                        user={user}
-                                        setIsUpdateClicked={setIsUpdateClicked}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                            <Button variant="contained" color="primary"
-                                    onClick={handleUpdateClick}>
-                                Update Mileage
-                            </Button>
-                            <Dialog open={isDeleteClicked} onClose={() => setIsDeleteClicked(false)}>
-                                <DialogTitle>Confirm VIN</DialogTitle>
-                                <DialogContent>
-                                    <VinConfirm
-                                        vehicleData={chosenVehicle}
-                                        user={user}
-                                        setErrors={setErrors}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={handleDeleteClick}>
-                                Delete Vehicle
-                            </Button>
-
+                            <Grid container spacing={2}>
+                                <Grid item>
+                                    <Button variant="contained" color="primary"
+                                            onClick={() => navigate("/maintenance_list")}>
+                                        View Maintenance
+                                    </Button>
+                                </Grid>
+                                <Grid item>
+                                    <Dialog open={isUpdateClicked} onClose={() => setIsUpdateClicked(false)}>
+                                        <DialogTitle>Update Mileage</DialogTitle>
+                                        <DialogContent>
+                                            <UpdateMileageForm
+                                                chosenVehicle={chosenVehicle}
+                                                setChosenVehicle={setChosenVehicle}
+                                                setErrors={setErrors}
+                                                user={user}
+                                                setIsUpdateClicked={setIsUpdateClicked}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Button variant="contained" color="primary"
+                                            onClick={handleUpdateClick}>
+                                        Update Mileage
+                                    </Button>
+                                </Grid>
+                                <Grid item>
+                                    <Dialog open={isDeleteClicked} onClose={() => setIsDeleteClicked(false)}>
+                                        <DialogTitle>Confirm VIN</DialogTitle>
+                                        <DialogContent>
+                                            <VinConfirm
+                                                vehicleData={chosenVehicle}
+                                                user={user}
+                                                setErrors={setErrors}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Button variant="contained" color="secondary" onClick={handleDeleteClick}>
+                                        Delete Vehicle
+                                    </Button>
+                                </Grid>
+                            </Grid>
                         </Box>
                     </Paper>
                 </Grid>

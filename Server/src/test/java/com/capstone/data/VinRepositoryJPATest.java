@@ -1,6 +1,5 @@
 package com.capstone.data;
 
-import com.capstone.models.VehicleInfo;
 import com.capstone.models.Vin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -14,11 +14,15 @@ function App() {
     const [vehicles, setVehicles] = useState([]);
     const [chosenVehicle, setChosenVehicle] = useState({})
     const protectedRoute = <Navigate to='/'/>;
+    const logout = () => {
+        localStorage.removeItem("user");
+        setUser(null);
+    };
 
     return (
 
         <BrowserRouter>
-            <NavBar/>
+            <NavBar user={user} logout={logout}/>
             <Routes>
                 <Route path="/" element={<Landing/>}/>
                 <Route path="/login" element={<AuthenticationForm setUser={setUser}/>}/>

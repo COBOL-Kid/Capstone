@@ -1,12 +1,14 @@
 import {Button, Container, TextField} from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import React from "react";
+import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 
 export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setErrors, user, setIsUpdateClicked}) {
 
     const navigate = useNavigate();
+    const [fixedMiles, setFixedMiles] = useState(0);
+    const [change, setChange] = useState(true);
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -21,7 +23,8 @@ export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setE
             if (response.status === 200) {
                 response.json().then(data => {
                     setChosenVehicle(data);
-                    setIsUpdateClicked(false)
+                    setIsUpdateClicked(false);
+                    setChange(prevChange => !prevChange);
                 })
             } else if (response.status === 403) {
                 localStorage.removeItem("user")
@@ -35,9 +38,12 @@ export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setE
         });
     }
 
+    useEffect(() => {
+        setFixedMiles(chosenVehicle.mileage);
+    },[change])
+
     function handleInputChange(e) {
         setChosenVehicle({...chosenVehicle, mileage: e.target.value});
-        console.log(chosenVehicle)
     }
 
     return (
@@ -56,7 +62,7 @@ export default function UpdateMileageForm({chosenVehicle, setChosenVehicle, setE
                     Vin: {chosenVehicle.vin}
                 </Typography>
                 <Typography variant="body2">
-                    Mileage: {chosenVehicle.mileage}
+                    Mileage: {fixedMiles}
                 </Typography>
                 <Typography variant="body2">
                     {chosenVehicle.make} {chosenVehicle.model} ({chosenVehicle.year})

@@ -1,4 +1,4 @@
-import {BrowserRouter, Route, Routes} from "react-router-dom";
+import {BrowserRouter, Navigate, Route, Routes} from "react-router-dom";
 import NavBar from "./Components/NavBar.jsx";
 import Landing from "./Pages/Landing.jsx";
 import React, {useState} from "react";
@@ -13,7 +13,7 @@ function App() {
     const [user, setUser] = React.useState(initialUser);
     const [vehicles, setVehicles] = useState([]);
     const [chosenVehicle, setChosenVehicle] = useState({})
-    const [reminders, setReminders] = useState([]);
+    const protectedRoute = <Navigate to='/'/>;
 
     return (
 
@@ -24,16 +24,16 @@ function App() {
                 <Route path="/login" element={<AuthenticationForm setUser={setUser}/>}/>
                 <Route path="/signup" element={<AuthenticationForm setUser={setUser}/>}/>
                 <Route path="/fleet_overview"
-                       element={<FleetOverview user={user} vehicles={vehicles} setVehicles={setVehicles}
-                                               setChosenVehicle={setChosenVehicle}/>}/>
-                <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
-                <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle}
-                                                                          setChosenVehicle={setChosenVehicle}
-                                                                          reminders={reminders}
-                                                                          setReminders={setReminders}/>}/>
+                       element={user ? <FleetOverview user={user} vehicles={vehicles} setVehicles={setVehicles}
+                                                      setChosenVehicle={setChosenVehicle}/> : protectedRoute}/>
+                <Route path="/add_vehicle" element={user ? <AddVehicleForm user={user}/> : protectedRoute}/>
+                <Route path="/vehicle_overview"
+                       element={user ? <VehicleOverview user={user} chosenVehicle={chosenVehicle}
+                                                        setChosenVehicle={setChosenVehicle}
+                       /> : protectedRoute}/>
                 <Route path="/maintenance_list"
-                       element={<Maintenance chosenVehicle={chosenVehicle} user={user}
-                                             setReminders={setReminders}/>}/>
+                       element={user ? <Maintenance chosenVehicle={chosenVehicle} user={user}
+                       /> : protectedRoute}/>
             </Routes>
         </BrowserRouter>
 

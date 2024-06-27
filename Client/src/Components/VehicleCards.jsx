@@ -13,7 +13,7 @@ export default function VehicleCards({vehicles, setChosenVehicle}) {
     const navigate = useNavigate();
 
     return (
-        <Box sx={{display: 'flex', flexWrap:'wrap', gap: '16px'}}>
+        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: '16px'}}>
             {vehicles.map((vehicle) => (
                 <Card sx={{width: '350px'}} key={vehicle.vinId}>
                     <CardMedia

@@ -197,13 +197,13 @@ export default function Maintenance({chosenVehicle, user}) {
                         <ListItem key={index}
                                   secondaryAction={
                                       <>
-                                          <IconButton color= "primary" aria-label="add" onClick={() => {
+                                          <IconButton color="primary" aria-label="add" onClick={() => {
                                               maintenanceItem.description = item.desc;
                                               maintenanceItem.mileageDue = item.due_mileage;
                                               maintenanceItem.cost = item.repair.total_cost;
                                               handleAddClick(maintenanceItem);
                                           }}>
-                                              <AddCircleIcon />
+                                              <AddCircleIcon/>
                                           </IconButton>
                                           <Button variant="contained" color="primary"
                                                   onClick={() => handleReminderClick(item.desc)}
@@ -283,8 +283,9 @@ export default function Maintenance({chosenVehicle, user}) {
                     {completedMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
-                                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item)}>
-                                          <DeleteIcon />
+                                      <IconButton edge="end" aria-label="delete"
+                                                  onClick={() => handleDeleteClick(item)}>
+                                          <DeleteIcon/>
                                       </IconButton>
                                   }
                                   sx={{

@@ -1,33 +1,59 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import {Box} from '@mui/system';
-import {Grid, Paper} from '@mui/material';
+import {Grid, List, Paper} from '@mui/material';
 import {Errors} from "../Components/Errors.jsx";
 import UpdateMileageForm from "../Components/UpdateMileageForm.jsx";
 import VinConfirm from "../Components/VinConfirm.jsx";
-import MaintenanceList from "../Components/MaintenanceList.jsx";
 import {useNavigate} from "react-router-dom";
+import ReminderList from "../Components/ReminderList.jsx";
 
 export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
 
     const [isDeleteClicked, setIsDeleteClicked] = useState(false);
     const [isUpdateClicked, setIsUpdateClicked] = useState(false);
     const [errors, setErrors] = useState([]);
+    const [reminders, setReminders] = useState([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vinId}`, {
+            method: 'GET',
+            header: {
+                Authorization: `Bearer ${user.jwt}`,
+            }
+        }).then(response => {
+            if (response.status === 200) {
+                response.json().then(data => {
+                    setReminders(data);
+                })
+            } else if (response.status === 403) {
+                localStorage.removeItem("user");
+                navigate("/")
+            } else {
+                Promise.reject(`Problem with response. Status: ${response.status}`);
+            }
+        }).catch(errors => setErrors(["Something Went Wrong"]));
+    }, []);
 
     const handleDeleteClick = () => {
         setIsDeleteClicked(true);
-    }
+    };
 
     const handleUpdateClick = () => {
         setIsUpdateClicked(true);
-    }
+    };
 
     return (
         <Box sx={{flexGrow: 1}}>
             <Grid container spacing={2}>
                 <Grid item xs={8}>
+                    <List>
+                        {reminders.map(reminder => (
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}/>
+                        ))}
+                    </List>
                     <Errors errors={errors}/>
                     <Paper sx={{p: 2}}>
                         <Typography variant="h5" gutterBottom>
@@ -44,9 +70,11 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                         </Typography>
                         <Box pt={2}>
                             {isUpdateClicked ?
-                                <UpdateMileageForm chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle} setErrors={setErrors} user={user}
+                                <UpdateMileageForm chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}
+                                                   setErrors={setErrors} user={user}
                                 /> :
-                                <Button variant="contained" color="primary" onClick={handleUpdateClick}> {/* add onClick handler */}
+                                <Button variant="contained" color="primary"
+                                        onClick={handleUpdateClick}> {/* todo add onClick handler */}
                                     Update Mileage
                                 </Button>
                             }
@@ -57,7 +85,8 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                                     Delete Vehicle
                                 </Button>
                             }
-                            <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={() => navigate("/test")}>
+                            <Button variant="contained" color="secondary" sx={{ml: 1}}
+                                    onClick={() => navigate("/maintenance_list")}>
                                 View Maintenance
                             </Button>
                         </Box>

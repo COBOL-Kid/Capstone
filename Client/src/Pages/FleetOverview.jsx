@@ -28,7 +28,7 @@ export default function FleetOverview({user, vehicles, setVehicles, setChosenVeh
                 } else {
                     response.json().then(json => setErrors(json));
                 }
-            }).catch(errors => setErrors(["Something Went Wrong"]));
+            }).catch(errors => setErrors(errors));
     }, []);
 
     return (
@@ -50,7 +50,8 @@ export default function FleetOverview({user, vehicles, setVehicles, setChosenVeh
             ) : (
                 <VehicleCards vehicles={vehicles} setChosenVehicle={setChosenVehicle}/>
             )}
-            <Button variant="contained" size="large" style={{alignSelf: 'center'}} onClick={() => navigate("/add_vehicle")}>
+            <Button variant="contained" size="large" style={{alignSelf: 'center'}}
+                    onClick={() => navigate("/add_vehicle")}>
                 Add A Vehicle
             </Button>
         </Box>

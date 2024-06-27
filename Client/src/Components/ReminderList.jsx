@@ -10,7 +10,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
 import {useNavigate} from "react-router-dom";
 
-export default function ReminderList({reminder, user, setErrors}) {
+export default function ReminderList({reminder, user, setErrors, fetchReminders}) {
     const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
     const [reminderDate, setReminderDate] = useState(reminder.reminderDate);
     const navigate = useNavigate();
@@ -49,7 +49,8 @@ export default function ReminderList({reminder, user, setErrors}) {
         })
             .then(response => {
                 if (response.status === 200) {
-                    navigate("/vehicle_overview")
+                    fetchReminders();
+                    navigate("/vehicle_overview");
                 }
                 if (response.status === 403) {
                     localStorage.removeItem("user")
@@ -73,6 +74,7 @@ export default function ReminderList({reminder, user, setErrors}) {
         })
             .then(response => {
                 if (response.status === 200) {
+                    fetchReminders();
                     navigate("/vehicle_overview")
                 }
                 if (response.status === 403) {

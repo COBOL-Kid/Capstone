@@ -4,8 +4,8 @@ import java.util.Objects;
 
 public class AuthenticationRequest {
 
-    String password;
     private String email;
+    private String password;
 
     public AuthenticationRequest() {
     }

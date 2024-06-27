@@ -1,7 +1,7 @@
-import { Dialog, DialogTitle, DialogContent, List, ListItem } from '@mui/material';
+import {Dialog, DialogContent, DialogTitle, List, ListItem} from '@mui/material';
 import * as React from 'react';
 
-export const Errors = ({ errors }) => {
+export const Errors = ({errors}) => {
     const [open, setOpen] = React.useState(false);
 
     React.useEffect(() => {
@@ -21,7 +21,8 @@ export const Errors = ({ errors }) => {
     }
 
     return (
-        <Dialog open={open} onClose={handleClose} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
+        <Dialog open={open} onClose={handleClose} aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description">
             <DialogTitle id="alert-dialog-title">{"An Error Occurred"}</DialogTitle>
             <DialogContent>
                 <List>

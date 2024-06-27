@@ -2,22 +2,25 @@ import React, {useEffect, useState} from 'react';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import {Box} from '@mui/system';
-import {Grid, List, Paper} from '@mui/material';
+import {Dialog, DialogContent, DialogTitle, Grid, List, Paper} from '@mui/material';
 import {Errors} from "../Components/Errors.jsx";
 import UpdateMileageForm from "../Components/UpdateMileageForm.jsx";
 import VinConfirm from "../Components/VinConfirm.jsx";
 import {useNavigate} from "react-router-dom";
 import ReminderList from "../Components/ReminderList.jsx";
 
-export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
+export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, reminders, setReminders}) {
 
     const [isDeleteClicked, setIsDeleteClicked] = useState(false);
     const [isUpdateClicked, setIsUpdateClicked] = useState(false);
     const [errors, setErrors] = useState([]);
-    const [reminders, setReminders] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
+        fetchReminders();
+    }, []);
+
+    function fetchReminders() {
         fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vinId}`, {
             method: 'GET',
             header: {
@@ -34,8 +37,8 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
-        }).catch(errors => setErrors(["Something Went Wrong"]));
-    }, []);
+        }).catch(errors => setErrors(errors));
+    }
 
     const handleDeleteClick = () => {
         setIsDeleteClicked(true);
@@ -49,11 +52,6 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
         <Box sx={{flexGrow: 1}}>
             <Grid container spacing={2}>
                 <Grid item xs={8}>
-                    <List>
-                        {reminders.map(reminder => (
-                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}/>
-                        ))}
-                    </List>
                     <Errors errors={errors}/>
                     <Paper sx={{p: 2}}>
                         <Typography variant="h5" gutterBottom>
@@ -69,26 +67,47 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                             Mileage: {chosenVehicle.mileage}
                         </Typography>
                         <Box pt={2}>
-                            {isUpdateClicked ?
-                                <UpdateMileageForm chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}
-                                                   setErrors={setErrors} user={user}
-                                /> :
-                                <Button variant="contained" color="primary"
-                                        onClick={handleUpdateClick}> {/* todo add onClick handler */}
-                                    Update Mileage
-                                </Button>
-                            }
-                            {isDeleteClicked ?
-                                <VinConfirm vehicleData={chosenVehicle} user={user} setErrors={setErrors}/>
-                                :
-                                <Button variant="contained" color="secondary" sx={{ml: 1}} onClick={handleDeleteClick}>
-                                    Delete Vehicle
-                                </Button>
-                            }
-                            <Button variant="contained" color="secondary" sx={{ml: 1}}
-                                    onClick={() => navigate("/maintenance_list")}>
-                                View Maintenance
-                            </Button>
+                            <Grid container spacing={2}>
+                                <Grid item>
+                                    <Button variant="contained" color="primary"
+                                            onClick={() => navigate("/maintenance_list")}>
+                                        View Maintenance
+                                    </Button>
+                                </Grid>
+                                <Grid item>
+                                    <Dialog open={isUpdateClicked} onClose={() => setIsUpdateClicked(false)}>
+                                        <DialogTitle>Update Mileage</DialogTitle>
+                                        <DialogContent>
+                                            <UpdateMileageForm
+                                                chosenVehicle={chosenVehicle}
+                                                setChosenVehicle={setChosenVehicle}
+                                                setErrors={setErrors}
+                                                user={user}
+                                                setIsUpdateClicked={setIsUpdateClicked}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Button variant="contained" color="primary"
+                                            onClick={handleUpdateClick}>
+                                        Update Mileage
+                                    </Button>
+                                </Grid>
+                                <Grid item>
+                                    <Dialog open={isDeleteClicked} onClose={() => setIsDeleteClicked(false)}>
+                                        <DialogTitle>Confirm VIN</DialogTitle>
+                                        <DialogContent>
+                                            <VinConfirm
+                                                vehicleData={chosenVehicle}
+                                                user={user}
+                                                setErrors={setErrors}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Button variant="contained" color="secondary" onClick={handleDeleteClick}>
+                                        Delete Vehicle
+                                    </Button>
+                                </Grid>
+                            </Grid>
                         </Box>
                     </Paper>
                 </Grid>
@@ -96,6 +115,21 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                     <img src={chosenVehicle.image} alt={chosenVehicle.model} style={{width: '100%'}}/>
                 </Grid>
             </Grid>
+            <Box my={4}>
+                <Typography variant="h5" gutterBottom align="left">
+                    Reminders
+                </Typography>
+                {reminders.length > 0 ?
+                    <List>
+                        {reminders.map(reminder => (
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}
+                                          fetchReminders={fetchReminders}/>
+                        ))}
+                    </List>
+                    : <Typography variant="body2" gutterBottom align="left">
+                        No Reminders
+                    </Typography>}
+            </Box>
         </Box>
     )
 }

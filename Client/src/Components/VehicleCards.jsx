@@ -12,18 +12,21 @@ export default function VehicleCards({vehicles, setChosenVehicle}) {
     const navigate = useNavigate();
 
     return vehicles.map((vehicle) => (
-        <Card sx={{ maxWidth: 345 }} key={vehicle.id}>
+        <Card sx={{maxWidth: 345}} key={vehicle.vinId}>
             <CardMedia
-                sx={{ height: 140 }}
+                sx={{height: 170}}
                 image={vehicle.image}
                 title={vehicle.model}
             />
             <CardContent>
                 <Typography gutterBottom variant="h5" component="div">
-                    {vehicle.make} {vehicle.model} ({vehicle.mileage})
+                    {vehicle.make} {vehicle.model}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    {vehicle.vin} {vehicle.mileage}
+                    {vehicle.vin}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    Mileage: {vehicle.mileage}
                 </Typography>
             </CardContent>
             <CardActions>

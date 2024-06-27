@@ -25,6 +25,8 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
     const [change, setChange] = useState(false);
+    const [updatedUpcomingMaint, setUpdatedUpcomingMain] = useState([]);
+    const [filteredUpcomingMaintenance, setFilteredUpcomingMaintenance] = useState([]);
 
     const todayDate = new Date();
     const todayYear = todayDate.getFullYear();
@@ -151,6 +153,18 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
             }).catch(errors => setErrors(errors))
     }
 
+    useEffect(() => {
+        const newUpcomingMaintenance = [];
+        upcomingMaintenance.forEach((maintenanceItem) => {
+            if (!completedMaintenance.some(item => item.description === maintenanceItem.desc && item.mileageDue === maintenanceItem.due_mileage)) {
+                newUpcomingMaintenance.push(maintenanceItem);
+            }
+        });
+
+        setFilteredUpcomingMaintenance(newUpcomingMaintenance);
+    }, [upcomingMaintenance, completedMaintenance]);
+
+
     return (
         <>
             <Typography variant="h4" sx={{textAlign: 'center', mt: 2}}>
@@ -159,7 +173,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
             <Errors errors={errors}/>
             <Box sx={{width: '100%', maxHeight: '45vh', overflow: 'auto'}}>
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
-                    {upcomingMaintenance.map((item, index) => (
+                    {filteredUpcomingMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
                                       <>

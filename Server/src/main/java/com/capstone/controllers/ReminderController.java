@@ -40,6 +40,15 @@ public class ReminderController {
 
     }
 
+    @PutMapping
+    public ResponseEntity<?> updateReminder(@RequestBody Reminder reminder) {
+        Result<Reminder> result = reminderService.updateReminder(reminder);
+        if (result.isSuccess()) {
+            return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
+    }
+
     @DeleteMapping("/delete/{reminderId}")
     public ResponseEntity<?> deleteReminder(@PathVariable Long reminderId) {
         Result<Reminder> result = reminderService.deleteReminder(reminderId);

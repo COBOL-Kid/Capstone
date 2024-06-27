@@ -24,7 +24,6 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
     const [reminderDialogOpen, setReminderDialogOpen] = useState({});
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
-    const today = new Date();
 
     const todayDate = new Date();
     const todayYear = todayDate.getFullYear();
@@ -32,7 +31,7 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
     const todayDay = String(todayDate.getDate()).padStart(2, '0');
     const minDateString = `${todayYear}-${todayMonth}-${todayDay}`;
 
-    const dateCompleted = `${today.getFullYear()}-${todayMonth}-${todayDay}`;
+    const dateCompleted = `${todayYear}-${todayMonth}-${todayDay}`;
 
     const maintenanceItem = {
         "vinId": chosenVehicle.vinId,
@@ -108,12 +107,14 @@ export default function Maintenance({chosenVehicle, user, setReminders}) {
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
-            }).catch(errors => setErrors(["Something Went Wrong"]))
+            }).catch(error => {
+            setErrors([error.toString()]);
+        });
 
         fetch(`http://localhost:8080/api/maintenance/${chosenVehicle.vinId}`, {
             method: "GET", headers: {
                 "Content-Type": 'application/json',
-                Authorization: `Bearer ${user.jwt}`
+                "Authorization": `Bearer ${user.jwt}`
             }
         }).then(response => {
             if (response.status === 200) {

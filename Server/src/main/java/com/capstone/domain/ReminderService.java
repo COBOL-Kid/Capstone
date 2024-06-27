@@ -90,9 +90,6 @@ public class ReminderService {
             return result;
         }
         Reminder existingReminder = existingReminderOpt.get();
-        existingReminder.setVinId(incomingReminder.getVinId());
-        existingReminder.setMaintenanceRecordId(incomingReminder.getMaintenanceRecordId());
-        existingReminder.setDescription(incomingReminder.getDescription());
         existingReminder.setReminderDate(incomingReminder.getReminderDate());
         try {
             result.setPayload(reminderRepository.save(existingReminder));

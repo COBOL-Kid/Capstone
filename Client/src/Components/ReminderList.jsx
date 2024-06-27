@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
@@ -8,10 +8,19 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
+import {useNavigate} from "react-router-dom";
 
-export default function ReminderList({ reminder }) {
+export default function ReminderList({reminder, user, setErrors}) {
     const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
     const [reminderDate, setReminderDate] = useState(reminder.reminderDate);
+    const navigate = useNavigate();
+
+    const today = new Date();
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayYear = today.getFullYear();
+
+    const todayFormatted = todayYear + '-' + todayMonth + '-' + todayDay;
 
     const handleReminderClick = () => {
         setReminderDialogOpen(true);
@@ -26,9 +35,57 @@ export default function ReminderList({ reminder }) {
     };
 
     const handleReminderConfirm = () => {
-        // todo handle your reminder update
         setReminderDialogOpen(false);
+
+        const updatedReminder = {...reminder, reminderDate};
+
+        fetch("http://localhost:8080/api/reminder", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user.jwt}`,
+            },
+            body: JSON.stringify(updatedReminder)
+        })
+            .then(response => {
+                if (response.status === 200) {
+                    navigate("/vehicle_overview")
+                }
+                if (response.status === 403) {
+                    localStorage.removeItem("user")
+                    navigate("/")
+                } else {
+                    Promise.reject(`Problem with response. Status: ${response.status}`);
+                    navigate("/vehicle_overview)");
+                }
+            }).catch(error => {
+            setErrors([error.toString()]);
+        });
     };
+
+    const handleReminderDelete = () => {
+        fetch(`http://localhost:8080/api/reminder/delete/${reminder.reminderId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user.jwt}`,
+            }
+        })
+            .then(response => {
+                if (response.status === 200) {
+                    navigate("/vehicle_overview")
+                }
+                if (response.status === 403) {
+                    localStorage.removeItem("user")
+                    navigate("/")
+                } else {
+                    Promise.reject(`Problem with response. Status: ${response.status}`);
+                    navigate("/vehicle_overview");
+                }
+            }).catch(error => {
+            setErrors([error.toString()]);
+        });
+    }
 
     return (
         <div>
@@ -39,11 +96,11 @@ export default function ReminderList({ reminder }) {
                 />
                 <ListItemSecondaryAction>
                     <IconButton edge="end" aria-label="edit" onClick={handleReminderClick}>
-                        <EditIcon />
+                        <EditIcon/>
                     </IconButton>
                     {/* todo delete handler to IconButton onClick */}
-                    <IconButton edge="end" aria-label="delete">
-                        <DeleteIcon />
+                    <IconButton edge="end" aria-label="delete" onClick={handleReminderDelete}>
+                        <DeleteIcon/>
                     </IconButton>
                 </ListItemSecondaryAction>
             </ListItem>
@@ -58,6 +115,9 @@ export default function ReminderList({ reminder }) {
                         shrink: true,
                     }}
                     onChange={handleReminderDateChange}
+                    inputProps={{
+                        min: todayFormatted,
+                    }}
                 />
                 <button onClick={handleReminderConfirm}>Confirm</button>
             </Dialog>

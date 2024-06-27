@@ -51,7 +51,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                 <Grid item xs={8}>
                     <List>
                         {reminders.map(reminder => (
-                            <ReminderList key={reminder.id} reminder={reminder}/>
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}/>
                         ))}
                     </List>
                     <Errors errors={errors}/>

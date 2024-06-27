@@ -1,4 +1,4 @@
-@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoidGVzdCIsImlhdCI6MTcxOTQwNTAzMCwiZXhwIjoxNzE5NDA2NDcwfQ.DRqV5NJfa11-HMHUTKkXDBjEoiKBx9SUv88qjar0_dM
+@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5NDY0ODUxLCJleHAiOjE3MTk0NjYyOTF9.tFwmKd5T9wnseQ2zbbSu0Vg4HLBVPBUG-Sr9DZDzBWE
 ###
 
 GET http://localhost:8080/api/demo/hello
@@ -100,6 +100,7 @@ Content-Type: application/json
 Authorization: Bearer {{AUTH}}
 
 {
+  "reminderId": 1,
   "vinId" : 1,
   "description": "test",
   "reminderDate": "2025-01-01"
@@ -110,3 +111,16 @@ Authorization: Bearer {{AUTH}}
 DELETE http://localhost:8080/api/reminder/delete/1
 Content-Type: application/json
 Authorization: Bearer {{AUTH}}
+
+###
+
+PUT http://localhost:8080/api/reminder
+Content-Type: application/json
+Authorization: Bearer {{AUTH}}
+
+{
+  "reminderId": 1,
+  "vinId" : 1,
+  "description": "test",
+  "reminderDate": "2026-02-02"
+}

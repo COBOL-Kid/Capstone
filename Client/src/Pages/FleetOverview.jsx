@@ -16,7 +16,8 @@ export default function FleetOverview({user, vehicles, setVehicles, setChosenVeh
             {
                 method: "GET",
                 headers: {
-                    Authorization: `Bearer ${user.jwt}`
+                    "Authorization": `Bearer ${user.jwt}`,
+                    "Content-Type": "application/jason"
                 }
             })
             .then(response => {

@@ -9,15 +9,18 @@ import VinConfirm from "../Components/VinConfirm.jsx";
 import {useNavigate} from "react-router-dom";
 import ReminderList from "../Components/ReminderList.jsx";
 
-export default function VehicleOverview({user, chosenVehicle, setChosenVehicle}) {
+export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, reminders, setReminders}) {
 
     const [isDeleteClicked, setIsDeleteClicked] = useState(false);
     const [isUpdateClicked, setIsUpdateClicked] = useState(false);
     const [errors, setErrors] = useState([]);
-    const [reminders, setReminders] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
+        fetchReminders();
+    }, []);
+
+    function fetchReminders() {
         fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vinId}`, {
             method: 'GET',
             header: {
@@ -35,7 +38,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(["Something Went Wrong"]));
-    }, []);
+    }
 
     const handleDeleteClick = () => {
         setIsDeleteClicked(true);
@@ -51,7 +54,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
                 <Grid item xs={8}>
                     <List>
                         {reminders.map(reminder => (
-                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors}/>
+                            <ReminderList key={reminder.id} reminder={reminder} user={user} setErrors={setErrors} fetchReminders={fetchReminders}/>
                         ))}
                     </List>
                     <Errors errors={errors}/>

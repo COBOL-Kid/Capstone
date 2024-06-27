@@ -26,8 +26,12 @@ function App() {
                        element={<FleetOverview user={user} vehicles={vehicles} setVehicles={setVehicles}
                                                setChosenVehicle={setChosenVehicle}/>}/>
                 <Route path="/add_vehicle" element={<AddVehicleForm user={user}/>}/>
-                <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle} setChosenVehicle={setChosenVehicle}/>}/>
-                <Route path="/maintenance_list" element={<Maintenance chosenVehicle={chosenVehicle} user={user} setReminders={setReminders}/>}/>
+                <Route path="/vehicle_overview" element={<VehicleOverview user={user} chosenVehicle={chosenVehicle}
+                                                                          setChosenVehicle={setChosenVehicle}
+                                                                          reminders={reminders}
+                                                                          setReminders={setReminders}/>}/>
+                <Route path="/maintenance_list"
+                       element={<Maintenance chosenVehicle={chosenVehicle} user={user} setReminders={setReminders}/>}/>
             </Routes>
         </BrowserRouter>
     );

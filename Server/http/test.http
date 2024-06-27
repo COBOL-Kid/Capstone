@@ -28,7 +28,7 @@ GET http://localhost:8080/api/external/find_maintenance/1GNALDEK9FZ108495/10000
 
 ###
 
-POST http://localhost:8080/test/authenticate
+POST http://localhost:8080/api/auth/authenticate
 Content-Type: application/json
 
 {

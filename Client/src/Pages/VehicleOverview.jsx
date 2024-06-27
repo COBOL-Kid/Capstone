@@ -37,7 +37,7 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle, 
             } else {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
-        }).catch(errors => setErrors(["Something Went Wrong"]));
+        }).catch(errors => setErrors(errors));
     }
 
     const handleDeleteClick = () => {

@@ -58,7 +58,10 @@ function AuthenticationForm({setUser}) {
                     "Content-Type": "application/json",
                     Accept: "application/json"
                 },
-                body: JSON.stringify([userEmail, userPassword])
+                body: JSON.stringify({
+                    email: userEmail,
+                    password: userPassword,
+                })
             })
                 .then(response => {
                     if (response.status === 200) {

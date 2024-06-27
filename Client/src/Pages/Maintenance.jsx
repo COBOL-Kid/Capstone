@@ -72,9 +72,7 @@ export default function Maintenance({chosenVehicle, user}) {
         let month = String(selectedDate.getMonth() + 1).padStart(2, '0');
         let date = String(selectedDate.getDate()).padStart(2, '0');
         reminder.reminderDate = `${year}-${month}-${date}`;
-
         setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
-
         fetch("http://localhost:8080/api/reminder", {
             method: "POST",
             headers: {
@@ -85,6 +83,7 @@ export default function Maintenance({chosenVehicle, user}) {
         }).then(response => {
             if (response.status === 201) {
                 navigate("/maintenance_list");
+                alert('Reminder added'); // Added alert here
             } else if (response.status === 403) {
                 localStorage.removeItem("user");
                 navigate("/");

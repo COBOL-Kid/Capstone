@@ -51,12 +51,18 @@ export default function VehicleOverview({user, chosenVehicle, setChosenVehicle})
 
     return (
         <Box sx={{flexGrow: 1}}>
+            <Typography variant="h4" gutterBottom gutterBottom sx={{ pt: 2 }}>
+                Welcome {user.firstName}!
+            </Typography>
             <Grid container spacing={2}>
                 <Grid item xs={8}>
                     <Errors errors={errors}/>
                     <Paper sx={{p: 2}}>
                         <Typography variant="h5" gutterBottom>
                             {chosenVehicle.model}
+                        </Typography>
+                        <Typography variant="body2">
+                            {chosenVehicle.vin}
                         </Typography>
                         <Typography variant="body2">
                             Manufacturer: {chosenVehicle.make}

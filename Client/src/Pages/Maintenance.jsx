@@ -107,14 +107,23 @@ export default function Maintenance({chosenVehicle, user}) {
     }
 
     useEffect(() => {
-        const fetchMaintenance = async () => {
+        const fetchAndConvertMaintenance = async () => {
+            let convertedUpcomingArr = [];
             try {
                 const response = await fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`,
                     {method: "GET", headers: {"Content-Type": 'application/json'}}
                 );
-
                 if (response.status === 200) {
                     const data = await response.json();
+                    data.forEach((record) => {
+                        let convertedMaintenanceitem = {
+                            "vinId": chosenVehicle.vinId,
+                            "description": record.desc,
+                            "mileageDue": record.due_mileage,
+                            "cost": record.repair.total_cost
+                        };
+                        convertedUpcomingArr.push(convertedMaintenanceitem);
+                    });
                     setUpcomingExternalApiMaintenance(data);
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
@@ -125,23 +134,10 @@ export default function Maintenance({chosenVehicle, user}) {
             } catch (error) {
                 setErrors([error.toString()]);
             }
+            return convertedUpcomingArr;
         };
 
-        const convertAndMapData = async () => {
-            const convertedUpcomingArr = [];
-            upcomingExternalApiMaintenance.forEach((record) => {
-                let convertedMaintenanceitem = {
-                    "vinId": chosenVehicle.vinId,
-                    "description": record.desc,
-                    "mileageDue": record.due_mileage,
-                    "cost": record.repair.total_cost
-                };
-                convertedUpcomingArr.push(convertedMaintenanceitem);
-            });
-            setMappedExternalApiMaintenance(convertedUpcomingArr);
-        }
-
-        const updateMaintenanceRecord = async () => {
+        const updateMaintenanceRecord = async (mappedExternalApiMaintenance) => {
             try {
                 const response = await fetch("http://localhost:8080/api/maintenance/update_maintenance_records", {
                     method: "POST",
@@ -160,6 +156,7 @@ export default function Maintenance({chosenVehicle, user}) {
         };
 
         const fetchMaintenanceById = async () => {
+            let data;
             try {
                 const response = await fetch(`http://localhost:8080/api/maintenance/${chosenVehicle.vinId}`, {
                     method: "GET",
@@ -169,12 +166,11 @@ export default function Maintenance({chosenVehicle, user}) {
                     }
                 });
                 if (response.status === 200) {
-                    const data = await response.json();
+                    data = await response.json();
                     setAllMaintenance(data);
-                    return data;
                 } else if (response.status === 204) {
                     setAllMaintenance([]);
-                    return [];
+                    data = [];
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
                     navigate("/");
@@ -184,32 +180,28 @@ export default function Maintenance({chosenVehicle, user}) {
             } catch (error) {
                 setErrors([error.toString()]);
             }
+            return data;
         }
 
         const operations = async () => {
-            const fetchedMaintenance = await fetchMaintenance();
-            console.log("fetched maintenance");
-            console.log(fetchedMaintenance);
-            const convertedData = await convertAndMapData(fetchedMaintenance);
-            console.log("converted data")
-            console.log(convertedData);
-            await updateMaintenanceRecord(convertedData);
+            const fetchedAndConvertedMaintenance = await fetchAndConvertMaintenance();
+            console.log("fetched and converted maintenance");
+            console.log(fetchedAndConvertedMaintenance);
+            await updateMaintenanceRecord(fetchedAndConvertedMaintenance);
             const fetchedMaintenanceById = await fetchMaintenanceById();
             console.log("fetched maintenance by Id");
             console.log(fetchedMaintenanceById);
             const completedMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted !== null);
             console.log("completed maintenance");
             console.log(completedMaintenance);
+            setUpcomingMaintenance(fetchedAndConvertedMaintenance);
             const upcomingMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted === null);
-            console.log("upcoming maintenance")
+            console.log("upcoming maintenance");
             console.log(upcomingMaintenance);
-            setUpcomingMaintenance(upcomingMaintenance);
             setCompletedMaintenance(completedMaintenance);
         }
-
         operations();
     }, [change]);
-
 
     function handleAddClick(maintenanceItem) {
         fetch("http://localhost:8080/api/maintenance", {
@@ -269,6 +261,8 @@ export default function Maintenance({chosenVehicle, user}) {
                                               todayMaintenanceItem.mileageDue = item.mileageDue;
                                               todayMaintenanceItem.cost = item.cost;
                                               todayMaintenanceItem.maintenanceRecordId = item.maintenanceRecordId;
+                                              console.log(item);
+                                              console.log(todayMaintenanceItem);
                                               handleAddClick(todayMaintenanceItem);
                                           }}>
                                               <AddCircleIcon/>

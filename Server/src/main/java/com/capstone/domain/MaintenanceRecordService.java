@@ -63,7 +63,7 @@ public class MaintenanceRecordService {
             if (!result.isSuccess()) {
                 return result;
             }
-            Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDueAAndVinId(record.getDescription(), record.getMileageDue(), record.getVinId());
+            Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDueAndVinId(record.getDescription(), record.getMileageDue(), record.getVinId());
             if (existingRecord.isEmpty()) {
                 try {
                     result.setPayload(maintenanceRecordRepositoryJPA.save(result.getPayload()));
@@ -86,7 +86,7 @@ public class MaintenanceRecordService {
         if (!result.isSuccess()) {
             return result;
         }
-        Optional<MaintenanceRecord> existingRecordOpt = maintenanceRecordRepositoryJPA.findById(incomingRecord.getMaintenanceRecordId());
+        Optional<MaintenanceRecord> existingRecordOpt = maintenanceRecordRepositoryJPA.findByDescriptionAndMileageDueAndVinId(incomingRecord.getDescription(), incomingRecord.getMileageDue(), incomingRecord.getVinId());
         if (existingRecordOpt.isEmpty()) {
             result.addError("MaintenanceRecord not found");
             return result;

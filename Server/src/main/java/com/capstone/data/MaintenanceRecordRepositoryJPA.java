@@ -13,6 +13,6 @@ public interface MaintenanceRecordRepositoryJPA extends JpaRepository<Maintenanc
     List<MaintenanceRecord> findAllByVinId(Long vinId);
 
     @Query("select r from MaintenanceRecord r where r.description =?1 and r.mileageDue =?2 and r.vinId = ?3")
-    Optional<MaintenanceRecord> findByDescriptionAndMileageDueAAndVinId(String description, int mileageDue, Long vinId);
+    Optional<MaintenanceRecord> findByDescriptionAndMileageDueAndVinId(String description, int mileageDue, Long vinId);
 
 }

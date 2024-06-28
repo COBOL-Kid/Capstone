@@ -100,7 +100,7 @@ public class MaintenanceRecord {
     }
 
     public boolean isInvalid() {
-        return vinId <= 0 || description == null || description.isEmpty() || mileageDue <= 0;
+        return vinId == null || vinId <= 0 || description == null || description.isEmpty() || mileageDue <= 0;
     }
 
 

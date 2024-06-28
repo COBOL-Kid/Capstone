@@ -21,14 +21,16 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 
 export default function Maintenance({chosenVehicle, user}) {
-    const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
+    const [upcomingExternalApiMaintenance, setUpcomingExternalApiMaintenance] = useState([]);
     const [errors, setErrors] = useState([]);
-    const [completedMaintenance, setCompletedMaintenance] = useState([]);
+    const [allMaintenance, setAllMaintenance] = useState([]);
     const [reminderDialogOpen, setReminderDialogOpen] = useState({});
     const [reminderDate, setReminderDate] = useState({});
     const navigate = useNavigate();
     const [change, setChange] = useState(false);
-    const [filteredUpcomingMaintenance, setFilteredUpcomingMaintenance] = useState([]);
+    const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
+    const [mappedExternalApiMaintenance, setMappedExternalApiMaintenance] = useState([]);
+    const [completedMaintenance, setCompletedMaintenance] = useState([]);
 
     const todayDate = new Date();
     const todayYear = todayDate.getFullYear();
@@ -38,7 +40,7 @@ export default function Maintenance({chosenVehicle, user}) {
 
     const dateCompleted = `${todayYear}-${todayMonth}-${todayDay}`;
 
-    const maintenanceItem = {
+    const todayMaintenanceItem = {
         "vinId": chosenVehicle.vinId,
         "description": "",
         "dateCompleted": dateCompleted,
@@ -46,9 +48,17 @@ export default function Maintenance({chosenVehicle, user}) {
         "cost": 0.0
     }
 
+    let convertedMaintenanceitem = {
+        "vinId": chosenVehicle.vinId,
+        "description": "",
+        "mileageDue": 0,
+        "cost": 0.0
+    }
+
     const reminder = {
         "reminderId": 0,
         "vinId": chosenVehicle.vinId,
+        "maintenanceRecordId": null,
         "description": "",
         "reminderDate": ""
     }
@@ -65,14 +75,15 @@ export default function Maintenance({chosenVehicle, user}) {
         setReminderDate(prevState => ({...prevState, [itemName]: date}));
     }
 
-    const handleReminderConfirm = itemName => {
-        reminder.description = itemName;
-        let selectedDate = new Date(reminderDate[itemName]);
+    const handleReminderConfirm = item => {
+        reminder.description = item.description;
+        reminder.maintenanceRecordId = item.maintenanceRecordId;
+        let selectedDate = new Date(reminderDate[item.description]);
         let year = selectedDate.getFullYear();
         let month = String(selectedDate.getMonth() + 1).padStart(2, '0');
         let date = String(selectedDate.getDate()).padStart(2, '0');
         reminder.reminderDate = `${year}-${month}-${date}`;
-        setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
+        setReminderDialogOpen(prevState => ({...prevState, [item.description]: false}));
         fetch("http://localhost:8080/api/reminder", {
             method: "POST",
             headers: {
@@ -83,7 +94,7 @@ export default function Maintenance({chosenVehicle, user}) {
         }).then(response => {
             if (response.status === 201) {
                 navigate("/maintenance_list");
-                alert('Reminder added'); // Added alert here
+                alert('Reminder added');
             } else if (response.status === 403) {
                 localStorage.removeItem("user");
                 navigate("/");
@@ -91,49 +102,103 @@ export default function Maintenance({chosenVehicle, user}) {
                 Promise.reject(`Problem with response. Status: ${response.status}`);
             }
         }).catch(errors => setErrors(errors));
-        setReminderDialogOpen(prevState => ({...prevState, [itemName]: false}));
+        setReminderDialogOpen(prevState => ({...prevState, [item.description]: false}));
     }
 
     useEffect(() => {
-        fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`,
-            {method: "GET", headers: {"Content-Type": 'application/json'}}
-        )
-            .then(response => {
+        const fetchMaintenance = async () => {
+            try {
+                const response = await fetch(`http://localhost:8080/api/external/find_maintenance/${chosenVehicle.vin}/${chosenVehicle.mileage}`,
+                    {method: "GET", headers: {"Content-Type": 'application/json'}}
+                );
+
                 if (response.status === 200) {
-                    response.json()
-                        .then(data => {
-                            setUpcomingMaintenance(data);
-                        })
+                    const data = await response.json();
+                    setUpcomingExternalApiMaintenance(data);
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
                     navigate("/");
                 } else {
-                    Promise.reject(`Problem with response. Status: ${response.status}`);
+                    throw new Error(`Problem with response. Status: ${response.status}`);
                 }
-            }).catch(error => {
-            setErrors([error.toString()]);
-        });
+            } catch (error) {
+                setErrors([error.toString()]);
+            }
+        };
 
-        fetch(`http://localhost:8080/api/maintenance/${chosenVehicle.vinId}`, {
-            method: "GET", headers: {
-                "Content-Type": 'application/json',
-                "Authorization": `Bearer ${user.jwt}`
+        const convertAndMapData = async () => {
+            const convertedUpcomingArr = [];
+            upcomingExternalApiMaintenance.forEach((record) => {
+                let convertedMaintenanceitem = {
+                    "vinId": chosenVehicle.vinId,
+                    "description": record.desc,
+                    "mileageDue": record.due_mileage,
+                    "cost": record.repair.total_cost
+                };
+                convertedUpcomingArr.push(convertedMaintenanceitem);
+            });
+            setMappedExternalApiMaintenance(convertedUpcomingArr);
+        }
+
+        const updateMaintenanceRecord = async () => {
+            try {
+                const response = await fetch("http://localhost:8080/api/maintenance/update_maintenance_records", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${user.jwt}`
+                    },
+                    body: JSON.stringify(mappedExternalApiMaintenance)
+                });
+                if (response.status !== 201) {
+                    throw new Error(`Problem with response. Status: ${response.status}`);
+                }
+            } catch (errors) {
+                setErrors(errors);
             }
-        }).then(response => {
-            if (response.status === 200) {
-                response.json().then(data => {
-                    setCompletedMaintenance(data);
-                })
-            } else if (response.status === 204) {
-                setCompletedMaintenance([])
-            } else if (response.status === 403) {
-                localStorage.removeItem("user");
-                navigate("/");
-            } else {
-                Promise.reject(`Problem with response. Status: ${response.status}`);
+        };
+
+        const fetchMaintenanceById = async () => {
+            try {
+                const response = await fetch(`http://localhost:8080/api/maintenance/${chosenVehicle.vinId}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": 'application/json',
+                        "Authorization": `Bearer ${user.jwt}`
+                    }
+                });
+                if (response.status === 200) {
+                    const data = await response.json();
+                    setAllMaintenance(data);
+                    return data; // Add this line
+                } else if (response.status === 204) {
+                    setAllMaintenance([]);
+                    return []; // Add this line
+                } else if (response.status === 403) {
+                    localStorage.removeItem("user");
+                    navigate("/");
+                } else {
+                    throw new Error(`Problem with response. Status: ${response.status}`);
+                }
+            } catch (error) {
+                setErrors([error.toString()]);
             }
-        }).catch(errors => setErrors(errors))
+        }
+
+        const operations = async () => {
+            const fetchedMaintenance = await fetchMaintenance();
+            const convertedData = await convertAndMapData(fetchedMaintenance);
+            await updateMaintenanceRecord(convertedData);
+            const fetchedMaintenanceById = await fetchMaintenanceById();
+            const completedMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted !== null);
+            const upcomingMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted === null);
+            setUpcomingMaintenance(upcomingMaintenance);
+            setCompletedMaintenance(completedMaintenance);
+        }
+
+        operations();
     }, [change]);
+
 
 
     function handleAddClick(maintenanceItem) {
@@ -173,17 +238,6 @@ export default function Maintenance({chosenVehicle, user}) {
         }).catch(errors => setErrors(errors))
     }
 
-    useEffect(() => {
-        const newUpcomingMaintenance = [];
-        upcomingMaintenance.forEach((maintenanceItem) => {
-            if (!completedMaintenance.some(item => item.description === maintenanceItem.desc && item.mileageDue === maintenanceItem.due_mileage)) {
-                newUpcomingMaintenance.push(maintenanceItem);
-            }
-        });
-
-        setFilteredUpcomingMaintenance(newUpcomingMaintenance);
-    }, [upcomingMaintenance, completedMaintenance]);
-
 
     return (
         <>
@@ -193,26 +247,26 @@ export default function Maintenance({chosenVehicle, user}) {
             <Errors errors={errors}/>
             <Box sx={{width: '100%', maxHeight: '45vh', overflow: 'auto'}}>
                 <List sx={{width: '100%', bgcolor: 'background.paper', marginTop: 2}}>
-                    {filteredUpcomingMaintenance.map((item, index) => (
+                    {upcomingMaintenance.map((item, index) => (
                         <ListItem key={index}
                                   secondaryAction={
                                       <>
                                           <IconButton color="primary" aria-label="add" onClick={() => {
-                                              maintenanceItem.description = item.desc;
-                                              maintenanceItem.mileageDue = item.due_mileage;
-                                              maintenanceItem.cost = item.repair.total_cost;
-                                              handleAddClick(maintenanceItem);
+                                              todayMaintenanceItem.description = item.description;
+                                              todayMaintenanceItem.mileageDue = item.mileageDue;
+                                              todayMaintenanceItem.cost = item.cost;
+                                              handleAddClick(todayMaintenanceItem);
                                           }}>
                                               <AddCircleIcon/>
                                           </IconButton>
                                           <Button variant="contained" color="primary"
-                                                  onClick={() => handleReminderClick(item.desc)}
+                                                  onClick={() => handleReminderClick(item.description)}
                                                   style={{marginLeft: '10px'}}>
                                               Reminder
                                           </Button>
 
-                                          <Dialog open={reminderDialogOpen[item.desc]}
-                                                  onClose={() => handleReminderDialogClose(item.desc)}>
+                                          <Dialog open={reminderDialogOpen[item.description]}
+                                                  onClose={() => handleReminderDialogClose(item.description)}>
                                               <DialogTitle>Add Reminder</DialogTitle>
                                               <DialogContent>
                                                   <DialogContentText>
@@ -224,17 +278,17 @@ export default function Maintenance({chosenVehicle, user}) {
                                                       id="reminderDate"
                                                       type="date"
                                                       fullWidth
-                                                      value={reminderDate[item.desc] || ''}
+                                                      value={reminderDate[item.description] || ''}
                                                       min={minDateString}
-                                                      onChange={event => handleReminderDateChange(event.target.value, item.desc)}
+                                                      onChange={event => handleReminderDateChange(event.target.value, item.description)}
                                                   />
                                               </DialogContent>
                                               <DialogActions>
-                                                  <Button onClick={() => handleReminderDialogClose(item.desc)}
+                                                  <Button onClick={() => handleReminderDialogClose(item.description)}
                                                           color="primary">
                                                       Cancel
                                                   </Button>
-                                                  <Button onClick={() => handleReminderConfirm(item.desc)}
+                                                  <Button onClick={() => handleReminderConfirm(item)}
                                                           color="primary">
                                                       Confirm
                                                   </Button>
@@ -251,23 +305,15 @@ export default function Maintenance({chosenVehicle, user}) {
                                   }}
                         >
                             <ListItemText
-                                primary={<Typography variant="h5">{item.desc}</Typography>}
+                                primary={<Typography variant="h5">{item.description}</Typography>}
                                 secondary={
                                     <>
                                         <Typography variant="body2">
-                                            Due mileage: {item.due_mileage}
+                                            Due mileage: {item.mileageDue}
                                         </Typography>
                                         <Typography variant="body2">
-                                            Total cost: {item.repair.total_cost}
+                                            Total cost: {item.cost}
                                         </Typography>
-                                        <Typography component="div" variant="body1">
-                                            Parts:
-                                        </Typography>
-                                        {item.parts && item.parts.map((part, index) => (
-                                            <Typography key={index} variant="body2">
-                                                Part desc: {part.desc}, Price: {part.price}, Qty: {part.qty}
-                                            </Typography>
-                                        ))}
                                     </>
                                 }
                             />

@@ -167,10 +167,10 @@ export default function Maintenance({chosenVehicle, user}) {
                 });
                 if (response.status === 200) {
                     data = await response.json();
-                    setAllMaintenance(data);
+                    return data;
                 } else if (response.status === 204) {
-                    setAllMaintenance([]);
                     data = [];
+                    return data;
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
                     navigate("/");
@@ -185,20 +185,12 @@ export default function Maintenance({chosenVehicle, user}) {
 
         const operations = async () => {
             const fetchedAndConvertedMaintenance = await fetchAndConvertMaintenance();
-            console.log("fetched and converted maintenance");
-            console.log(fetchedAndConvertedMaintenance);
             await updateMaintenanceRecord(fetchedAndConvertedMaintenance);
             const fetchedMaintenanceById = await fetchMaintenanceById();
-            console.log("fetched maintenance by Id");
-            console.log(fetchedMaintenanceById);
-            const completedMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted !== null);
-            console.log("completed maintenance");
-            console.log(completedMaintenance);
-            setUpcomingMaintenance(fetchedAndConvertedMaintenance);
-            const upcomingMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted === null);
-            console.log("upcoming maintenance");
-            console.log(upcomingMaintenance);
-            setCompletedMaintenance(completedMaintenance);
+            const completedMaintenanceTest = fetchedMaintenanceById.filter((record) => record.dateCompleted !== null);
+            setCompletedMaintenance(completedMaintenanceTest);
+            const upcomingMaintenanceTest = fetchedMaintenanceById.filter((record) => record.dateCompleted === null);
+            setUpcomingMaintenance(upcomingMaintenanceTest);
         }
         operations();
     }, [change]);

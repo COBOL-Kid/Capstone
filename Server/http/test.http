@@ -1,4 +1,4 @@
-@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5NTYyNDY1LCJleHAiOjE3MTk1NjM5MDV9.peZmYEAMkxYzakWmJuawGSlD1sWvvNkJ3ZjbYLCFBYw
+@AUTH = eyJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0Iiwib3duZXJJZCI6MSwic3ViIjoiZW1haWxAZW1haWwuY29tIiwiaWF0IjoxNzE5NTY4OTA3LCJleHAiOjE3MTk1NzAzNDd9.RFtBa-tvvRsBxzczg8SwJS-CwedZ-1StE7l6c3ZbJfo
 ###
 
 GET http://localhost:8080/api/demo/hello
@@ -67,11 +67,11 @@ Authorization: Bearer {{AUTH}}
 {
   "ownerId": 1,
   "vin": "test",
-  "mileage" : 1337,
-  "year" : 1999,
+  "mileage": 1337,
+  "year": 1999,
   "make": "test",
-  "model" : "test",
-  "image" : "test"
+  "model": "test",
+  "image": "test"
 }
 
 ###
@@ -86,6 +86,22 @@ Authorization: Bearer {{AUTH}}
   "mileageDue": 1337,
   "cost": 10.00
 }
+
+###
+
+PUT http://localhost:8080/api/maintenance
+Content-Type: application/json
+Authorization: Bearer {{AUTH}}
+
+{
+  "maintenanceRecordId": 1,
+  "vinId": 1,
+  "description": "test",
+  "mileageDue": 1337,
+  "dateCompleted": "2025-01-01",
+  "cost": 10.00
+}
+
 
 ###
 
@@ -128,7 +144,7 @@ Authorization: Bearer {{AUTH}}
 
 {
   "reminderId": 1,
-  "vinId" : 1,
+  "vinId": 1,
   "description": "test",
   "reminderDate": "2025-01-01"
 }
@@ -147,7 +163,7 @@ Authorization: Bearer {{AUTH}}
 
 {
   "reminderId": 1,
-  "vinId" : 1,
+  "vinId": 1,
   "description": "test",
   "reminderDate": "2026-02-02"
 }

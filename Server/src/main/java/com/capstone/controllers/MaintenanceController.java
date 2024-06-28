@@ -40,6 +40,16 @@ public class MaintenanceController {
         }
     }
 
+    @PutMapping
+    public ResponseEntity<?> updateMaintenanceRecord(@RequestBody MaintenanceRecord maintenanceRecord) {
+        Result<MaintenanceRecord> record = maintenanceRecordService.updateMaintenanceRecordDateCompleted(maintenanceRecord);
+        if (record.isSuccess()) {
+            return new ResponseEntity<>(record.getPayload(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(record.getErrors(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PostMapping("/update_maintenance_records")
     public ResponseEntity<?> updateMaintenanceRecords(@RequestBody List<MaintenanceRecord> maintenanceRecords) {
         Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(maintenanceRecords);

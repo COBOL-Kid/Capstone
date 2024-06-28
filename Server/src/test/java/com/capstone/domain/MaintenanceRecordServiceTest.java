@@ -110,61 +110,61 @@ class MaintenanceRecordServiceTest {
     }
 
     @Test
-    void updateMaintenanceRecord_nonExistentRecord_returnsFailure() {
+    void updateMaintenanceRecord_nonExistentRecord_DateCompleted_returnsFailure() {
         MaintenanceRecord maintenanceRecord = makeValidMaintenanceRecord();
         maintenanceRecord.setMaintenanceRecordId(999L);
         when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getMaintenanceRecordId())).thenReturn(Optional.empty());
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(maintenanceRecord);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(maintenanceRecord);
         assertFalse(result.isSuccess());
         assertTrue(result.getErrors().contains("MaintenanceRecord not found"));
     }
 
     @Test
-    void updateMaintenanceRecord_withNullData_returnsFailure() {
+    void updateMaintenanceRecord_DateCompleted_withNullData_returnsFailure() {
         MaintenanceRecord maintenanceRecord = null;
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(maintenanceRecord);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(maintenanceRecord);
         assertFalse(result.isSuccess());
         assertTrue(result.getErrors().contains("Maintenance record is null"));
     }
 
     @Test
-    void updateMaintenanceRecord_withInvalidData_returnsFailure() {
+    void updateMaintenanceRecord_DateCompleted_withInvalidData_returnsFailure() {
         MaintenanceRecord maintenanceRecord = new MaintenanceRecord();
         maintenanceRecord.setVinId(1L);
         when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getMaintenanceRecordId())).thenReturn(Optional.of(maintenanceRecord));
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(maintenanceRecord);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(maintenanceRecord);
         assertFalse(result.isSuccess());
         assertTrue(result.getErrors().contains("Maintenance record contains null or invalid values"));
     }
 
     @Test
-    void updateMaintenanceRecord_withValidData_returnsSuccess() {
+    void updateMaintenanceRecord_DateCompleted_withValidData_returnsSuccess() {
         MaintenanceRecord maintenanceRecord = makeValidMaintenanceRecord();
         maintenanceRecord.setMaintenanceRecordId(1L);
         when(maintenanceRecordRepositoryJPA.findById(maintenanceRecord.getMaintenanceRecordId())).thenReturn(Optional.of(maintenanceRecord));
         when(maintenanceRecordRepositoryJPA.save(any())).thenReturn(maintenanceRecord);
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(maintenanceRecord);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(maintenanceRecord);
         assertTrue(result.isSuccess());
     }
 
     @Test
-    void shouldThrowDataIntegrityViolationException_whenUpdateMaintenanceRecord() {
+    void shouldThrowDataIntegrityViolationException_whenUpdateMaintenanceRecordDateCompleted() {
         MaintenanceRecord record = makeValidMaintenanceRecord();
         record.setMaintenanceRecordId(1L);
         when(maintenanceRecordRepositoryJPA.findById(record.getMaintenanceRecordId())).thenReturn(Optional.of(record));
         when(maintenanceRecordRepositoryJPA.save(any())).thenThrow(DataIntegrityViolationException.class);
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(record);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(record);
 
         assertTrue(result.getErrors().contains("DataIntegrityViolationException"));
     }
 
     @Test
-    void shouldThrowJpaSystemException_whenUpdateMaintenanceRecord() {
+    void shouldThrowJpaSystemException_whenUpdateMaintenanceRecordDateCompleted() {
         MaintenanceRecord record = makeValidMaintenanceRecord();
         record.setMaintenanceRecordId(1L);
         when(maintenanceRecordRepositoryJPA.findById(record.getMaintenanceRecordId())).thenReturn(Optional.of(record));
         when(maintenanceRecordRepositoryJPA.save(any())).thenThrow(JpaSystemException.class);
-        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecord(record);
+        Result<MaintenanceRecord> result = maintenanceRecordService.updateMaintenanceRecordDateCompleted(record);
 
         assertTrue(result.getErrors().contains("JpaSystemException"));
     }

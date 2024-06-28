@@ -81,22 +81,20 @@ public class MaintenanceRecordService {
     }
 
     @Transactional
-    public Result<MaintenanceRecord> updateMaintenanceRecord(MaintenanceRecord incomingRecord) {
+    public Result<MaintenanceRecord> updateMaintenanceRecordDateCompleted(MaintenanceRecord incomingRecord) {
         Result<MaintenanceRecord> result = validateMaintenanceRecord(incomingRecord);
         if (!result.isSuccess()) {
             return result;
         }
-        Optional<MaintenanceRecord> existingRecord = maintenanceRecordRepositoryJPA.findById(incomingRecord.getMaintenanceRecordId());
-        if (existingRecord.isEmpty()) {
+        Optional<MaintenanceRecord> existingRecordOpt = maintenanceRecordRepositoryJPA.findById(incomingRecord.getMaintenanceRecordId());
+        if (existingRecordOpt.isEmpty()) {
             result.addError("MaintenanceRecord not found");
             return result;
         }
-        existingRecord.get().setDescription(incomingRecord.getDescription());
-        existingRecord.get().setDateCompleted(incomingRecord.getDateCompleted());
-        existingRecord.get().setMileageDue(incomingRecord.getMileageDue());
-        existingRecord.get().setCost(incomingRecord.getCost());
+        MaintenanceRecord existingRecord = existingRecordOpt.get();
+        existingRecord.setDateCompleted(incomingRecord.getDateCompleted());
         try {
-            result.setPayload(maintenanceRecordRepositoryJPA.save(existingRecord.get()));
+            result.setPayload(maintenanceRecordRepositoryJPA.save(existingRecord));
         } catch (DataIntegrityViolationException e) {
             result.addError("DataIntegrityViolationException");
         } catch (JpaSystemException e) {

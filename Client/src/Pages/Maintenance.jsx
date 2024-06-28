@@ -41,6 +41,7 @@ export default function Maintenance({chosenVehicle, user}) {
     const dateCompleted = `${todayYear}-${todayMonth}-${todayDay}`;
 
     const todayMaintenanceItem = {
+        "maintenanceRecordId": 0,
         "vinId": chosenVehicle.vinId,
         "description": "",
         "dateCompleted": dateCompleted,
@@ -170,10 +171,10 @@ export default function Maintenance({chosenVehicle, user}) {
                 if (response.status === 200) {
                     const data = await response.json();
                     setAllMaintenance(data);
-                    return data; // Add this line
+                    return data;
                 } else if (response.status === 204) {
                     setAllMaintenance([]);
-                    return []; // Add this line
+                    return [];
                 } else if (response.status === 403) {
                     localStorage.removeItem("user");
                     navigate("/");
@@ -187,11 +188,21 @@ export default function Maintenance({chosenVehicle, user}) {
 
         const operations = async () => {
             const fetchedMaintenance = await fetchMaintenance();
+            console.log("fetched maintenance");
+            console.log(fetchedMaintenance);
             const convertedData = await convertAndMapData(fetchedMaintenance);
+            console.log("converted data")
+            console.log(convertedData);
             await updateMaintenanceRecord(convertedData);
             const fetchedMaintenanceById = await fetchMaintenanceById();
+            console.log("fetched maintenance by Id");
+            console.log(fetchedMaintenanceById);
             const completedMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted !== null);
+            console.log("completed maintenance");
+            console.log(completedMaintenance);
             const upcomingMaintenance = fetchedMaintenanceById.filter((record) => record.dateCompleted === null);
+            console.log("upcoming maintenance")
+            console.log(upcomingMaintenance);
             setUpcomingMaintenance(upcomingMaintenance);
             setCompletedMaintenance(completedMaintenance);
         }
@@ -200,10 +211,9 @@ export default function Maintenance({chosenVehicle, user}) {
     }, [change]);
 
 
-
     function handleAddClick(maintenanceItem) {
         fetch("http://localhost:8080/api/maintenance", {
-            method: "POST",
+            method: "PUT",
             headers: {
                 "Content-Type": 'application/json',
                 Authorization: `Bearer ${user.jwt}`
@@ -211,8 +221,11 @@ export default function Maintenance({chosenVehicle, user}) {
             body: JSON.stringify(maintenanceItem)
         })
             .then(response => {
-                if (response.status === 201) {
+                if (response.status === 200) {
                     setChange(prevChange => !prevChange);
+                } else if (response.status === 403) {
+                    localStorage.removeItem("user");
+                    navigate("/");
                 } else {
                     Promise.reject(`Problem with response. Status: ${response.status}`);
                 }
@@ -255,6 +268,7 @@ export default function Maintenance({chosenVehicle, user}) {
                                               todayMaintenanceItem.description = item.description;
                                               todayMaintenanceItem.mileageDue = item.mileageDue;
                                               todayMaintenanceItem.cost = item.cost;
+                                              todayMaintenanceItem.maintenanceRecordId = item.maintenanceRecordId;
                                               handleAddClick(todayMaintenanceItem);
                                           }}>
                                               <AddCircleIcon/>

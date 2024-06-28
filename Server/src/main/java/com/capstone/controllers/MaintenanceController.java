@@ -40,6 +40,15 @@ public class MaintenanceController {
         }
     }
 
+    @PostMapping("/update_maintenance_records")
+    public ResponseEntity<?> updateMaintenanceRecords(@RequestBody List<MaintenanceRecord> maintenanceRecords) {
+        Result<MaintenanceRecord> result = maintenanceRecordService.createNotYetExistentMaintenanceRecords(maintenanceRecords);
+        if (!result.isSuccess()) {
+            return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
     @DeleteMapping("/{maintenanceRecordId}")
     public ResponseEntity<?> deleteMaintenanceRecord(@PathVariable Long maintenanceRecordId) {
         Result<MaintenanceRecord> result = maintenanceRecordService.deleteMaintenanceRecord(maintenanceRecordId);

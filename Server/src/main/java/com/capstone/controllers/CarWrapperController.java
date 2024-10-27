@@ -45,7 +45,11 @@ public class CarWrapperController {
         if (response.getStatusCode().isError()) {
             throw new RuntimeException("Error while calling external service");
         }
-        VehicleInfo vehicleInfo = response.getBody().getData();
+        VinResponse vinResponse = response.getBody();
+        if (vinResponse == null) {
+            throw new RuntimeException("Response body is null");
+        }
+        VehicleInfo vehicleInfo = vinResponse.getData();
         return updateVehicleInfo(vin, vehicleInfo);
     }
 
@@ -77,6 +81,10 @@ public class CarWrapperController {
         if (response.getStatusCode().isError()) {
             throw new RuntimeException("Error while calling external service");
         }
-        return response.getBody().getData();
+        MaintenanceResponse maintenanceResponse = response.getBody();
+        if (maintenanceResponse == null) {
+            throw new RuntimeException("Response body is null");
+        }
+        return maintenanceResponse.getData();
     }
 }

@@ -64,7 +64,11 @@ public class CarWrapperController {
         if (response.getStatusCode().isError()) {
             throw new RuntimeException("Error while calling external service");
         }
-        VehicleInfo additionalData = response.getBody().getData();
+        VinResponse vinResponseBody = response.getBody();
+        if (vinResponseBody == null) {
+            throw new RuntimeException("Response body is null");
+        }
+        VehicleInfo additionalData = vinResponseBody.getData();
         vehicleInfo.setImage(additionalData.getImage());
         return vehicleInfo;
     }

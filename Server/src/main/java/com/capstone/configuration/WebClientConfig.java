@@ -1,5 +1,6 @@
 package com.capstone.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -7,8 +8,11 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class WebClientConfig {
 
-    private final String authorization = System.getenv("API_AUTH");
-    private final String partnerToken = System.getenv("PARTNER_TOKEN");
+    @Value("${api.auth}")
+    private String authorization;
+
+    @Value("${partner.token}")
+    private String partnerToken;
 
     @Bean
     public RestTemplate restTemplate() {

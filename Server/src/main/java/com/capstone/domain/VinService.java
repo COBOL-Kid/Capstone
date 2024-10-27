@@ -1,16 +1,17 @@
 package com.capstone.domain;
 
-import com.capstone.data.VinRepositoryJPA;
-import com.capstone.models.Result;
-import com.capstone.models.Vin;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.capstone.data.VinRepositoryJPA;
+import com.capstone.models.Result;
+import com.capstone.models.Vin;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class VinService {
@@ -19,7 +20,6 @@ public class VinService {
     VinRepositoryJPA vinRepositoryJPA;
 
 
-    @Autowired
     public VinService(VinRepositoryJPA vinRepositoryJPA) {
         this.vinRepositoryJPA = vinRepositoryJPA;
     }

@@ -1,18 +1,19 @@
 package com.capstone.domain;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Service;
+
 import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.MaintenanceRecord;
 import com.capstone.models.Result;
 import com.capstone.models.Vin;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.orm.jpa.JpaSystemException;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import jakarta.transaction.Transactional;
 
 @Service
 public class MaintenanceRecordService {
@@ -21,7 +22,6 @@ public class MaintenanceRecordService {
 
     VinRepositoryJPA vinRepositoryJPA;
 
-    @Autowired
     public MaintenanceRecordService(MaintenanceRecordRepositoryJPA maintenanceRecordRepositoryJPA, VinRepositoryJPA vinRepositoryJPA) {
         this.maintenanceRecordRepositoryJPA = maintenanceRecordRepositoryJPA;
         this.vinRepositoryJPA = vinRepositoryJPA;

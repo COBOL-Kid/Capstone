@@ -1,4 +1,4 @@
-package com.capstone.authentication;
+package com.capstone.Authentication;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

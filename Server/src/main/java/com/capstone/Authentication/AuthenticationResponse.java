@@ -1,4 +1,4 @@
-package com.capstone.authentication;
+package com.capstone.Authentication;
 
 import java.util.Objects;
 

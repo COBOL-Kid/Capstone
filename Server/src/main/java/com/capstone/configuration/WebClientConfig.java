@@ -8,10 +8,10 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${api.auth}")
+    @Value("${API_AUTH}")
     private String authorization;
 
-    @Value("${partner.token}")
+    @Value("${API_TOKEN}")
     private String partnerToken;
 
     @Bean

@@ -1,4 +1,4 @@
-package com.capstone.Authentication;
+package com.capstone.authentication;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;

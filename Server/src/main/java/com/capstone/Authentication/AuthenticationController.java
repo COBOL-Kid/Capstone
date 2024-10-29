@@ -1,6 +1,5 @@
 package com.capstone.Authentication;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +12,6 @@ public class AuthenticationController {
 
     private final AuthenticationService service;
 
-    @Autowired
     public AuthenticationController(AuthenticationService service) {
         this.service = service;
     }

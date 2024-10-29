@@ -1,17 +1,17 @@
 package com.capstone.Authentication;
 
-import com.capstone.data.OwnerRepositoryJPA;
-import com.capstone.models.Owner;
-import com.capstone.models.Role;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.capstone.data.OwnerRepositoryJPA;
+import com.capstone.models.Owner;
+import com.capstone.models.Role;
 
 @Service
 public class AuthenticationService {
@@ -21,7 +21,6 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    @Autowired
     public AuthenticationService(OwnerRepositoryJPA repository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;

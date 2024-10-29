@@ -1,20 +1,21 @@
 package com.capstone.domain;
 
-import com.capstone.data.MaintenanceRecordRepositoryJPA;
-import com.capstone.data.ReminderRepositoryJPA;
-import com.capstone.data.VinRepositoryJPA;
-import com.capstone.models.Reminder;
-import com.capstone.models.Result;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import com.capstone.data.MaintenanceRecordRepositoryJPA;
+import com.capstone.data.ReminderRepositoryJPA;
+import com.capstone.data.VinRepositoryJPA;
+import com.capstone.models.Reminder;
+import com.capstone.models.Result;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ReminderService {
@@ -23,7 +24,6 @@ public class ReminderService {
     MaintenanceRecordRepositoryJPA maintenanceRecordRepository;
     VinRepositoryJPA vinRepository;
 
-    @Autowired
     public ReminderService(ReminderRepositoryJPA reminderRepository, MaintenanceRecordRepositoryJPA maintenanceRecordRepository, VinRepositoryJPA vinRepository) {
         this.reminderRepository = reminderRepository;
         this.maintenanceRecordRepository = maintenanceRecordRepository;

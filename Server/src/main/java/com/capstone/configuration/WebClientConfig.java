@@ -15,7 +15,7 @@ public class WebClientConfig {
     private String partnerToken;
 
     @Bean
-    public RestTemplate restTemplate() {
+    RestTemplate restTemplate() {
         return new RestTemplate();
     }
 

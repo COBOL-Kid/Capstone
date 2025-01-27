@@ -35,7 +35,7 @@ public class CarWrapperController {
         if (vin == null) {
             throw new IllegalArgumentException("VIN cannot be null");
         }
-        String url = String.format("http://api.carmd.com/v3.0/decode?vin=%s", vin);
+        String url = "http://api.carmd.com/v3.0/decode?vin=%s".formatted(vin);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", webClientConfig.getAuthorization());
         headers.set("Partner-Token", webClientConfig.getPartnerToken());
@@ -54,7 +54,7 @@ public class CarWrapperController {
     }
 
     private VehicleInfo updateVehicleInfo(String vin, VehicleInfo vehicleInfo) {
-        String url = String.format("http://api.carmd.com/v3.0/image?vin=%s", vin);
+        String url = "http://api.carmd.com/v3.0/image?vin=%s".formatted(vin);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", webClientConfig.getAuthorization());
         headers.set("Partner-Token", webClientConfig.getPartnerToken());
@@ -75,7 +75,7 @@ public class CarWrapperController {
 
     @GetMapping("/find_maintenance/{vin}/{mileage}")
     public List<Maintenance> getData(@PathVariable String vin, @PathVariable String mileage) {
-        String url = String.format("http://api.carmd.com/v3.0/maint?vin=%s&mileage=%s", vin, mileage);
+        String url = "http://api.carmd.com/v3.0/maint?vin=%s&mileage=%s".formatted(vin, mileage);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", webClientConfig.getAuthorization());
         headers.set("Partner-Token", webClientConfig.getPartnerToken());

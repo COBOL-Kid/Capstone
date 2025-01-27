@@ -6,7 +6,7 @@ import com.capstone.models.Vin;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.Mock;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class VinServiceTest {
 
-    @MockBean
+    @Mock
     VinRepositoryJPA vinRepository;
     @Autowired
     private VinService vinService;

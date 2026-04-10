@@ -34,7 +34,7 @@ dependencies {
 group = "com.capstone"
 version = "1.0-SNAPSHOT"
 description = "Server"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_25
 
 // Force Tomcat embed to 10.1.52 to fix 18 CVEs in 10.1.31 (including CRITICAL CVE-2025-24813).
 // See: .github/java-upgrade/20260410042749/plan.md

@@ -36,6 +36,17 @@ version = "1.0-SNAPSHOT"
 description = "Server"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
+// Force Tomcat embed to 10.1.52 to fix 18 CVEs in 10.1.31 (including CRITICAL CVE-2025-24813).
+// See: .github/java-upgrade/20260410042749/plan.md
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.apache.tomcat.embed") {
+            useVersion("10.1.52")
+            because("Fix CVE-2025-24813 (CRITICAL) and 17 other CVEs present in 10.1.31")
+        }
+    }
+}
+
 publishing {
     publications.create<MavenPublication>("maven") {
         from(components["java"])

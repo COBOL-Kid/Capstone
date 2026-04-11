@@ -12,40 +12,25 @@ public class Vin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long vinId;
 
-    @Column(name = "owner_id",
-            nullable = false,
-            columnDefinition = "integer")
+    @Column(name = "owner_id", nullable = false, columnDefinition = "integer")
     private Long ownerId;
 
-    @Column(name = "vin",
-            nullable = false,
-            unique = true,
-            columnDefinition = "text")
+    @Column(name = "vin", nullable = false, unique = true, columnDefinition = "text")
     private String vin;
 
-    @Column(name = "mileage",
-            nullable = false,
-            columnDefinition = "integer")
+    @Column(name = "mileage", nullable = false, columnDefinition = "integer")
     private int mileage;
 
-    @Column(name = "year",
-            nullable = false,
-            columnDefinition = "integer")
+    @Column(name = "year", nullable = false, columnDefinition = "integer")
     private int year;
 
-    @Column(name = "make",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "make", nullable = false, columnDefinition = "text")
     private String make;
 
-    @Column(name = "model",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "model", nullable = false, columnDefinition = "text")
     private String model;
 
-    @Column(name = "image",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "image", nullable = false, columnDefinition = "text")
     private String image;
 
     public Vin() {
@@ -126,15 +111,21 @@ public class Vin {
     }
 
     public boolean isInvalid() {
-        return year == 0 || mileage == 0 || model == null || model.isEmpty() || image == null || image.isEmpty() || vin == null || vin.isEmpty() || make == null || make.isEmpty();
+        return year == 0 || mileage == 0 || model == null || model.isEmpty() || image == null || image.isEmpty()
+                || vin == null || vin.isEmpty() || make == null || make.isEmpty();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Vin vin1 = (Vin) o;
-        return getMileage() == vin1.getMileage() && getYear() == vin1.getYear() && Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVin(), vin1.getVin()) && Objects.equals(getMake(), vin1.getMake()) && Objects.equals(getModel(), vin1.getModel()) && Objects.equals(getImage(), vin1.getImage());
+        return getMileage() == vin1.getMileage() && getYear() == vin1.getYear()
+                && Objects.equals(getOwnerId(), vin1.getOwnerId()) && Objects.equals(getVin(), vin1.getVin())
+                && Objects.equals(getMake(), vin1.getMake()) && Objects.equals(getModel(), vin1.getModel())
+                && Objects.equals(getImage(), vin1.getImage());
     }
 
     @Override
@@ -142,6 +133,3 @@ public class Vin {
         return Objects.hash(getOwnerId(), getVin(), getMileage(), getYear(), getMake(), getModel(), getImage());
     }
 }
-
-
-

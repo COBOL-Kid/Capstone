@@ -13,32 +13,20 @@ public class MaintenanceRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long maintenanceRecordId;
 
-    @Column(name = "vin_id",
-            nullable = false,
-            columnDefinition = "integer")
+    @Column(name = "vin_id", nullable = false, columnDefinition = "integer")
     private Long vinId;
 
-    @Column(name = "description",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "description", nullable = false, columnDefinition = "text")
     private String description;
 
-    @Column(name = "date_completed",
-            nullable = true,
-            columnDefinition = "date")
+    @Column(name = "date_completed", nullable = true, columnDefinition = "date")
     private LocalDate dateCompleted;
 
-    @Column(name = "mileage_due",
-            nullable = false,
-            columnDefinition = "int")
+    @Column(name = "mileage_due", nullable = false, columnDefinition = "int")
     private int mileageDue;
 
-    @Column(name = "cost",
-            nullable = true,
-            columnDefinition = "numeric"
-    )
+    @Column(name = "cost", nullable = true, columnDefinition = "numeric")
     private double cost;
-
 
     public MaintenanceRecord() {
     }
@@ -103,13 +91,17 @@ public class MaintenanceRecord {
         return vinId == null || vinId <= 0 || description == null || description.isEmpty() || mileageDue <= 0;
     }
 
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         MaintenanceRecord that = (MaintenanceRecord) o;
-        return getMileageDue() == that.getMileageDue() && Double.compare(getCost(), that.getCost()) == 0 && Objects.equals(getVinId(), that.getVinId()) && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getDateCompleted(), that.getDateCompleted());
+        return getMileageDue() == that.getMileageDue() && Double.compare(getCost(), that.getCost()) == 0
+                && Objects.equals(getVinId(), that.getVinId())
+                && Objects.equals(getDescription(), that.getDescription())
+                && Objects.equals(getDateCompleted(), that.getDateCompleted());
     }
 
     @Override

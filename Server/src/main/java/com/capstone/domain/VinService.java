@@ -16,9 +16,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class VinService {
 
-
     VinRepositoryJPA vinRepositoryJPA;
-
 
     public VinService(VinRepositoryJPA vinRepositoryJPA) {
         this.vinRepositoryJPA = vinRepositoryJPA;

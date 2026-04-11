@@ -13,26 +13,17 @@ public class Reminder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reminderId;
 
-    @Column(name = "vin_id",
-            nullable = false,
-            columnDefinition = "integer")
+    @Column(name = "vin_id", nullable = false, columnDefinition = "integer")
     private Long vinId;
 
-    @Column(name = "maintenance_record_id",
-            nullable = true,
-            columnDefinition = "integer")
+    @Column(name = "maintenance_record_id", nullable = true, columnDefinition = "integer")
     private Long maintenanceRecordId;
 
-    @Column(name = "description",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "description", nullable = false, columnDefinition = "text")
     private String description;
 
-    @Column(name = "reminder_date",
-            nullable = false,
-            columnDefinition = "date")
+    @Column(name = "reminder_date", nullable = false, columnDefinition = "date")
     private LocalDate reminderDate;
-
 
     public Reminder() {
     }
@@ -90,10 +81,15 @@ public class Reminder {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Reminder reminder = (Reminder) o;
-        return Objects.equals(getVinId(), reminder.getVinId()) && Objects.equals(getMaintenanceRecordId(), reminder.getMaintenanceRecordId()) && Objects.equals(getDescription(), reminder.getDescription()) && Objects.equals(getReminderDate(), reminder.getReminderDate());
+        return Objects.equals(getVinId(), reminder.getVinId())
+                && Objects.equals(getMaintenanceRecordId(), reminder.getMaintenanceRecordId())
+                && Objects.equals(getDescription(), reminder.getDescription())
+                && Objects.equals(getReminderDate(), reminder.getReminderDate());
     }
 
     @Override

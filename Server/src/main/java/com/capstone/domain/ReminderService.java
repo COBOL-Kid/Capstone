@@ -24,7 +24,8 @@ public class ReminderService {
     MaintenanceRecordRepositoryJPA maintenanceRecordRepository;
     VinRepositoryJPA vinRepository;
 
-    public ReminderService(ReminderRepositoryJPA reminderRepository, MaintenanceRecordRepositoryJPA maintenanceRecordRepository, VinRepositoryJPA vinRepository) {
+    public ReminderService(ReminderRepositoryJPA reminderRepository,
+            MaintenanceRecordRepositoryJPA maintenanceRecordRepository, VinRepositoryJPA vinRepository) {
         this.reminderRepository = reminderRepository;
         this.maintenanceRecordRepository = maintenanceRecordRepository;
         this.vinRepository = vinRepository;
@@ -34,25 +35,25 @@ public class ReminderService {
         return reminderRepository.getRemindersByVinIdMatches(vinId);
     }
 
-    //TODO figure out how to get list of emails that need to be sent every day
-//    public List<Reminder> getUpcomingReminders(Long vinId) {
-//        List<Reminder> allReminders = getAllRemindersByVinID(vinId);
-//        if (allReminders.isEmpty()) {
-//            return List.of();
-//        }
-//        Optional<Vin> remindersVin = vinRepository.findById(vinId);
-//        if (remindersVin.isEmpty()) {
-//            return
-//        }
-//        List<Reminder> upcomingReminders = new ArrayList<>();
-//        LocalDate currentDate = LocalDate.now();
-//        for (Reminder reminder : allReminders) {
-//            if (reminder.getReminderDate().isAfter(currentDate)) {
-//                upcomingReminders.add(reminder);
-//            }
-//        }
-//        return upcomingReminders;
-//    }
+    // TODO figure out how to get list of emails that need to be sent every day
+    // public List<Reminder> getUpcomingReminders(Long vinId) {
+    // List<Reminder> allReminders = getAllRemindersByVinID(vinId);
+    // if (allReminders.isEmpty()) {
+    // return List.of();
+    // }
+    // Optional<Vin> remindersVin = vinRepository.findById(vinId);
+    // if (remindersVin.isEmpty()) {
+    // return
+    // }
+    // List<Reminder> upcomingReminders = new ArrayList<>();
+    // LocalDate currentDate = LocalDate.now();
+    // for (Reminder reminder : allReminders) {
+    // if (reminder.getReminderDate().isAfter(currentDate)) {
+    // upcomingReminders.add(reminder);
+    // }
+    // }
+    // return upcomingReminders;
+    // }
 
     @Transactional
     public Result<Reminder> createReminder(Reminder reminder) {

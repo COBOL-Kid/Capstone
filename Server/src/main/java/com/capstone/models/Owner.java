@@ -17,24 +17,16 @@ public class Owner implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ownerId;
 
-    @Column(name = "first_name",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "first_name", nullable = false, columnDefinition = "text")
     private String firstName;
 
-    @Column(name = "last_name",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "last_name", nullable = false, columnDefinition = "text")
     private String lastName;
 
-    @Column(name = "email",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "email", nullable = false, columnDefinition = "text")
     private String email;
 
-    @Column(name = "password",
-            nullable = false,
-            columnDefinition = "text")
+    @Column(name = "password", nullable = false, columnDefinition = "text")
 
     private String password;
     @Enumerated(EnumType.STRING)
@@ -131,10 +123,14 @@ public class Owner implements UserDetails {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Owner owner = (Owner) o;
-        return Objects.equals(getFirstName(), owner.getFirstName()) && Objects.equals(getLastName(), owner.getLastName()) && Objects.equals(getEmail(), owner.getEmail()) && Objects.equals(getPassword(), owner.getPassword());
+        return Objects.equals(getFirstName(), owner.getFirstName())
+                && Objects.equals(getLastName(), owner.getLastName()) && Objects.equals(getEmail(), owner.getEmail())
+                && Objects.equals(getPassword(), owner.getPassword());
     }
 
     @Override

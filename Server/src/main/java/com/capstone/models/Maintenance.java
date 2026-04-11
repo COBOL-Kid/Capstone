@@ -16,7 +16,8 @@ public class Maintenance {
     public Maintenance() {
     }
 
-    public Maintenance(String desc, int due_mileage, int due_km, boolean is_oem, boolean is_cycle, int cycle_mileage, int cycle_km, Repair repair, List<Part> parts) {
+    public Maintenance(String desc, int due_mileage, int due_km, boolean is_oem, boolean is_cycle, int cycle_mileage,
+            int cycle_km, Repair repair, List<Part> parts) {
         this.desc = desc;
         this.due_mileage = due_mileage;
         this.due_km = due_km;

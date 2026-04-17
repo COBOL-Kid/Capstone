@@ -23,7 +23,6 @@ class ReminderRepositoryJPATest {
         reminderRepositoryJPA.deleteAll();
         Reminder reminder = new Reminder();
         reminder.setVinId(1L);
-        reminder.setReminderId(1L);
         reminder.setReminderDate(LocalDate.now());
         reminder.setDescription("test");
         reminder.setMaintenanceRecordId(1L);

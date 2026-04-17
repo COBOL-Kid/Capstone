@@ -28,7 +28,7 @@ public class VinController {
     }
 
     @GetMapping("/{vinId}")
-    public ResponseEntity<?> getAllVins(@PathVariable Long vinId) {
+    public ResponseEntity<?> getVinsByOwnerId(@PathVariable Long vinId) {
         List<Vin> vinList = vinService.findVinsByOwnerId(vinId);
         if (vinList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -57,7 +57,7 @@ public class VinController {
 
     @DeleteMapping("/{vinId}")
     public ResponseEntity<?> deleteVin(@PathVariable Long vinId) {
-        Result<Vin> result = vinService.deleteVinByid(vinId);
+        Result<Vin> result = vinService.deleteVinById(vinId);
         if (result.isSuccess()) {
             return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
         } else {

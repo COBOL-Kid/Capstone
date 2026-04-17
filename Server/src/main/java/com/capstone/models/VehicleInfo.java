@@ -1,22 +1,34 @@
 package com.capstone.models;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "vehicle_info")
 public class VehicleInfo {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "vehicle_info_id", nullable = false, columnDefinition = "integer")
     private Long vehicleInfoId;
 
+    @Column(name = "\"year\"", nullable = false, columnDefinition = "integer")
     private int year;
 
+    @Column(name = "make", nullable = false, columnDefinition = "text")
     private String make;
 
+    @Column(name = "model", nullable = false, columnDefinition = "text")
     private String model;
 
+    @Column(name = "image", columnDefinition = "text")
     private String image;
-
-    private List<Vin> vins = new ArrayList<>();
 
     public VehicleInfo() {
     }
@@ -68,11 +80,6 @@ public class VehicleInfo {
         this.image = image;
     }
 
-    public boolean isEmpty() {
-        return (make == null || make.isEmpty()) && (model == null || model.isEmpty())
-                && (image == null || image.isEmpty()) && year == 0;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -88,19 +95,5 @@ public class VehicleInfo {
     @Override
     public int hashCode() {
         return Objects.hash(getVehicleInfoId(), getYear(), getMake(), getModel(), getImage());
-    }
-
-    public List<Vin> getVins() {
-        return vins;
-    }
-
-    public void addVin(Vin vin) {
-        if (!vins.contains(vin)) {
-            vins.add(vin);
-        }
-    }
-
-    public void removeVin(Vin vin) {
-        vins.remove(vin);
     }
 }

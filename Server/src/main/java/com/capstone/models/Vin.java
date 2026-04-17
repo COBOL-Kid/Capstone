@@ -1,5 +1,7 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -15,35 +17,29 @@ public class Vin {
     @Column(name = "owner_id", nullable = false, columnDefinition = "integer")
     private Long ownerId;
 
+    @Column(name = "vehicle_info_id", nullable = false, insertable = false, updatable = false, columnDefinition = "integer")
+    private Long vehicleInfoId;
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "vehicle_info_id", nullable = false, columnDefinition = "integer")
+    @JsonIgnore
+    private VehicleInfo vehicleInfo;
+
     @Column(name = "vin", nullable = false, unique = true, columnDefinition = "text")
     private String vin;
 
     @Column(name = "mileage", nullable = false, columnDefinition = "integer")
     private int mileage;
 
-    @Column(name = "year", nullable = false, columnDefinition = "integer")
-    private int year;
-
-    @Column(name = "make", nullable = false, columnDefinition = "text")
-    private String make;
-
-    @Column(name = "model", nullable = false, columnDefinition = "text")
-    private String model;
-
-    @Column(name = "image", nullable = false, columnDefinition = "text")
-    private String image;
-
     public Vin() {
+        this.vehicleInfo = new VehicleInfo();
     }
 
     public Vin(Long ownerId, String vin, int mileage, int year, String make, String model, String image) {
         this.ownerId = ownerId;
         this.vin = vin;
         this.mileage = mileage;
-        this.year = year;
-        this.make = make;
-        this.model = model;
-        this.image = image;
+        this.vehicleInfo = new VehicleInfo(year, make, model, image);
     }
 
     public Long getVinId() {
@@ -60,6 +56,10 @@ public class Vin {
 
     public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public Long getVehicleInfoId() {
+        return vehicleInfoId;
     }
 
     public String getVin() {
@@ -79,40 +79,57 @@ public class Vin {
     }
 
     public int getYear() {
-        return year;
+        return vehicleInfo == null ? 0 : vehicleInfo.getYear();
     }
 
     public void setYear(int year) {
-        this.year = year;
+        ensureVehicleInfo().setYear(year);
     }
 
     public String getMake() {
-        return make;
+        return vehicleInfo == null ? null : vehicleInfo.getMake();
     }
 
     public void setMake(String make) {
-        this.make = make;
+        ensureVehicleInfo().setMake(make);
     }
 
     public String getModel() {
-        return model;
+        return vehicleInfo == null ? null : vehicleInfo.getModel();
     }
 
     public void setModel(String model) {
-        this.model = model;
+        ensureVehicleInfo().setModel(model);
     }
 
     public String getImage() {
-        return image;
+        return vehicleInfo == null ? null : vehicleInfo.getImage();
     }
 
     public void setImage(String image) {
-        this.image = image;
+        ensureVehicleInfo().setImage(image);
+    }
+
+    @JsonIgnore
+    public VehicleInfo getVehicleInfo() {
+        return vehicleInfo;
+    }
+
+    public void setVehicleInfo(VehicleInfo vehicleInfo) {
+        this.vehicleInfo = vehicleInfo;
     }
 
     public boolean isInvalid() {
-        return year == 0 || mileage == 0 || model == null || model.isEmpty() || image == null || image.isEmpty()
-                || vin == null || vin.isEmpty() || make == null || make.isEmpty();
+        return ownerId == null || ownerId <= 0 || mileage <= 0 || vin == null || vin.isEmpty() || getYear() <= 0
+                || getModel() == null || getModel().isEmpty() || getImage() == null || getImage().isEmpty()
+                || getMake() == null || getMake().isEmpty();
+    }
+
+    private VehicleInfo ensureVehicleInfo() {
+        if (vehicleInfo == null) {
+            vehicleInfo = new VehicleInfo();
+        }
+        return vehicleInfo;
     }
 
     @Override

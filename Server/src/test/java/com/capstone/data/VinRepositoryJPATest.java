@@ -26,7 +26,7 @@ class VinRepositoryJPATest {
 
     @Test
     void getVinsByOwnerId() {
-        Vin expected = new Vin();
+        Vin expected = new Vin(1L, "1HGCM82633A004352", 12000, 2020, "Honda", "Civic", "img");
         repository.save(expected);
         List<Vin> actual = repository.getVinsByOwnerId(1L);
         assertEquals(actual.get(0), expected);

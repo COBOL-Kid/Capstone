@@ -64,7 +64,7 @@ public class VinService {
         return result;
     }
 
-    public Result<Vin> deleteVinByid(Long vinId) {
+    public Result<Vin> deleteVinById(Long vinId) {
         Result<Vin> result = vinIdExists(vinId);
         if (!result.isSuccess()) {
             return result;

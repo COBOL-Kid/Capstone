@@ -9,9 +9,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 
-import com.capstone.data.MaintenanceRecordRepositoryJPA;
 import com.capstone.data.ReminderRepositoryJPA;
-import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.Reminder;
 import com.capstone.models.Result;
 
@@ -21,39 +19,14 @@ import jakarta.transaction.Transactional;
 public class ReminderService {
 
     ReminderRepositoryJPA reminderRepository;
-    MaintenanceRecordRepositoryJPA maintenanceRecordRepository;
-    VinRepositoryJPA vinRepository;
 
-    public ReminderService(ReminderRepositoryJPA reminderRepository,
-            MaintenanceRecordRepositoryJPA maintenanceRecordRepository, VinRepositoryJPA vinRepository) {
+    public ReminderService(ReminderRepositoryJPA reminderRepository) {
         this.reminderRepository = reminderRepository;
-        this.maintenanceRecordRepository = maintenanceRecordRepository;
-        this.vinRepository = vinRepository;
     }
 
     public List<Reminder> getAllRemindersByVinID(Long vinId) {
         return reminderRepository.getRemindersByVinIdMatches(vinId);
     }
-
-    // TODO figure out how to get list of emails that need to be sent every day
-    // public List<Reminder> getUpcomingReminders(Long vinId) {
-    // List<Reminder> allReminders = getAllRemindersByVinID(vinId);
-    // if (allReminders.isEmpty()) {
-    // return List.of();
-    // }
-    // Optional<Vin> remindersVin = vinRepository.findById(vinId);
-    // if (remindersVin.isEmpty()) {
-    // return
-    // }
-    // List<Reminder> upcomingReminders = new ArrayList<>();
-    // LocalDate currentDate = LocalDate.now();
-    // for (Reminder reminder : allReminders) {
-    // if (reminder.getReminderDate().isAfter(currentDate)) {
-    // upcomingReminders.add(reminder);
-    // }
-    // }
-    // return upcomingReminders;
-    // }
 
     @Transactional
     public Result<Reminder> createReminder(Reminder reminder) {

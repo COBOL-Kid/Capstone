@@ -36,7 +36,7 @@ class ReminderServiceTest {
         List<Reminder> reminders = new ArrayList<>();
         reminders.add(new Reminder());
 
-        when(reminderService.getAllRemindersByVinID(1L)).thenReturn(reminders);
+        when(reminderRepository.getRemindersByVinIdMatches(1L)).thenReturn(reminders);
 
         List<Reminder> result = reminderService.getAllRemindersByVinID(1L);
 
@@ -45,6 +45,7 @@ class ReminderServiceTest {
 
     @Test
     void invalidGetAllRemindersByVinIDTest() {
+        when(reminderRepository.getRemindersByVinIdMatches(-1L)).thenReturn(List.of());
         List<Reminder> result = reminderService.getAllRemindersByVinID(-1L);
         assertTrue(result.isEmpty());
     }
@@ -111,8 +112,6 @@ class ReminderServiceTest {
     @Test
     void invalidUpdateReminderBecauseDateIsNotInFutureTest() {
         Reminder newReminder = new Reminder(1L, 1L, "description", LocalDate.of(1999, 12, 12));
-
-        when(reminderRepository.getReferenceById(any())).thenReturn(newReminder);
 
         Result<Reminder> result = reminderService.updateReminder(newReminder);
 

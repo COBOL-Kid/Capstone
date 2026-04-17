@@ -9,7 +9,6 @@ public class RegisterRequest {
     private String email;
     private String password;
 
-
     public RegisterRequest() {
     }
 
@@ -22,10 +21,13 @@ public class RegisterRequest {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         RegisterRequest that = (RegisterRequest) o;
-        return Objects.equals(getFirstname(), that.getFirstname()) && Objects.equals(getLastname(), that.getLastname()) && Objects.equals(getEmail(), that.getEmail()) && Objects.equals(getPassword(), that.getPassword());
+        return Objects.equals(getFirstname(), that.getFirstname()) && Objects.equals(getLastname(), that.getLastname())
+                && Objects.equals(getEmail(), that.getEmail()) && Objects.equals(getPassword(), that.getPassword());
     }
 
     @Override

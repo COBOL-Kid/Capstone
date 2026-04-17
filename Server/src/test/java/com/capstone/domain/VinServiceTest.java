@@ -6,7 +6,7 @@ import com.capstone.models.Vin;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class VinServiceTest {
 
-    @MockBean
+    @MockitoBean
     VinRepositoryJPA vinRepository;
     @Autowired
     private VinService vinService;
@@ -172,7 +172,7 @@ class VinServiceTest {
 
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
 
-        Result<Vin> actualResult = vinService.deleteVinByid(validVin.getVinId());
+        Result<Vin> actualResult = vinService.deleteVinById(validVin.getVinId());
 
         assertTrue(actualResult.isSuccess());
     }
@@ -183,7 +183,7 @@ class VinServiceTest {
 
         when(vinRepository.findById(nonexistentVinId)).thenReturn(Optional.empty());
 
-        Result<Vin> actualResult = vinService.deleteVinByid(nonexistentVinId);
+        Result<Vin> actualResult = vinService.deleteVinById(nonexistentVinId);
 
         assertFalse(actualResult.isSuccess());
         assertTrue(actualResult.getErrors().contains("VIN number does not exist"));
@@ -197,7 +197,7 @@ class VinServiceTest {
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
         doThrow(DataIntegrityViolationException.class).when(vinRepository).deleteById(validVin.getVinId());
 
-        Result<Vin> actualResult = vinService.deleteVinByid(validVin.getVinId());
+        Result<Vin> actualResult = vinService.deleteVinById(validVin.getVinId());
 
         assertFalse(actualResult.isSuccess());
         assertTrue(actualResult.getErrors().contains("DataIntegrityViolationException"));
@@ -211,13 +211,13 @@ class VinServiceTest {
         when(vinRepository.findById(validVin.getVinId())).thenReturn(Optional.of(validVin));
         doThrow(JpaSystemException.class).when(vinRepository).deleteById(validVin.getVinId());
 
-        Result<Vin> actualResult = vinService.deleteVinByid(validVin.getVinId());
+        Result<Vin> actualResult = vinService.deleteVinById(validVin.getVinId());
 
         assertFalse(actualResult.isSuccess());
         assertTrue(actualResult.getErrors().contains("JpaSystemException"));
     }
 
     private Vin createValidVin() {
-        return new Vin();
+        return new Vin(1L, "1HGCM82633A004352", 12000, 2020, "Honda", "Civic", "https://example.com/car.png");
     }
 }

@@ -13,7 +13,8 @@ public class Repair {
     public Repair() {
     }
 
-    public Repair(int repair_difficulty, double repair_hours, double labor_rate_per_hour, double part_cost, double labor_cost, double misc_cost, double total_cost) {
+    public Repair(int repair_difficulty, double repair_hours, double labor_rate_per_hour, double part_cost,
+            double labor_cost, double misc_cost, double total_cost) {
         this.repair_difficulty = repair_difficulty;
         this.repair_hours = repair_hours;
         this.labor_rate_per_hour = labor_rate_per_hour;

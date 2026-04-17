@@ -4,7 +4,6 @@ public class VinResponse {
 
     private VehicleInfo data;
 
-
     public VinResponse(VehicleInfo data) {
         this.data = data;
     }

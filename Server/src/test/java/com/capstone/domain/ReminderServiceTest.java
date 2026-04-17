@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.orm.jpa.JpaSystemException;
 
@@ -27,7 +27,7 @@ class ReminderServiceTest {
     @Autowired
     ReminderService reminderService;
 
-    @MockBean
+    @MockitoBean
     ReminderRepositoryJPA reminderRepository;
 
 
@@ -36,7 +36,7 @@ class ReminderServiceTest {
         List<Reminder> reminders = new ArrayList<>();
         reminders.add(new Reminder());
 
-        when(reminderService.getAllRemindersByVinID(1L)).thenReturn(reminders);
+        when(reminderRepository.getRemindersByVinIdMatches(1L)).thenReturn(reminders);
 
         List<Reminder> result = reminderService.getAllRemindersByVinID(1L);
 
@@ -45,6 +45,7 @@ class ReminderServiceTest {
 
     @Test
     void invalidGetAllRemindersByVinIDTest() {
+        when(reminderRepository.getRemindersByVinIdMatches(-1L)).thenReturn(List.of());
         List<Reminder> result = reminderService.getAllRemindersByVinID(-1L);
         assertTrue(result.isEmpty());
     }
@@ -111,8 +112,6 @@ class ReminderServiceTest {
     @Test
     void invalidUpdateReminderBecauseDateIsNotInFutureTest() {
         Reminder newReminder = new Reminder(1L, 1L, "description", LocalDate.of(1999, 12, 12));
-
-        when(reminderRepository.getReferenceById(any())).thenReturn(newReminder);
 
         Result<Reminder> result = reminderService.updateReminder(newReminder);
 

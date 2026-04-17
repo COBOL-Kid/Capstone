@@ -4,8 +4,8 @@ import com.capstone.models.Vin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ class VinRepositoryJPATest {
 
     @Test
     void getVinsByOwnerId() {
-        Vin expected = new Vin();
+        Vin expected = new Vin(1L, "1HGCM82633A004352", 12000, 2020, "Honda", "Civic", "img");
         repository.save(expected);
         List<Vin> actual = repository.getVinsByOwnerId(1L);
         assertEquals(actual.get(0), expected);

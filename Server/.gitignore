@@ -4,9 +4,11 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 target/
+bin/
 
 ### VS Code ###
 .vscode/
+.github/
 
 ### Mac OS ###
 .DS_Store

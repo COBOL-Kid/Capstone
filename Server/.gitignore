@@ -12,3 +12,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Misc ###
+samples/

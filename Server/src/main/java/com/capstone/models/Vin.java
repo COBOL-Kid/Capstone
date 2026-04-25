@@ -25,7 +25,7 @@ public class Vin {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_type_id", nullable = false)
-    private VehicleType vehicleType;
+    private VehicleType vehicleTypeId;
 
     @ManyToMany(mappedBy = "userVins")
     private Set<User> users = new HashSet<>();

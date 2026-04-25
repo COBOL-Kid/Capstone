@@ -18,8 +18,14 @@ public class VehicleType {
     @Column(name = "vehicle_type_id")
     private Long vehicleTypeId;
 
-    @OneToMany(mappedBy = "vehicleType")
+    @OneToMany(mappedBy = "vehicleTypeId")
     private Set<Vin> vins = new HashSet<>();
+
+    @OneToMany(mappedBy = "vehicleTypeId")
+    private Set<MaintMileage> maintItems;
+
+    @OneToMany(mappedBy = "vehicleTypeId")
+    private Set<MaintCost> maintCosts;
 
     @Column(name = "vehicle_make", nullable = false, columnDefinition = "varchar(25)")
     private String vehicleMake;

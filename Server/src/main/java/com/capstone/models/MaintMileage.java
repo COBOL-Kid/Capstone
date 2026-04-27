@@ -26,4 +26,52 @@ public class MaintMileage {
 
     @Column(name = "maint_desc", nullable = false, columnDefinition = "varchar(50)")
     private String maintDesc;
+
+    public MaintMileage() {
+    }
+
+    public MaintMileage(VehicleType vehicleTypeId, int mileageDue, String maintDesc) {
+        this.vehicleTypeId = vehicleTypeId;
+        this.mileageDue = mileageDue;
+        this.maintDesc = maintDesc;
+    }
+
+    public MaintMileage(Long maintMileageId, VehicleType vehicleTypeId, int mileageDue, String maintDesc) {
+        this.maintMileageId = maintMileageId;
+        this.vehicleTypeId = vehicleTypeId;
+        this.mileageDue = mileageDue;
+        this.maintDesc = maintDesc;
+    }
+
+    public Long getMaintMileageId() {
+        return maintMileageId;
+    }
+
+    public void setMaintMileageId(Long maintMileageId) {
+        this.maintMileageId = maintMileageId;
+    }
+
+    public VehicleType getVehicleTypeId() {
+        return vehicleTypeId;
+    }
+
+    public void setVehicleTypeId(VehicleType vehicleTypeId) {
+        this.vehicleTypeId = vehicleTypeId;
+    }
+
+    public int getMileageDue() {
+        return mileageDue;
+    }
+
+    public void setMileageDue(int mileageDue) {
+        this.mileageDue = mileageDue;
+    }
+
+    public String getMaintDesc() {
+        return maintDesc;
+    }
+
+    public void setMaintDesc(String maintDesc) {
+        this.maintDesc = maintDesc;
+    }
 }

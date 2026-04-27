@@ -27,6 +27,9 @@ public class VehicleType {
     @OneToMany(mappedBy = "vehicleTypeId")
     private Set<MaintCost> maintCosts;
 
+    @OneToMany(mappedBy = "vehicleTypeId")
+    private Set<Recall> recalls = new HashSet<>();
+
     @Column(name = "vehicle_make", nullable = false, columnDefinition = "varchar(25)")
     private String vehicleMake;
 
@@ -41,4 +44,109 @@ public class VehicleType {
 
     @Column(name = "owners_manual", columnDefinition = "varchar(100)")
     private String ownersManual;
+
+    public VehicleType() {
+    }
+
+    public VehicleType(String vehicleMake, String vehicleModel, String vehicleTrim, String vehicleYear) {
+        this.vehicleMake = vehicleMake;
+        this.vehicleModel = vehicleModel;
+        this.vehicleTrim = vehicleTrim;
+        this.vehicleYear = vehicleYear;
+    }
+
+    public VehicleType(Long vehicleTypeId, Set<Vin> vins, Set<MaintMileage> maintItems, Set<MaintCost> maintCosts,
+            Set<Recall> recalls, String vehicleMake, String vehicleModel, String vehicleTrim, String vehicleYear,
+            String ownersManual) {
+        this.vehicleTypeId = vehicleTypeId;
+        this.vins = vins != null ? vins : new HashSet<>();
+        this.maintItems = maintItems != null ? maintItems : new HashSet<>();
+        this.maintCosts = maintCosts != null ? maintCosts : new HashSet<>();
+        this.recalls = recalls != null ? recalls : new HashSet<>();
+        this.vehicleMake = vehicleMake;
+        this.vehicleModel = vehicleModel;
+        this.vehicleTrim = vehicleTrim;
+        this.vehicleYear = vehicleYear;
+        this.ownersManual = ownersManual;
+    }
+
+    public Long getVehicleTypeId() {
+        return vehicleTypeId;
+    }
+
+    public void setVehicleTypeId(Long vehicleTypeId) {
+        this.vehicleTypeId = vehicleTypeId;
+    }
+
+    public Set<Vin> getVins() {
+        return vins;
+    }
+
+    public void setVins(Set<Vin> vins) {
+        this.vins = vins != null ? vins : new HashSet<>();
+    }
+
+    public Set<MaintMileage> getMaintItems() {
+        return maintItems;
+    }
+
+    public void setMaintItems(Set<MaintMileage> maintItems) {
+        this.maintItems = maintItems != null ? maintItems : new HashSet<>();
+    }
+
+    public Set<MaintCost> getMaintCosts() {
+        return maintCosts;
+    }
+
+    public void setMaintCosts(Set<MaintCost> maintCosts) {
+        this.maintCosts = maintCosts != null ? maintCosts : new HashSet<>();
+    }
+
+    public Set<Recall> getRecalls() {
+        return recalls;
+    }
+
+    public void setRecalls(Set<Recall> recalls) {
+        this.recalls = recalls != null ? recalls : new HashSet<>();
+    }
+
+    public String getVehicleMake() {
+        return vehicleMake;
+    }
+
+    public void setVehicleMake(String vehicleMake) {
+        this.vehicleMake = vehicleMake;
+    }
+
+    public String getVehicleModel() {
+        return vehicleModel;
+    }
+
+    public void setVehicleModel(String vehicleModel) {
+        this.vehicleModel = vehicleModel;
+    }
+
+    public String getVehicleTrim() {
+        return vehicleTrim;
+    }
+
+    public void setVehicleTrim(String vehicleTrim) {
+        this.vehicleTrim = vehicleTrim;
+    }
+
+    public String getVehicleYear() {
+        return vehicleYear;
+    }
+
+    public void setVehicleYear(String vehicleYear) {
+        this.vehicleYear = vehicleYear;
+    }
+
+    public String getOwnersManual() {
+        return ownersManual;
+    }
+
+    public void setOwnersManual(String ownersManual) {
+        this.ownersManual = ownersManual;
+    }
 }

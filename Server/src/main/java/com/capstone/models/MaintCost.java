@@ -45,4 +45,108 @@ public class MaintCost {
     @Column(name = "dealer_low", columnDefinition = "int")
     private int dealerLow;
 
+    public MaintCost() {
+    }
+
+    public MaintCost(VehicleType vehicleTypeId, String maintTitle, String maintDesc) {
+        this.vehicleTypeId = vehicleTypeId;
+        this.maintTitle = maintTitle;
+        this.maintDesc = maintDesc;
+    }
+
+    public MaintCost(Long maintCostId, VehicleType vehicleTypeId, String maintTitle, String maintDesc,
+            int independentAvg, int independentHigh, int independentLow, int dealerAvg, int dealerHigh,
+            int dealerLow) {
+        this.maintCostId = maintCostId;
+        this.vehicleTypeId = vehicleTypeId;
+        this.maintTitle = maintTitle;
+        this.maintDesc = maintDesc;
+        this.independentAvg = independentAvg;
+        this.independentHigh = independentHigh;
+        this.independentLow = independentLow;
+        this.dealerAvg = dealerAvg;
+        this.dealerHigh = dealerHigh;
+        this.dealerLow = dealerLow;
+    }
+
+    public Long getMaintCostId() {
+        return maintCostId;
+    }
+
+    public void setMaintCostId(Long maintCostId) {
+        this.maintCostId = maintCostId;
+    }
+
+    public VehicleType getVehicleTypeId() {
+        return vehicleTypeId;
+    }
+
+    public void setVehicleTypeId(VehicleType vehicleTypeId) {
+        this.vehicleTypeId = vehicleTypeId;
+    }
+
+    public String getMaintTitle() {
+        return maintTitle;
+    }
+
+    public void setMaintTitle(String maintTitle) {
+        this.maintTitle = maintTitle;
+    }
+
+    public String getMaintDesc() {
+        return maintDesc;
+    }
+
+    public void setMaintDesc(String maintDesc) {
+        this.maintDesc = maintDesc;
+    }
+
+    public int getIndependentAvg() {
+        return independentAvg;
+    }
+
+    public void setIndependentAvg(int independentAvg) {
+        this.independentAvg = independentAvg;
+    }
+
+    public int getIndependentHigh() {
+        return independentHigh;
+    }
+
+    public void setIndependentHigh(int independentHigh) {
+        this.independentHigh = independentHigh;
+    }
+
+    public int getIndependentLow() {
+        return independentLow;
+    }
+
+    public void setIndependentLow(int independentLow) {
+        this.independentLow = independentLow;
+    }
+
+    public int getDealerAvg() {
+        return dealerAvg;
+    }
+
+    public void setDealerAvg(int dealerAvg) {
+        this.dealerAvg = dealerAvg;
+    }
+
+    public int getDealerHigh() {
+        return dealerHigh;
+    }
+
+    public void setDealerHigh(int dealerHigh) {
+        this.dealerHigh = dealerHigh;
+    }
+
+    public int getDealerLow() {
+        return dealerLow;
+    }
+
+    public void setDealerLow(int dealerLow) {
+        this.dealerLow = dealerLow;
+    }
+
 }

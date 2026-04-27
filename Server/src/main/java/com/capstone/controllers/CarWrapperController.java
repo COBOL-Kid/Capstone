@@ -43,7 +43,7 @@ public class CarWrapperController {
 
         ResponseEntity<VinResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity, VinResponse.class);
         if (response.getStatusCode().isError()) {
-            throw new RuntimeException("Error while calling external service"); // Catch this exception
+            throw new RuntimeException("Error while calling external service"); 
         }
         VinResponse vinResponse = response.getBody();
         if (vinResponse == null) {
@@ -66,7 +66,7 @@ public class CarWrapperController {
         }
         VinResponse vinResponseBody = response.getBody();
         if (vinResponseBody == null) {
-            throw new RuntimeException("Response body is null"); // Catch this exception
+            throw new RuntimeException("Response body is null"); 
         }
         VehicleInfo additionalData = vinResponseBody.getData();
         vehicleInfo.setImage(additionalData.getImage());
@@ -88,7 +88,7 @@ public class CarWrapperController {
         }
         MaintenanceResponse maintenanceResponse = response.getBody();
         if (maintenanceResponse == null) {
-            throw new RuntimeException("Response body is null"); // Catch this exception
+            throw new RuntimeException("Response body is null"); 
         }
         return maintenanceResponse.getData();
     }

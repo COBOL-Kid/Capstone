@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 
 @Entity
@@ -25,12 +26,21 @@ public class UserVin {
     @JoinColumn(name = "vin_num", referencedColumnName = "vin_num", nullable = false)
     private Vin vin;
 
+    @Column(name = "current_mileage", nullable = false, columnDefinition = "int")
+    private int currentMileage;
+
     public UserVin() {
     }
 
     public UserVin(User user, Vin vin) {
         setUser(user);
         setVin(vin);
+    }
+
+    public UserVin(User user, Vin vin, int currentMileage) {
+        setUser(user);
+        setVin(vin);
+        this.currentMileage = currentMileage;
     }
 
     public UserVin(UserVinId id, User user, Vin vin) {
@@ -69,5 +79,13 @@ public class UserVin {
             this.id = new UserVinId();
         }
         this.id.setVin(vin != null ? vin.getVin() : null);
+    }
+
+    public int getCurrentMileage() {
+        return currentMileage;
+    }
+
+    public void setCurrentMileage(int currentMileage) {
+        this.currentMileage = currentMileage;
     }
 }

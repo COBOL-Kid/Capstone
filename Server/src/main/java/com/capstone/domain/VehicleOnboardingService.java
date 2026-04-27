@@ -61,7 +61,10 @@ public class VehicleOnboardingService {
             throw new IllegalArgumentException("Authenticated user is required");
         }
         String normalizedVin = normalizeVin(request != null ? request.vin() : null);
-        int currentMileage = request != null ? request.currentMileage() : 0;
+        Integer currentMileage = request != null ? request.currentMileage() : null;
+        if (currentMileage == null) {
+            throw new IllegalArgumentException("Current mileage is required");
+        }
         if (currentMileage < 0) {
             throw new IllegalArgumentException("Current mileage cannot be negative");
         }

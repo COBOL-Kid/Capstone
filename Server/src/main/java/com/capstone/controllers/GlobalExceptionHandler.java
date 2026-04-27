@@ -1,16 +1,44 @@
 package com.capstone.controllers;
 
+import java.util.Comparator;
+import java.util.List;
+
 import org.hibernate.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import jakarta.validation.ConstraintViolationException;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex) {
+        List<ValidationErrorResponse.FieldValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .sorted(Comparator.comparing(FieldError::getField))
+                .map(error -> new ValidationErrorResponse.FieldValidationError(error.getField(),
+                        error.getDefaultMessage()))
+                .toList();
+        return new ResponseEntity<>(new ValidationErrorResponse("Validation failed", errors), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
+        List<ValidationErrorResponse.FieldValidationError> errors = ex.getConstraintViolations().stream()
+                .map(violation -> new ValidationErrorResponse.FieldValidationError(
+                        violation.getPropertyPath().toString(), violation.getMessage()))
+                .sorted(Comparator.comparing(ValidationErrorResponse.FieldValidationError::field))
+                .toList();
+        return new ResponseEntity<>(new ValidationErrorResponse("Validation failed", errors), HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(HttpMessageConversionException.class)
     public ResponseEntity<String> handleHttpMessageConversionException(HttpMessageConversionException ex) {

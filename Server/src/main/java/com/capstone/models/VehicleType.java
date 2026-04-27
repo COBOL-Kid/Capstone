@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity(name = "vehicle_type")
 @Table(name = "vehicle_type", uniqueConstraints = @UniqueConstraint(columnNames = { "vehicle_year", "vehicle_make",
-    "vehicle_model", "vehicle_trim" }))
+        "vehicle_model", "vehicle_trim" }))
 public class VehicleType {
 
     @Id

@@ -13,7 +13,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity(name = "MAINT_MILEAGE")
 @Table(name = "maint_mileage", uniqueConstraints = @UniqueConstraint(columnNames = { "vehicle_type_id", "mileage_due",
-    "maint_desc" }))
+        "maint_desc" }))
 public class MaintMileage {
 
     @Id

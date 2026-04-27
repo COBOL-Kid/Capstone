@@ -1,8 +1,12 @@
 package com.capstone.controllers;
 
+import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +21,12 @@ import com.capstone.domain.dto.AddVinResponse;
 import com.capstone.models.User;
 import com.capstone.models.Vin;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+
 @RestController
 @RequestMapping("/api/vin")
+@Validated
 public class VinController {
 
     VinService vinService;
@@ -42,14 +50,17 @@ public class VinController {
     }
 
     @GetMapping("/{vin}")
-    public ResponseEntity<?> getVin(@PathVariable String vin) {
+    public ResponseEntity<?> getVin(
+            @PathVariable
+            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
+            String vin) {
         return vinService.findByVin(vin)
                 .<ResponseEntity<?>>map(foundVin -> new ResponseEntity<Vin>(foundVin, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PostMapping
-    public ResponseEntity<?> addVin(@AuthenticationPrincipal User user, @RequestBody AddVinRequest request) {
+    public ResponseEntity<?> addVin(@AuthenticationPrincipal User user, @Valid @RequestBody AddVinRequest request) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

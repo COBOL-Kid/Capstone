@@ -1,10 +1,14 @@
 package com.capstone.controllers;
 
+import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
+
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +21,12 @@ import com.capstone.domain.dto.CompleteMaintenanceRequest;
 import com.capstone.domain.dto.CompletedMaintenanceResponse;
 import com.capstone.models.User;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+
 @RestController
 @RequestMapping("/api/maintenance")
+@Validated
 public class MaintenanceController {
 
     private final MaintenanceTrackingService maintenanceTrackingService;
@@ -28,7 +36,10 @@ public class MaintenanceController {
     }
 
     @GetMapping("/{vin}/completed")
-    public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user, @PathVariable String vin) {
+    public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user,
+            @PathVariable
+            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
+            String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -43,7 +54,7 @@ public class MaintenanceController {
 
     @PostMapping("/completed")
     public ResponseEntity<?> completeMaintenance(@AuthenticationPrincipal User user,
-            @RequestBody CompleteMaintenanceRequest request) {
+            @Valid @RequestBody CompleteMaintenanceRequest request) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

@@ -42,6 +42,12 @@ public class MaintenanceTrackingService {
         if (request == null || request.maintMileageId() == null) {
             throw new IllegalArgumentException("Maintenance item is required");
         }
+        if (request.mileageCompleted() == null) {
+            throw new IllegalArgumentException("Mileage completed is required");
+        }
+        if (request.mileageCompleted() < 0) {
+            throw new IllegalArgumentException("Mileage completed cannot be negative");
+        }
         UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
                 .orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
         MaintMileage maintMileage = maintMileageRepository.findById(request.maintMileageId())

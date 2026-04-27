@@ -2,9 +2,19 @@ package com.capstone.Authentication;
 
 import java.util.Objects;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class AuthenticationRequest {
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
+    @Size(max = 254, message = "Email must be 254 characters or fewer")
     private String email;
+
+    @NotBlank(message = "Password is required")
+    @Size(max = 72, message = "Password must be 72 characters or fewer")
     private String password;
 
     public AuthenticationRequest() {

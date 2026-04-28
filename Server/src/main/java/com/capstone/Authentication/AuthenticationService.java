@@ -9,19 +9,19 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.capstone.data.OwnerRepositoryJPA;
-import com.capstone.models.Owner;
+import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.Role;
+import com.capstone.models.User;
 
 @Service
 public class AuthenticationService {
 
-    private final OwnerRepositoryJPA repository;
+    private final UserRepositoryJPA repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationService(OwnerRepositoryJPA repository, PasswordEncoder passwordEncoder, JwtService jwtService,
+    public AuthenticationService(UserRepositoryJPA repository, PasswordEncoder passwordEncoder, JwtService jwtService,
             AuthenticationManager authenticationManager) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
@@ -30,18 +30,18 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
-        Owner owner = new Owner();
-        owner.setFirstName(request.getFirstname());
-        owner.setLastName(request.getLastname());
-        owner.setEmail(request.getEmail());
-        owner.setPassword(passwordEncoder.encode(request.getPassword()));
-        owner.setRole(Role.USER);
+        User user = new User();
+        user.setFirstName(request.getFirstname());
+        user.setLastName(request.getLastname());
+        user.setUserEmail(request.getEmail());
+        user.setUserPw(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.USER);
 
-        repository.save(owner);
+        repository.save(user);
 
-        Map<String, Object> extraClaims = buildExtraClaims(owner);
+        Map<String, Object> extraClaims = buildExtraClaims(user);
 
-        String jwtToken = jwtService.generateToken(extraClaims, owner);
+        String jwtToken = jwtService.generateToken(extraClaims, user);
 
         AuthenticationResponse newResponse = new AuthenticationResponse();
         newResponse.setToken(jwtToken);
@@ -51,23 +51,23 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        Owner owner = repository.getOwnerByEmail(request.getEmail())
+        User user = repository.findByUserEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
 
-        Map<String, Object> extraClaims = buildExtraClaims(owner);
+        Map<String, Object> extraClaims = buildExtraClaims(user);
 
-        String jwtToken = jwtService.generateToken(extraClaims, owner);
+        String jwtToken = jwtService.generateToken(extraClaims, user);
 
         AuthenticationResponse response = new AuthenticationResponse();
         response.setToken(jwtToken);
         return response;
     }
 
-    private Map<String, Object> buildExtraClaims(Owner owner) {
+    private Map<String, Object> buildExtraClaims(User user) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("firstName", owner.getFirstName());
-        extraClaims.put("lastName", owner.getLastName());
-        extraClaims.put("ownerId", owner.getOwnerId());
+        extraClaims.put("firstName", user.getFirstName());
+        extraClaims.put("lastName", user.getLastName());
+        extraClaims.put("userId", user.getUserId());
         return extraClaims;
     }
 

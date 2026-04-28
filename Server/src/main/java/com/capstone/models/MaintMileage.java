@@ -8,8 +8,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity(name = "MAINT_MILEAGE")
+@Table(name = "maint_mileage", uniqueConstraints = @UniqueConstraint(columnNames = { "vehicle_type_id", "mileage_due",
+        "maint_desc" }))
 public class MaintMileage {
 
     @Id
@@ -24,7 +28,7 @@ public class MaintMileage {
     @Column(name = "mileage_due", nullable = false, columnDefinition = "int")
     private int mileageDue;
 
-    @Column(name = "maint_desc", nullable = false, columnDefinition = "varchar(50)")
+    @Column(name = "maint_desc", nullable = false, columnDefinition = "varchar(255)")
     private String maintDesc;
 
     public MaintMileage() {

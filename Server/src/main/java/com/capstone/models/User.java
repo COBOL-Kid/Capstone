@@ -4,10 +4,16 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 
 import java.util.HashSet;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 @Entity(name = "USER")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,11 +24,21 @@ public class User {
     @Column(name = "user_email", nullable = false, columnDefinition = "varchar(50)")
     private String userEmail;
 
+    @Column(name = "first_name", columnDefinition = "varchar(50)")
+    private String firstName;
+
+    @Column(name = "last_name", columnDefinition = "varchar(50)")
+    private String lastName;
+
     @Column(name = "user_sms", columnDefinition = "varchar(12)")
     private String userSms;
 
-    @Column(name = "user_pw", nullable = false, columnDefinition = "varchar(20)")
+    @Column(name = "user_pw", nullable = false, columnDefinition = "varchar(100)")
     private String userPw;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, columnDefinition = "varchar(20)")
+    private Role role = Role.USER;
 
     @OneToMany(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
     private Set<UserVin> userVins = new HashSet<>();
@@ -60,6 +76,22 @@ public class User {
         this.userEmail = userEmail;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public String getUserSms() {
         return userSms;
     }
@@ -76,12 +108,55 @@ public class User {
         this.userPw = userPw;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
     public Set<UserVin> getUserVins() {
         return userVins;
     }
 
     public void setUserVins(Set<UserVin> userVins) {
         this.userVins = userVins != null ? userVins : new HashSet<>();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return userPw;
+    }
+
+    @Override
+    public String getUsername() {
+        return userEmail;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 
 }

@@ -1,67 +1,70 @@
 package com.capstone.controllers;
 
-import java.util.List;
+import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.domain.VinService;
-import com.capstone.models.Result;
+import com.capstone.domain.VehicleOnboardingService;
+import com.capstone.domain.dto.AddVinRequest;
+import com.capstone.domain.dto.AddVinResponse;
+import com.capstone.models.User;
 import com.capstone.models.Vin;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 
 @RestController
 @RequestMapping("/api/vin")
+@Validated
 public class VinController {
 
     VinService vinService;
+    VehicleOnboardingService vehicleOnboardingService;
 
-    public VinController(VinService vinService) {
+    public VinController(VinService vinService, VehicleOnboardingService vehicleOnboardingService) {
         this.vinService = vinService;
+        this.vehicleOnboardingService = vehicleOnboardingService;
     }
 
-    @GetMapping("/{vinId}")
-    public ResponseEntity<?> getVinsByOwnerId(@PathVariable Long vinId) {
-        List<Vin> vinList = vinService.findVinsByOwnerId(vinId);
+    @GetMapping
+    public ResponseEntity<?> getCurrentUserVins(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        var vinList = vinService.findVinsByUserId(user.getUserId());
         if (vinList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity<>(vinList, HttpStatus.OK);
         }
+        return new ResponseEntity<>(vinList, HttpStatus.OK);
+    }
+
+    @GetMapping("/{vin}")
+    public ResponseEntity<?> getVin(
+            @PathVariable
+            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
+            String vin) {
+        return vinService.findByVin(vin)
+                .<ResponseEntity<?>>map(foundVin -> new ResponseEntity<Vin>(foundVin, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PostMapping
-    public ResponseEntity<?> createVin(@RequestBody Vin vin) {
-        Result<Vin> vinResult = vinService.createVin(vin);
-        if (!vinResult.isSuccess()) {
-            return new ResponseEntity<>(vinResult.getErrors(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> addVin(@AuthenticationPrincipal User user, @Valid @RequestBody AddVinRequest request) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return new ResponseEntity<>(vinResult.getPayload(), HttpStatus.CREATED);
-    }
-
-    @PutMapping
-    public ResponseEntity<?> updateVin(@RequestBody Vin vin) {
-        Result<Vin> vinResult = vinService.updateVin(vin);
-        if (!vinResult.isSuccess()) {
-            return new ResponseEntity<>(vinResult.getErrors(), HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(vinResult.getPayload(), HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{vinId}")
-    public ResponseEntity<?> deleteVin(@PathVariable Long vinId) {
-        Result<Vin> result = vinService.deleteVinById(vinId);
-        if (result.isSuccess()) {
-            return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(result.getErrors(), HttpStatus.BAD_REQUEST);
-        }
+        AddVinResponse response = vehicleOnboardingService.addVinToUser(user, request);
+        return new ResponseEntity<>(response, response.createdAssociation() ? HttpStatus.CREATED : HttpStatus.OK);
     }
 }

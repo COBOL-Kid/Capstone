@@ -131,19 +131,25 @@ public class VehicleDataMapper {
 
     public List<Recall> toRecalls(VehicleType vehicleType, RecallResponse recallResponse) {
         List<Recall> recalls = new ArrayList<>();
-        if (recallResponse == null || recallResponse.data() == null || recallResponse.data().recall() == null) {
+        if (recallResponse == null || recallResponse.data() == null) {
             return recalls;
         }
-        for (RecallResponse.RecallItem item : recallResponse.data().recall()) {
-            if (item == null || clean(item.campaignId()) == null) {
+        for (RecallResponse.RecallItem item : recallResponse.data()) {
+            String nhtsaCampaignNumber = clean(item != null ? item.nhtsaCampaignNumber() : null);
+            if (nhtsaCampaignNumber == null) {
                 continue;
             }
-            Recall recall = new Recall(vehicleType, clean(item.campaignId()), parseRecallDate(item.recallDate()),
-                    requiredText(item.componentAffected()), requiredText(item.summary()), requiredText(item.consequences()),
+            Recall recall = new Recall(vehicleType, nhtsaCampaignNumber, parseRecallDate(item.reportReceivedDate()),
+                    requiredText(item.component()), requiredText(item.summary()), requiredText(item.consequence()),
                     requiredText(item.remedy()));
-            recall.setRecallNo(clean(item.recallNo()));
+            recall.setParkIt(Boolean.TRUE.equals(item.parkIt()));
+            recall.setParkOutside(Boolean.TRUE.equals(item.parkOutside()));
+            recall.setOverTheAirUpdate(Boolean.TRUE.equals(item.overTheAirUpdate()));
             recall.setNotes(clean(item.notes()));
-            recall.setManufacturerName(clean(item.manufacturerName()));
+            recall.setManufacturer(clean(item.manufacturer()));
+            recall.setModelYear(clean(item.modelYear()));
+            recall.setMake(clean(item.make()));
+            recall.setModel(clean(item.model()));
             recalls.add(recall);
         }
         return recalls;

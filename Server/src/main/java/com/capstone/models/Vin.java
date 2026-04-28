@@ -78,6 +78,4 @@ public class Vin {
         this.userVins = userVins != null ? userVins : new HashSet<>();
     }
 
-    // @Column(name = vehicleImage, columnDefinition = ?)
-
 }

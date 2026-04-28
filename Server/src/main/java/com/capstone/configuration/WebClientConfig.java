@@ -23,6 +23,15 @@ public class WebClientConfig {
     @Value("${vehicle-data.api-key-header:x-AuthKey}")
     private String vehicleDataApiKeyHeader;
 
+    @Value("${vehicle-data.recall-base-url:https://api.auto.dev}")
+    private String vehicleDataRecallBaseUrl;
+
+    @Value("${vehicle-data.recall-api-key:${vehicle-data.api-key:}}")
+    private String vehicleDataRecallApiKey;
+
+    @Value("${vehicle-data.recall-api-key-header:${vehicle-data.api-key-header:x-AuthKey}}")
+    private String vehicleDataRecallApiKeyHeader;
+
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
@@ -46,5 +55,17 @@ public class WebClientConfig {
 
     public String getVehicleDataApiKeyHeader() {
         return vehicleDataApiKeyHeader;
+    }
+
+    public String getVehicleDataRecallBaseUrl() {
+        return vehicleDataRecallBaseUrl;
+    }
+
+    public String getVehicleDataRecallApiKey() {
+        return vehicleDataRecallApiKey;
+    }
+
+    public String getVehicleDataRecallApiKeyHeader() {
+        return vehicleDataRecallApiKeyHeader;
     }
 }

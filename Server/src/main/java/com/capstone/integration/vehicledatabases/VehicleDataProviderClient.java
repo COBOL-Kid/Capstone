@@ -34,7 +34,8 @@ public class VehicleDataProviderClient {
     }
 
     public RecallResponse getRecalls(String vin) {
-        return get("/vehicle-recalls/{vin}", vin, RecallResponse.class);
+        return get(webClientConfig.getVehicleDataRecallBaseUrl(), "/openrecalls/{vin}", vin, RecallResponse.class,
+                webClientConfig.getVehicleDataRecallApiKey(), webClientConfig.getVehicleDataRecallApiKeyHeader());
     }
 
     public OwnerManualResponse getOwnerManual(String vin) {
@@ -42,11 +43,18 @@ public class VehicleDataProviderClient {
     }
 
     private <T> T get(String path, String vin, Class<T> responseType) {
-        String url = UriComponentsBuilder.fromUriString(webClientConfig.getVehicleDataBaseUrl())
+        return get(webClientConfig.getVehicleDataBaseUrl(), path, vin, responseType,
+                webClientConfig.getVehicleDataApiKey(), webClientConfig.getVehicleDataApiKeyHeader());
+    }
+
+    private <T> T get(String baseUrl, String path, String vin, Class<T> responseType, String apiKey,
+            String apiKeyHeader) {
+        String url = UriComponentsBuilder.fromUriString(baseUrl)
                 .path(path)
                 .buildAndExpand(vin)
                 .toUriString();
-        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers()),
+        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers(apiKey,
+                apiKeyHeader)),
                 responseType);
         T body = response.getBody();
         if (body == null) {
@@ -55,10 +63,10 @@ public class VehicleDataProviderClient {
         return body;
     }
 
-    private HttpHeaders headers() {
+    private HttpHeaders headers(String apiKey, String apiKeyHeader) {
         HttpHeaders headers = new HttpHeaders();
-        if (!webClientConfig.getVehicleDataApiKey().isBlank()) {
-            headers.set(webClientConfig.getVehicleDataApiKeyHeader(), webClientConfig.getVehicleDataApiKey());
+        if (apiKey != null && !apiKey.isBlank()) {
+            headers.set(apiKeyHeader, apiKey);
         }
         return headers;
     }

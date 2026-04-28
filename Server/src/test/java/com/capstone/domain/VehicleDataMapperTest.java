@@ -1,6 +1,7 @@
 package com.capstone.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import com.capstone.integration.vehicledatabases.VinDecodeResponse;
 import com.capstone.models.MaintCost;
 import com.capstone.models.Recall;
 import com.capstone.models.VehicleType;
+import tools.jackson.databind.ObjectMapper;
 
 class VehicleDataMapperTest {
 
@@ -70,10 +72,53 @@ class VehicleDataMapperTest {
 
         Recall recall = mapper.toRecalls(vehicleType, recalls).get(0);
 
-        assertEquals("22V480000", recall.getCampaignId());
-        assertEquals("EQUIPMENT:OTHER:LABELS", recall.getComponentAffected());
-        assertEquals("Southeast Toyota Distributors, LLC", recall.getManufacturerName());
-        assertEquals(2022, recall.getRecallDate().getYear());
+        assertEquals("25V239000", recall.getNhtsaCampaignNumber());
+        assertEquals("25V239000", recall.getCampaignId());
+        assertEquals("POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", recall.getComponent());
+        assertEquals("Ford Motor Company", recall.getManufacturer());
+        assertFalse(recall.isParkIt());
+        assertFalse(recall.isParkOutside());
+        assertFalse(recall.isOverTheAirUpdate());
+        assertEquals("2025", recall.getModelYear());
+        assertEquals("FORD", recall.getMake());
+        assertEquals("EXPLORER", recall.getModel());
+        assertEquals(2025, recall.getReportReceivedDate().getYear());
+        assertEquals(11, recall.getReportReceivedDate().getMonthValue());
+        assertEquals(4, recall.getReportReceivedDate().getDayOfMonth());
+    }
+
+    @Test
+    void shouldDeserializeRecallResponseFromProviderJson() throws Exception {
+        String json = """
+                {
+                  "data": [
+                    {
+                      "manufacturer": "Ford Motor Company",
+                      "nhtsaCampaignNumber": "25V239000",
+                      "parkIt": false,
+                      "parkOutSide": false,
+                      "overTheAirUpdate": false,
+                      "reportReceivedDate": "11/04/2025",
+                      "component": "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE",
+                      "summary": "Ford Motor Company (Ford) is recalling certain 2025 Explorer vehicles.",
+                      "consequence": "A damaged park system can increase the risk of a crash.",
+                      "remedy": "Dealers will update the powertrain control module software, free of charge.",
+                      "notes": "Owners may also contact NHTSA.",
+                      "modelYear": "2025",
+                      "make": "FORD",
+                      "model": "EXPLORER"
+                    }
+                  ]
+                }
+                """;
+
+        RecallResponse response = new ObjectMapper().readValue(json, RecallResponse.class);
+
+        assertEquals(1, response.data().size());
+        assertEquals("25V239000", response.data().get(0).nhtsaCampaignNumber());
+        assertEquals(Boolean.FALSE, response.data().get(0).parkOutside());
+        assertEquals("POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", response.data().get(0).component());
+        assertEquals("Ford Motor Company", response.data().get(0).manufacturer());
     }
 
         private VinDecodeResponse vinDecodeResponse() {
@@ -114,10 +159,9 @@ class VehicleDataMapperTest {
                     new RepairCostResponse.CostLine("total", 1396, 1470, 1322)))))));
         }
 
-        private RecallResponse recallResponse() {
-        return new RecallResponse("success", new RecallResponse.RecallData("JTENU5JR6M5962554", "2021", "Toyota",
-            "4runner", List.of(new RecallResponse.RecallItem("22V480000", "", "06/07/2022",
-                "EQUIPMENT:OTHER:LABELS", "Summary", "Consequence", "Remedy", "Notes",
-                "Southeast Toyota Distributors, LLC"))));
+    private RecallResponse recallResponse() {
+        return new RecallResponse(List.of(new RecallResponse.RecallItem("Ford Motor Company", "25V239000", false,
+                false, false, "11/04/2025", "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", "Summary",
+                "Consequence", "Remedy", "Notes", "2025", "FORD", "EXPLORER")));
     }
 }

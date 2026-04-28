@@ -14,7 +14,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "recall", uniqueConstraints = @UniqueConstraint(columnNames = { "vehicle_type_id", "campaign_id" }))
+@Table(name = "recall", uniqueConstraints = @UniqueConstraint(columnNames = { "vehicle_type_id",
+        "nhtsa_campaign_number" }))
 public class Recall {
 
     @Id
@@ -26,23 +27,23 @@ public class Recall {
     @JoinColumn(name = "vehicle_type_id", nullable = false)
     private VehicleType vehicleTypeId;
 
-    @Column(name = "campaign_id", nullable = false, columnDefinition = "varchar(20)")
-    private String campaignId;
+    @Column(name = "nhtsa_campaign_number", nullable = false, columnDefinition = "varchar(20)")
+    private String nhtsaCampaignNumber;
 
     @Column(name = "recall_no", columnDefinition = "varchar(20)")
     private String recallNo;
 
-    @Column(name = "recall_date", nullable = false)
-    private LocalDate recallDate;
+    @Column(name = "report_received_date", nullable = false)
+    private LocalDate reportReceivedDate;
 
-    @Column(name = "component_affected", nullable = false, columnDefinition = "varchar(120)")
-    private String componentAffected;
+    @Column(name = "component", nullable = false, columnDefinition = "varchar(255)")
+    private String component;
 
     @Column(name = "summary", nullable = false, columnDefinition = "text")
     private String summary;
 
-    @Column(name = "consequences", nullable = false, columnDefinition = "text")
-    private String consequences;
+    @Column(name = "consequence", nullable = false, columnDefinition = "text")
+    private String consequence;
 
     @Column(name = "remedy", nullable = false, columnDefinition = "text")
     private String remedy;
@@ -50,37 +51,49 @@ public class Recall {
     @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
-    @Column(name = "manufacturer_name", columnDefinition = "varchar(120)")
-    private String manufacturerName;
+    @Column(name = "manufacturer", columnDefinition = "varchar(120)")
+    private String manufacturer;
+
+    @Column(name = "park_it", nullable = false)
+    private boolean parkIt;
+
+    @Column(name = "park_outside", nullable = false)
+    private boolean parkOutside;
+
+    @Column(name = "over_the_air_update", nullable = false)
+    private boolean overTheAirUpdate;
+
+    @Column(name = "model_year", columnDefinition = "char(4)")
+    private String modelYear;
+
+    @Column(name = "make", columnDefinition = "varchar(60)")
+    private String make;
+
+    @Column(name = "model", columnDefinition = "varchar(80)")
+    private String model;
 
     public Recall() {
     }
 
-    public Recall(VehicleType vehicleTypeId, String campaignId, LocalDate recallDate, String componentAffected,
-            String summary, String consequences, String remedy) {
+    public Recall(VehicleType vehicleTypeId, String nhtsaCampaignNumber, LocalDate reportReceivedDate, String component,
+            String summary, String consequence, String remedy) {
         this.vehicleTypeId = vehicleTypeId;
-        this.campaignId = campaignId;
-        this.recallDate = recallDate;
-        this.componentAffected = componentAffected;
+        this.nhtsaCampaignNumber = nhtsaCampaignNumber;
+        this.reportReceivedDate = reportReceivedDate;
+        this.component = component;
         this.summary = summary;
-        this.consequences = consequences;
+        this.consequence = consequence;
         this.remedy = remedy;
     }
 
     public Recall(Long recallId, VehicleType vehicleTypeId, String campaignId, String recallNo,
             LocalDate recallDate, String componentAffected, String summary, String consequences, String remedy,
             String notes, String manufacturerName) {
+        this(vehicleTypeId, campaignId, recallDate, componentAffected, summary, consequences, remedy);
         this.recallId = recallId;
-        this.vehicleTypeId = vehicleTypeId;
-        this.campaignId = campaignId;
         this.recallNo = recallNo;
-        this.recallDate = recallDate;
-        this.componentAffected = componentAffected;
-        this.summary = summary;
-        this.consequences = consequences;
-        this.remedy = remedy;
         this.notes = notes;
-        this.manufacturerName = manufacturerName;
+        this.manufacturer = manufacturerName;
     }
 
     public Long getRecallId() {
@@ -99,12 +112,20 @@ public class Recall {
         this.vehicleTypeId = vehicleTypeId;
     }
 
+    public String getNhtsaCampaignNumber() {
+        return nhtsaCampaignNumber;
+    }
+
+    public void setNhtsaCampaignNumber(String nhtsaCampaignNumber) {
+        this.nhtsaCampaignNumber = nhtsaCampaignNumber;
+    }
+
     public String getCampaignId() {
-        return campaignId;
+        return nhtsaCampaignNumber;
     }
 
     public void setCampaignId(String campaignId) {
-        this.campaignId = campaignId;
+        this.nhtsaCampaignNumber = campaignId;
     }
 
     public String getRecallNo() {
@@ -115,20 +136,36 @@ public class Recall {
         this.recallNo = recallNo;
     }
 
+    public LocalDate getReportReceivedDate() {
+        return reportReceivedDate;
+    }
+
+    public void setReportReceivedDate(LocalDate reportReceivedDate) {
+        this.reportReceivedDate = reportReceivedDate;
+    }
+
     public LocalDate getRecallDate() {
-        return recallDate;
+        return reportReceivedDate;
     }
 
     public void setRecallDate(LocalDate recallDate) {
-        this.recallDate = recallDate;
+        this.reportReceivedDate = recallDate;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public void setComponent(String component) {
+        this.component = component;
     }
 
     public String getComponentAffected() {
-        return componentAffected;
+        return component;
     }
 
     public void setComponentAffected(String componentAffected) {
-        this.componentAffected = componentAffected;
+        this.component = componentAffected;
     }
 
     public String getSummary() {
@@ -139,12 +176,20 @@ public class Recall {
         this.summary = summary;
     }
 
+    public String getConsequence() {
+        return consequence;
+    }
+
+    public void setConsequence(String consequence) {
+        this.consequence = consequence;
+    }
+
     public String getConsequences() {
-        return consequences;
+        return consequence;
     }
 
     public void setConsequences(String consequences) {
-        this.consequences = consequences;
+        this.consequence = consequences;
     }
 
     public String getRemedy() {
@@ -163,11 +208,67 @@ public class Recall {
         this.notes = notes;
     }
 
+    public String getManufacturer() {
+        return manufacturer;
+    }
+
+    public void setManufacturer(String manufacturer) {
+        this.manufacturer = manufacturer;
+    }
+
     public String getManufacturerName() {
-        return manufacturerName;
+        return manufacturer;
     }
 
     public void setManufacturerName(String manufacturerName) {
-        this.manufacturerName = manufacturerName;
+        this.manufacturer = manufacturerName;
+    }
+
+    public boolean isParkIt() {
+        return parkIt;
+    }
+
+    public void setParkIt(boolean parkIt) {
+        this.parkIt = parkIt;
+    }
+
+    public boolean isParkOutside() {
+        return parkOutside;
+    }
+
+    public void setParkOutside(boolean parkOutside) {
+        this.parkOutside = parkOutside;
+    }
+
+    public boolean isOverTheAirUpdate() {
+        return overTheAirUpdate;
+    }
+
+    public void setOverTheAirUpdate(boolean overTheAirUpdate) {
+        this.overTheAirUpdate = overTheAirUpdate;
+    }
+
+    public String getModelYear() {
+        return modelYear;
+    }
+
+    public void setModelYear(String modelYear) {
+        this.modelYear = modelYear;
+    }
+
+    public String getMake() {
+        return make;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
     }
 }

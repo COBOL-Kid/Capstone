@@ -2,16 +2,26 @@ package com.capstone.integration.vehicledatabases;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record RecallResponse(String status, RecallData data) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record RecallResponse(List<RecallItem> data) {
 
-    public record RecallData(String vin, String year, String make, String model, List<RecallItem> recall) {
-    }
-
-    public record RecallItem(@JsonProperty("campaign_id") String campaignId,
-            @JsonProperty("recall_no") String recallNo, @JsonProperty("recall_date") String recallDate,
-            @JsonProperty("component_affected") String componentAffected, String summary, String consequences,
-            String remedy, String notes, @JsonProperty("manufacturer_name") String manufacturerName) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record RecallItem(String manufacturer,
+            @JsonProperty("nhtsaCampaignNumber") String nhtsaCampaignNumber,
+            Boolean parkIt,
+            @JsonProperty("parkOutSide") Boolean parkOutside,
+            Boolean overTheAirUpdate,
+            @JsonProperty("reportReceivedDate") String reportReceivedDate,
+            String component,
+            String summary,
+            String consequence,
+            String remedy,
+            String notes,
+            String modelYear,
+            String make,
+            String model) {
     }
 }

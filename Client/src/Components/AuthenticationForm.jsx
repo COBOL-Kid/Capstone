@@ -46,7 +46,7 @@ function AuthenticationForm({ setUser }) {
             return Promise.reject();
           }
         })
-        .catch((error) => {
+        .catch(() => {
           setErrors(["Something Went Wrong"]);
         });
     } else {
@@ -74,7 +74,7 @@ function AuthenticationForm({ setUser }) {
             return Promise.reject();
           }
         })
-        .catch((error) => {
+        .catch(() => {
           setErrors(["Invalid User"]);
         });
     }

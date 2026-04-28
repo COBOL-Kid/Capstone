@@ -1,5 +1,6 @@
 package com.capstone.domain;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -21,6 +22,7 @@ import com.capstone.integration.vehicledatabases.OwnerManualResponse;
 import com.capstone.integration.vehicledatabases.RecallResponse;
 import com.capstone.integration.vehicledatabases.RepairCostResponse;
 import com.capstone.integration.vehicledatabases.VehicleDataProviderClient;
+import com.capstone.integration.vehicledatabases.VehiclePhotosResponse;
 import com.capstone.integration.vehicledatabases.VinDecodeResponse;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
@@ -97,10 +99,10 @@ public class VehicleOnboardingService {
             UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vin.getVin()).orElse(null);
             boolean createdAssociation = false;
             if (userVin == null) {
-                userVin = userVinRepository.save(new UserVin(user, vin, currentMileage));
+                userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
                 createdAssociation = true;
             }
-            return response(vin, userVin.getCurrentMileage(), false, false, createdAssociation);
+            return response(vin, userVin, false, false, createdAssociation);
         });
     }
 
@@ -115,10 +117,10 @@ public class VehicleOnboardingService {
             UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).orElse(null);
             boolean createdAssociation = false;
             if (userVin == null) {
-                userVin = userVinRepository.save(new UserVin(user, vin, currentMileage));
+                userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
                 createdAssociation = true;
             }
-            return response(vin, userVin.getCurrentMileage(), createdVin, createdVehicleType, createdAssociation);
+            return response(vin, userVin, createdVin, createdVehicleType, createdAssociation);
         });
     }
 
@@ -147,20 +149,37 @@ public class VehicleOnboardingService {
             UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).orElse(null);
             boolean createdAssociation = false;
             if (userVin == null) {
-                userVin = userVinRepository.save(new UserVin(user, vin, currentMileage));
+                userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
                 createdAssociation = true;
             }
-            return response(vin, userVin.getCurrentMileage(), createdVin, createdVehicleType, createdAssociation);
+            return response(vin, userVin, createdVin, createdVehicleType, createdAssociation);
         });
     }
 
-    private AddVinResponse response(Vin vin, int currentMileage, boolean createdVin, boolean createdVehicleType,
+    private UserVin newUserVin(User user, Vin vin, int currentMileage) {
+        UserVin userVin = new UserVin(user, vin, currentMileage);
+        List<String> availableImageUrls = fetchVehiclePhotos(vin.getVin());
+        userVin.setAvailableImageUrls(availableImageUrls);
+        userVin.setSelectedImageUrl(availableImageUrls.isEmpty() ? null : availableImageUrls.getFirst());
+        return userVin;
+    }
+
+    private AddVinResponse response(Vin vin, UserVin userVin, boolean createdVin, boolean createdVehicleType,
             boolean createdAssociation) {
         VehicleType vehicleType = vin.getVehicleTypeId();
-        return new AddVinResponse(vin.getVin(), currentMileage, vehicleType.getVehicleTypeId(),
+        return new AddVinResponse(vin.getVin(), userVin.getCurrentMileage(), vehicleType.getVehicleTypeId(),
                 vehicleType.getVehicleMake(),
-                vehicleType.getVehicleModel(), vehicleType.getVehicleTrim(), vehicleType.getVehicleYear(), createdVin,
-                createdVehicleType, createdAssociation);
+                vehicleType.getVehicleModel(), vehicleType.getVehicleTrim(), vehicleType.getVehicleYear(),
+                userVin.getAvailableImageUrls(), userVin.getSelectedImageUrl(), createdVin, createdVehicleType,
+                createdAssociation);
+    }
+
+    private List<String> fetchVehiclePhotos(String vinNumber) {
+        VehiclePhotosResponse photosResponse = vehicleDataProviderClient.getPhotos(vinNumber);
+        return photosResponse.retailPhotos().stream()
+                .filter(url -> url != null && !url.isBlank())
+                .distinct()
+                .toList();
     }
 
     private SupplementalVehicleData fetchSupplementalVehicleData(String normalizedVin) {

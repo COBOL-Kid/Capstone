@@ -16,6 +16,8 @@ import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.domain.dto.AddVinRequest;
 import com.capstone.domain.dto.AddVinResponse;
+import com.capstone.domain.dto.UpdateVehiclePhotoRequest;
+import com.capstone.domain.dto.UserVehicleResponse;
 import com.capstone.models.User;
 import com.capstone.models.VehicleType;
 import com.capstone.models.Vin;
@@ -47,14 +49,14 @@ class VinControllerTest {
         VinService vinService = mock(VinService.class);
         VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
         User user = user();
-        Vin vin = vin();
+        UserVehicleResponse vehicle = userVehicleResponse();
 
-        when(vinService.findVinsByUserId(1L)).thenReturn(List.of(vin));
+        when(vinService.findVinsByUserId(1L)).thenReturn(List.of(vehicle));
 
         var response = controller.getCurrentUserVins(user);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(List.of(vin), response.getBody());
+        assertEquals(List.of(vehicle), response.getBody());
     }
 
     @Test
@@ -78,9 +80,11 @@ class VinControllerTest {
         User user = user();
         AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000);
         AddVinResponse created = new AddVinResponse("JTENU5JR6M5962554", 45000, 7L, "Toyota", "4RUNNER",
-                "SRS Prem", "2021", false, false, true);
+                "SRS Prem", "2021", List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg", false, false, true);
         AddVinResponse existing = new AddVinResponse("JTENU5JR6M5962554", 32000, 7L, "Toyota", "4RUNNER",
-                "SRS Prem", "2021", false, false, false);
+                "SRS Prem", "2021", List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg", false, false, false);
 
         when(onboardingService.addVinToUser(user, request)).thenReturn(created, existing);
 
@@ -94,6 +98,30 @@ class VinControllerTest {
         verify(onboardingService, times(2)).addVinToUser(user, request);
     }
 
+    @Test
+    void shouldUpdateSelectedPhotoForCurrentUserVin() {
+        VinService vinService = mock(VinService.class);
+        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+        User user = user();
+        UserVehicleResponse vehicle = userVehicleResponse();
+        UpdateVehiclePhotoRequest request = new UpdateVehiclePhotoRequest(
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
+
+        when(vinService.updateSelectedImage(1L, "JTENU5JR6M5962554", request.selectedImageUrl()))
+                .thenReturn(Optional.of(vehicle));
+        when(vinService.updateSelectedImage(1L, "MISSINGVIN1234567", request.selectedImageUrl()))
+                .thenReturn(Optional.empty());
+
+        var updatedResponse = controller.updateSelectedPhoto(user, "JTENU5JR6M5962554", request);
+        var missingResponse = controller.updateSelectedPhoto(user, "MISSINGVIN1234567", request);
+
+        assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
+        assertEquals(vehicle, updatedResponse.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+        assertEquals(HttpStatus.UNAUTHORIZED, controller.updateSelectedPhoto(null, "JTENU5JR6M5962554", request)
+                .getStatusCode());
+    }
+
     private User user() {
         User user = new User();
         user.setUserId(1L);
@@ -105,5 +133,11 @@ class VinControllerTest {
         VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
         vehicleType.setVehicleTypeId(7L);
         return new Vin("JTENU5JR6M5962554", 45000, vehicleType);
+    }
+
+    private UserVehicleResponse userVehicleResponse() {
+        return new UserVehicleResponse("JTENU5JR6M5962554", 45000, 7L, "Toyota", "4RUNNER", "SRS Prem", "2021",
+                List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
     }
 }

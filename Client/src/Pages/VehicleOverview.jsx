@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { Box } from "@mui/system";
@@ -27,11 +27,13 @@ export default function VehicleOverview({
   const [change, setChange] = useState(true);
   const [reminders, setReminders] = useState([]);
   const navigate = useNavigate();
+  const vehicleImage = chosenVehicle.selectedImageUrl || "/honestCar.png";
+  const photoOptions = chosenVehicle.availableImageUrls || [];
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vinId}`, {
+    fetch(`http://localhost:8080/api/reminder/${chosenVehicle.vin}`, {
       method: "GET",
-      header: {
+      headers: {
         Authorization: `Bearer ${user.jwt}`,
       },
     })
@@ -50,7 +52,7 @@ export default function VehicleOverview({
         }
       })
       .catch((errors) => setErrors(errors));
-  }, [change]);
+  }, [change, chosenVehicle.vin, navigate, user.jwt]);
 
   const handleDeleteClick = () => {
     setIsDeleteClicked(true);
@@ -60,9 +62,33 @@ export default function VehicleOverview({
     setIsUpdateClicked(true);
   };
 
+  const handlePhotoSelect = (selectedImageUrl) => {
+    fetch(`http://localhost:8080/api/vin/${chosenVehicle.vin}/photo`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${user.jwt}`,
+      },
+      body: JSON.stringify({ selectedImageUrl }),
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          response.json().then((data) => setChosenVehicle(data));
+        } else if (response.status === 403) {
+          localStorage.removeItem("user");
+          navigate("/");
+        } else {
+          return response.text().then((message) => {
+            throw new Error(message || `Problem with response. Status: ${response.status}`);
+          });
+        }
+      })
+      .catch((error) => setErrors([error.toString()]));
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Typography variant="h4" gutterBottom gutterBottom sx={{ pt: 2 }}>
+      <Typography variant="h4" gutterBottom sx={{ pt: 2 }}>
         Welcome {user.firstName}!
       </Typography>
       <Grid container spacing={2}>
@@ -80,7 +106,7 @@ export default function VehicleOverview({
               Model Year: {chosenVehicle.year}
             </Typography>
             <Typography variant="body2">
-              Mileage: {chosenVehicle.mileage}
+              Mileage: {chosenVehicle.currentMileage}
             </Typography>
             <Box pt={2}>
               <Grid container spacing={2}>
@@ -145,10 +171,34 @@ export default function VehicleOverview({
         </Grid>
         <Grid item xs={4}>
           <img
-            src={chosenVehicle.image}
+            src={vehicleImage}
             alt={chosenVehicle.model}
             style={{ width: "100%" }}
           />
+          {photoOptions.length > 1 && (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
+              {photoOptions.map((photoUrl) => (
+                <Button
+                  key={photoUrl}
+                  onClick={() => handlePhotoSelect(photoUrl)}
+                  sx={{
+                    border:
+                      photoUrl === chosenVehicle.selectedImageUrl
+                        ? "2px solid #1976d2"
+                        : "1px solid transparent",
+                    minWidth: 0,
+                    p: 0.5,
+                  }}
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`${chosenVehicle.model} option`}
+                    style={{ width: 72, height: 48, objectFit: "cover" }}
+                  />
+                </Button>
+              ))}
+            </Box>
+          )}
         </Grid>
       </Grid>
       <Box my={4}>

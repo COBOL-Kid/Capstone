@@ -72,4 +72,31 @@ class VehicleDataProviderClientTest {
                 entityCaptor.capture(), eq(RecallResponse.class));
         assertEquals("recall-api-key", entityCaptor.getValue().getHeaders().getFirst("x-api-key"));
     }
+
+    @Test
+    void shouldFetchPhotosFromAutoDevEndpoint() {
+        RestTemplate restTemplate = mock(RestTemplate.class);
+        WebClientConfig webClientConfig = mock(WebClientConfig.class);
+        VehiclePhotosResponse providerResponse = new VehiclePhotosResponse(new VehiclePhotosResponse.PhotoData(List.of(
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg",
+                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg")));
+
+        when(webClientConfig.getVehicleDataBaseUrl()).thenReturn("https://api.auto.dev");
+        when(webClientConfig.getVehicleDataApiKey()).thenReturn("vin-api-key");
+        when(webClientConfig.getVehicleDataApiKeyHeader()).thenReturn("x-api-key");
+        when(restTemplate.exchange(eq("https://api.auto.dev/photos/JTENU5JR6M5962554"), eq(HttpMethod.GET),
+                org.mockito.ArgumentMatchers.<HttpEntity<?>>any(), eq(VehiclePhotosResponse.class)))
+                .thenReturn(ResponseEntity.ok(providerResponse));
+
+        VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, webClientConfig);
+
+        VehiclePhotosResponse response = client.getPhotos("JTENU5JR6M5962554");
+
+        assertSame(providerResponse, response);
+        ArgumentCaptor<HttpEntity<?>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
+        verify(restTemplate).exchange(eq("https://api.auto.dev/photos/JTENU5JR6M5962554"), eq(HttpMethod.GET),
+                entityCaptor.capture(), eq(VehiclePhotosResponse.class));
+        assertEquals("vin-api-key", entityCaptor.getValue().getHeaders().getFirst("x-api-key"));
+        assertEquals(2, response.retailPhotos().size());
+    }
 }

@@ -1,12 +1,16 @@
 package com.capstone.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
-import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 
 @Entity
@@ -28,6 +32,13 @@ public class UserVin {
 
     @Column(name = "current_mileage", nullable = false, columnDefinition = "int")
     private int currentMileage;
+
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "available_image_urls", nullable = false, columnDefinition = "text")
+    private List<String> availableImageUrls = new ArrayList<>();
+
+    @Column(name = "selected_image_url", columnDefinition = "varchar(500)")
+    private String selectedImageUrl;
 
     public UserVin() {
     }
@@ -87,5 +98,21 @@ public class UserVin {
 
     public void setCurrentMileage(int currentMileage) {
         this.currentMileage = currentMileage;
+    }
+
+    public List<String> getAvailableImageUrls() {
+        return availableImageUrls;
+    }
+
+    public void setAvailableImageUrls(List<String> availableImageUrls) {
+        this.availableImageUrls = availableImageUrls != null ? new ArrayList<>(availableImageUrls) : new ArrayList<>();
+    }
+
+    public String getSelectedImageUrl() {
+        return selectedImageUrl;
+    }
+
+    public void setSelectedImageUrl(String selectedImageUrl) {
+        this.selectedImageUrl = selectedImageUrl;
     }
 }

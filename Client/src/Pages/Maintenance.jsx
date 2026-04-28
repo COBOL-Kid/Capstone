@@ -20,17 +20,12 @@ import IconButton from "@mui/material/IconButton";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 export default function Maintenance({ chosenVehicle, user }) {
-  const [upcomingExternalApiMaintenance, setUpcomingExternalApiMaintenance] =
-    useState([]);
   const [errors, setErrors] = useState([]);
-  const [allMaintenance, setAllMaintenance] = useState([]);
   const [reminderDialogOpen, setReminderDialogOpen] = useState({});
   const [reminderDate, setReminderDate] = useState({});
   const navigate = useNavigate();
   const [change, setChange] = useState(false);
   const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
-  const [mappedExternalApiMaintenance, setMappedExternalApiMaintenance] =
-    useState([]);
   const [completedMaintenance, setCompletedMaintenance] = useState([]);
 
   const todayDate = new Date();
@@ -46,13 +41,6 @@ export default function Maintenance({ chosenVehicle, user }) {
     vinId: chosenVehicle.vinId,
     description: "",
     dateCompleted: dateCompleted,
-    mileageDue: 0,
-    cost: 0.0,
-  };
-
-  let convertedMaintenanceitem = {
-    vinId: chosenVehicle.vinId,
-    description: "",
     mileageDue: 0,
     cost: 0.0,
   };
@@ -134,8 +122,7 @@ export default function Maintenance({ chosenVehicle, user }) {
             };
             convertedUpcomingArr.push(convertedMaintenanceitem);
           });
-          setUpcomingExternalApiMaintenance(data);
-        } else if (response.status === 403) {
+          } else if (response.status === 403) {
           localStorage.removeItem("user");
           navigate("/");
         } else {
@@ -213,7 +200,7 @@ export default function Maintenance({ chosenVehicle, user }) {
       setUpcomingMaintenance(upcomingMaintenanceTest);
     };
     operations();
-  }, [change]);
+  }, [change, chosenVehicle.mileage, chosenVehicle.vin, chosenVehicle.vinId, navigate, user.jwt]);
 
   function handleAddClick(maintenanceItem) {
     fetch("http://localhost:8080/api/maintenance", {

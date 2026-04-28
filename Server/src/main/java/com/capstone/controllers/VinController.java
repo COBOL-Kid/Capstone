@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +19,7 @@ import com.capstone.domain.VinService;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.dto.AddVinRequest;
 import com.capstone.domain.dto.AddVinResponse;
+import com.capstone.domain.dto.UpdateVehiclePhotoRequest;
 import com.capstone.models.User;
 import com.capstone.models.Vin;
 
@@ -66,5 +68,19 @@ public class VinController {
         }
         AddVinResponse response = vehicleOnboardingService.addVinToUser(user, request);
         return new ResponseEntity<>(response, response.createdAssociation() ? HttpStatus.CREATED : HttpStatus.OK);
+    }
+
+    @PatchMapping("/{vin}/photo")
+    public ResponseEntity<?> updateSelectedPhoto(@AuthenticationPrincipal User user,
+            @PathVariable
+            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
+            String vin,
+            @Valid @RequestBody UpdateVehiclePhotoRequest request) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        return vinService.updateSelectedImage(user.getUserId(), vin, request.selectedImageUrl())
+                .<ResponseEntity<?>>map(response -> new ResponseEntity<>(response, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

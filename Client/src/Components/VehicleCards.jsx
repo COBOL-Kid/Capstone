@@ -1,4 +1,3 @@
-import * as React from "react";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
@@ -14,10 +13,10 @@ export default function VehicleCards({ vehicles, setChosenVehicle }) {
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
       {vehicles.map((vehicle) => (
-        <Card sx={{ width: "350px" }} key={vehicle.vinId}>
+        <Card sx={{ width: "350px" }} key={vehicle.vin}>
           <CardMedia
             sx={{ height: 170 }}
-            image={vehicle.image}
+            image={vehicle.selectedImageUrl || "/honestCar.png"}
             title={vehicle.model}
           />
           <CardContent>
@@ -28,7 +27,7 @@ export default function VehicleCards({ vehicles, setChosenVehicle }) {
               {vehicle.vin}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Mileage: {vehicle.mileage}
+              Mileage: {vehicle.currentMileage}
             </Typography>
           </CardContent>
           <CardActions>

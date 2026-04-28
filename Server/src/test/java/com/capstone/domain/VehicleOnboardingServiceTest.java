@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import com.capstone.data.VinRepositoryJPA;
 import com.capstone.domain.dto.AddVinRequest;
 import com.capstone.integration.vehicledatabases.VinDecodeResponse;
 import com.capstone.integration.vehicledatabases.VehicleDataProviderClient;
+import com.capstone.integration.vehicledatabases.VehiclePhotosResponse;
 import com.capstone.models.Role;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
@@ -33,8 +35,11 @@ import com.capstone.models.Vin;
 
 class VehicleOnboardingServiceTest {
 
+    private static final String PHOTO_1 = "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg";
+    private static final String PHOTO_2 = "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg";
+
     @Test
-    void shouldLinkExistingVinWithoutCallingProvider() {
+    void shouldLinkExistingVinAndPopulatePhotosWithoutCallingVinDecode() {
         VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
         VehicleTypeRepositoryJPA vehicleTypeRepository = mock(VehicleTypeRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
@@ -53,6 +58,7 @@ class VehicleOnboardingServiceTest {
         when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
         when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
         when(userVinRepository.save(any(UserVin.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(photosResponse());
 
         VehicleOnboardingService service = new VehicleOnboardingService(vinRepository, vehicleTypeRepository,
                 userVinRepository, recallRepository, maintMileageRepository, maintCostRepository, providerClient, mapper,
@@ -65,6 +71,8 @@ class VehicleOnboardingServiceTest {
         assertFalse(response.createdVin());
         assertFalse(response.createdVehicleType());
         assertTrue(response.createdAssociation());
+        assertEquals(List.of(PHOTO_1, PHOTO_2), response.availableImageUrls());
+        assertEquals(PHOTO_1, response.selectedImageUrl());
         verify(providerClient, never()).decodeVin(any());
     }
 
@@ -83,6 +91,8 @@ class VehicleOnboardingServiceTest {
         vehicleType.setVehicleTypeId(7L);
         Vin vin = new Vin("JTENU5JR6M5962554", 12000, vehicleType);
         UserVin existingAssociation = new UserVin(user, vin, 32000);
+        existingAssociation.setAvailableImageUrls(List.of(PHOTO_1));
+        existingAssociation.setSelectedImageUrl(PHOTO_1);
 
         when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
         when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554"))
@@ -98,8 +108,11 @@ class VehicleOnboardingServiceTest {
         assertFalse(response.createdVin());
         assertFalse(response.createdVehicleType());
         assertFalse(response.createdAssociation());
+        assertEquals(List.of(PHOTO_1), response.availableImageUrls());
+        assertEquals(PHOTO_1, response.selectedImageUrl());
         verify(userVinRepository, never()).save(any(UserVin.class));
         verify(providerClient, never()).decodeVin(any());
+        verify(providerClient, never()).getPhotos(any());
     }
 
     @Test
@@ -125,6 +138,7 @@ class VehicleOnboardingServiceTest {
         when(vinRepository.save(any(Vin.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
         when(userVinRepository.save(any(UserVin.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(photosResponse());
 
         VehicleOnboardingService service = new VehicleOnboardingService(vinRepository, vehicleTypeRepository,
                 userVinRepository, recallRepository, maintMileageRepository, maintCostRepository, providerClient,
@@ -137,6 +151,7 @@ class VehicleOnboardingServiceTest {
         assertTrue(response.createdVin());
         assertFalse(response.createdVehicleType());
         assertTrue(response.createdAssociation());
+        assertEquals(PHOTO_1, response.selectedImageUrl());
         verify(providerClient, never()).getOwnerManual(any());
         verify(providerClient, never()).getMaintenanceSchedule(any());
         verify(providerClient, never()).getRepairCosts(any());
@@ -171,6 +186,37 @@ class VehicleOnboardingServiceTest {
         verify(providerClient, never()).decodeVin(any());
     }
 
+    @Test
+    void shouldAllowVehicleOnboardingWhenProviderReturnsNoPhotos() {
+        VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
+        VehicleTypeRepositoryJPA vehicleTypeRepository = mock(VehicleTypeRepositoryJPA.class);
+        UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
+        MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+        VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
+        TransactionTemplate transactionTemplate = transactionTemplate();
+        User user = user();
+        VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
+        vehicleType.setVehicleTypeId(7L);
+        Vin vin = new Vin("JTENU5JR6M5962554", 12000, vehicleType);
+
+        when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
+        when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
+        when(userVinRepository.save(any(UserVin.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(new VehiclePhotosResponse(null));
+
+        VehicleOnboardingService service = new VehicleOnboardingService(vinRepository, vehicleTypeRepository,
+                userVinRepository, recallRepository, maintMileageRepository, maintCostRepository, providerClient,
+                new VehicleDataMapper(), transactionTemplate);
+
+        var response = service.addVinToUser(user, new AddVinRequest("JTENU5JR6M5962554", 45000));
+
+        assertEquals(List.of(), response.availableImageUrls());
+        assertEquals(null, response.selectedImageUrl());
+        assertTrue(response.createdAssociation());
+    }
+
     private TransactionTemplate transactionTemplate() {
         TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
         when(transactionTemplate.execute(any())).thenAnswer(invocation -> invocation.getArgument(0,
@@ -193,5 +239,9 @@ class VehicleOnboardingServiceTest {
                 new VinDecodeResponse.Vehicle("3GCUDHEL3NG668790", 2022, "Chevrolet", "Silverado 1500",
                         "General Motors de Mexico"),
                 new VinDecodeResponse.Photos(true, false, true, 12), false);
+    }
+
+    private VehiclePhotosResponse photosResponse() {
+        return new VehiclePhotosResponse(new VehiclePhotosResponse.PhotoData(List.of(PHOTO_1, PHOTO_2)));
     }
 }

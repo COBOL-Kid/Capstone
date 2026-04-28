@@ -42,6 +42,10 @@ public class VehicleDataProviderClient {
         return get("/owner-manual/{vin}", vin, OwnerManualResponse.class);
     }
 
+    public VehiclePhotosResponse getPhotos(String vin) {
+        return get("/photos/{vin}", vin, VehiclePhotosResponse.class);
+    }
+
     private <T> T get(String path, String vin, Class<T> responseType) {
         return get(webClientConfig.getVehicleDataBaseUrl(), path, vin, responseType,
                 webClientConfig.getVehicleDataApiKey(), webClientConfig.getVehicleDataApiKeyHeader());

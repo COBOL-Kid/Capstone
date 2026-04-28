@@ -29,14 +29,69 @@ class VehicleDataMapperTest {
 
         VehicleType vehicleType = mapper.toVehicleType(vinDecode, ownerManual);
 
-        assertEquals("Toyota", vehicleType.getVehicleMake());
-        assertEquals("4RUNNER", vehicleType.getVehicleModel());
-        assertEquals("SRS Prem", vehicleType.getVehicleTrim());
-        assertEquals("2021", vehicleType.getVehicleYear());
-        assertEquals("6", vehicleType.getEngineCylinders());
-        assertEquals("4WD/4-Wheel Drive/4x4", vehicleType.getDriveType());
+        assertEquals("Chevrolet", vehicleType.getVehicleMake());
+        assertEquals("Silverado 1500", vehicleType.getVehicleModel());
+        assertEquals("ZR2", vehicleType.getVehicleTrim());
+        assertEquals("2022", vehicleType.getVehicleYear());
+        assertEquals("4x4 4dr Crew Cab 5.8 ft. SB", vehicleType.getVehicleStyle());
+        assertEquals("3GCUDHEL3NG668790", vehicleType.getSourceVin());
+        assertEquals("Mexico", vehicleType.getOrigin());
+        assertEquals("Truck", vehicleType.getBody());
+        assertEquals("5.3L V8 OHV 16V FFV", vehicleType.getEngineDescription());
+        assertEquals("4WD", vehicleType.getDriveType());
+        assertEquals("Automatic", vehicleType.getTransmissionStyle());
         assertEquals("https://vhr.nyc3.cdn.digitaloceanspaces.com/owners-manual/toyota/2021_toyota_4runner_Toyota%202021%204Runner%20Owner%27s%20Manual%20OM35B41U.pdf",
                 vehicleType.getOwnersManual());
+    }
+
+    @Test
+    void shouldDeserializeVinDecodeResponseFromProviderJson() throws Exception {
+        String json = """
+                                {
+                                    "vin": "3GCUDHEL3NG668790",
+                                    "vinValid": true,
+                                    "wmi": "3GC",
+                                    "origin": "Mexico",
+                                    "squishVin": "3GCUDHELNG",
+                                    "checkDigit": "3",
+                                    "checksum": true,
+                                    "type": "Active",
+                                    "make": "Chevrolet",
+                                    "model": "Silverado 1500",
+                                    "trim": "ZR2",
+                                    "style": "4x4 4dr Crew Cab 5.8 ft. SB",
+                                    "body": "Truck",
+                                    "engine": "5.3L V8 OHV 16V FFV",
+                                    "drive": "4WD",
+                                    "transmission": "Automatic",
+                                    "vehicle": {
+                                        "vin": "3GCUDHEL3NG668790",
+                                        "year": 2022,
+                                        "make": "Chevrolet",
+                                        "model": "Silverado 1500",
+                                        "manufacturer": "General Motors de Mexico"
+                                    },
+                                    "photos": {
+                                        "hasRetailPhotos": true,
+                                        "hasWholesalePhotos": false,
+                                        "hasHistoricalPhotos": true,
+                                        "retailPhotoCount": 12
+                                    },
+                                    "ambiguous": false
+                                }
+                                """;
+
+        VinDecodeResponse response = new ObjectMapper().readValue(json, VinDecodeResponse.class);
+
+        assertEquals("3GCUDHEL3NG668790", response.vin());
+        assertEquals(Boolean.TRUE, response.vinValid());
+        assertEquals("Chevrolet", response.make());
+        assertEquals("Silverado 1500", response.model());
+        assertEquals("ZR2", response.trim());
+        assertEquals("4x4 4dr Crew Cab 5.8 ft. SB", response.style());
+        assertEquals("5.3L V8 OHV 16V FFV", response.engine());
+        assertEquals(2022, response.vehicle().year());
+        assertEquals(12, response.photos().retailPhotoCount());
     }
 
     @Test
@@ -121,43 +176,37 @@ class VehicleDataMapperTest {
         assertEquals("Ford Motor Company", response.data().get(0).manufacturer());
     }
 
-        private VinDecodeResponse vinDecodeResponse() {
-        return new VinDecodeResponse("success", new VinDecodeResponse.VinDecodeData(
-            new VinDecodeResponse.Intro("JTENU5JR6M5962554"),
-            new VinDecodeResponse.Basic("Toyota", "4RUNNER", "2021", "SRS Prem",
-                "Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)",
-                "Multipurpose Passenger Vehicle (MPV)", "5", "", "5"),
-            new VinDecodeResponse.Engine("6", "4.0", "1GR-FE V-Shaped", "4000.0", "V-Shaped", ""),
-            new VinDecodeResponse.Manufacturer("Toyota Motor Corporation", "Aichi", "Japan", "Tahara"),
-            new VinDecodeResponse.Transmission("Automatic"),
-            new VinDecodeResponse.Restraint("Manual Seat Belt"),
-            new VinDecodeResponse.Dimensions("Class 2E: 6,001 - 7,000 lb (2,722 - 3,175 kg)"),
-            new VinDecodeResponse.Drivetrain("4WD/4-Wheel Drive/4x4"),
-            new VinDecodeResponse.Fuel("Gasoline", "")));
-        }
+    private VinDecodeResponse vinDecodeResponse() {
+        return new VinDecodeResponse("3GCUDHEL3NG668790", true, "3GC", "Mexico", "3GCUDHELNG", "3", true,
+                "Active", "Chevrolet", "Silverado 1500", "ZR2", "4x4 4dr Crew Cab 5.8 ft. SB", "Truck",
+                "5.3L V8 OHV 16V FFV", "4WD", "Automatic",
+                new VinDecodeResponse.Vehicle("3GCUDHEL3NG668790", 2022, "Chevrolet", "Silverado 1500",
+                        "General Motors de Mexico"),
+                new VinDecodeResponse.Photos(true, false, true, 12), false);
+    }
 
-        private OwnerManualResponse ownerManualResponse() {
+    private OwnerManualResponse ownerManualResponse() {
         return new OwnerManualResponse("success", new OwnerManualResponse.OwnerManualData("JTENU5JR6M5962554", "2021",
-            "Toyota", "4runner",
-            "https://vhr.nyc3.cdn.digitaloceanspaces.com/owners-manual/toyota/2021_toyota_4runner_Toyota%202021%204Runner%20Owner%27s%20Manual%20OM35B41U.pdf"));
-        }
+                "Toyota", "4runner",
+                "https://vhr.nyc3.cdn.digitaloceanspaces.com/owners-manual/toyota/2021_toyota_4runner_Toyota%202021%204Runner%20Owner%27s%20Manual%20OM35B41U.pdf"));
+    }
 
-        private MaintenanceScheduleResponse maintenanceScheduleResponse() {
+    private MaintenanceScheduleResponse maintenanceScheduleResponse() {
         return new MaintenanceScheduleResponse("success", new MaintenanceScheduleResponse.MaintenanceScheduleData(
-            "JTENU5JR6M5962554", 2021, "Toyota", "4runner", "SR5 Premium 4dr 4x4 Automatic",
-            List.of(new MaintenanceScheduleResponse.MaintenanceInterval(
-                new MaintenanceScheduleResponse.Mileage(5000, 8000),
-                List.of("Check Driver's Floor Mat", "Inspect Brake System", "Replace Engine Oil & Filter")))));
-        }
+                "JTENU5JR6M5962554", 2021, "Toyota", "4runner", "SR5 Premium 4dr 4x4 Automatic",
+                List.of(new MaintenanceScheduleResponse.MaintenanceInterval(
+                        new MaintenanceScheduleResponse.Mileage(5000, 8000),
+                        List.of("Check Driver's Floor Mat", "Inspect Brake System", "Replace Engine Oil & Filter")))));
+    }
 
-        private RepairCostResponse repairCostResponse() {
+    private RepairCostResponse repairCostResponse() {
         return new RepairCostResponse("success", new RepairCostResponse.RepairCostData("JTENU5JR6M5962554", 2021,
-            "Toyota", "4runner", "USD", List.of(new RepairCostResponse.RepairItem("ABS Module Replacement", "N/A",
-                new RepairCostResponse.Costs(List.of(), List.of(
-                    new RepairCostResponse.CostLine("part", 949, 996, 902),
-                    new RepairCostResponse.CostLine("labor", 447, 474, 420),
-                    new RepairCostResponse.CostLine("total", 1396, 1470, 1322)))))));
-        }
+                "Toyota", "4runner", "USD", List.of(new RepairCostResponse.RepairItem("ABS Module Replacement", "N/A",
+                        new RepairCostResponse.Costs(List.of(), List.of(
+                                new RepairCostResponse.CostLine("part", 949, 996, 902),
+                                new RepairCostResponse.CostLine("labor", 447, 474, 420),
+                                new RepairCostResponse.CostLine("total", 1396, 1470, 1322)))))));
+    }
 
     private RecallResponse recallResponse() {
         return new RecallResponse(List.of(new RecallResponse.RecallItem("Ford Motor Company", "25V239000", false,

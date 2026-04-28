@@ -23,48 +23,16 @@ public class VehicleDataMapper {
     private static final DateTimeFormatter RECALL_DATE_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     public VehicleType toVehicleType(VinDecodeResponse vinDecodeResponse, OwnerManualResponse ownerManualResponse) {
-        VinDecodeResponse.VinDecodeData data = requireData(vinDecodeResponse);
-        VinDecodeResponse.Basic basic = data.basic();
-        if (basic == null) {
-            throw new IllegalArgumentException("VIN decode response is missing basic vehicle details");
-        }
-
-        VehicleType vehicleType = new VehicleType(required(basic.make()), required(basic.model()), required(basic.trim()),
-                required(basic.year()));
-        vehicleType.setDoors(clean(basic.doors()));
-        vehicleType.setVehicleSize(clean(basic.vehicleSize()));
-        vehicleType.setSeatingCapacity(clean(basic.seatingCapacity()));
-
-        if (data.engine() != null) {
-            vehicleType.setEngineCylinders(clean(data.engine().cylinders()));
-            vehicleType.setEngineSize(clean(data.engine().engineSize()));
-            vehicleType.setEngineDescription(clean(data.engine().engineDescription()));
-            vehicleType.setEngineCapacity(clean(data.engine().engineCapacity()));
-            vehicleType.setEngineConfiguration(clean(data.engine().engineConfiguration()));
-            vehicleType.setElectrificationLevel(clean(data.engine().electrificationLevel()));
-        }
-        if (data.manufacturer() != null) {
-            vehicleType.setManufacturerName(clean(data.manufacturer().manufacturer()));
-            vehicleType.setManufacturerRegion(clean(data.manufacturer().region()));
-            vehicleType.setManufacturerCountry(clean(data.manufacturer().country()));
-            vehicleType.setPlantCity(clean(data.manufacturer().plantCity()));
-        }
-        if (data.transmission() != null) {
-            vehicleType.setTransmissionStyle(clean(data.transmission().transmissionStyle()));
-        }
-        if (data.restraint() != null) {
-            vehicleType.setRestraintDetails(clean(data.restraint().others()));
-        }
-        if (data.dimensions() != null) {
-            vehicleType.setGvwr(clean(data.dimensions().gvwr()));
-        }
-        if (data.drivetrain() != null) {
-            vehicleType.setDriveType(clean(data.drivetrain().driveType()));
-        }
-        if (data.fuel() != null) {
-            vehicleType.setFuelType(clean(data.fuel().fuelType()));
-            vehicleType.setSecondaryFuelType(clean(data.fuel().secondaryFuelType()));
-        }
+        VinDecodeResponse response = requireResponse(vinDecodeResponse);
+        VehicleType vehicleType = new VehicleType(required(make(response)), required(model(response)),
+                required(response.trim()), required(year(response)));
+        vehicleType.setVehicleStyle(required(response.style()));
+        vehicleType.setSourceVin(clean(firstPresent(response.vin(), vehicleVin(response))));
+        vehicleType.setOrigin(clean(response.origin()));
+        vehicleType.setBody(clean(response.body()));
+        vehicleType.setEngineDescription(clean(response.engine()));
+        vehicleType.setDriveType(clean(response.drive()));
+        vehicleType.setTransmissionStyle(clean(response.transmission()));
         if (ownerManualResponse != null && ownerManualResponse.data() != null) {
             vehicleType.setOwnersManual(clean(ownerManualResponse.data().path()));
         }
@@ -72,12 +40,9 @@ public class VehicleDataMapper {
     }
 
     public VehicleIdentity toVehicleIdentity(VinDecodeResponse vinDecodeResponse) {
-        VinDecodeResponse.Basic basic = requireData(vinDecodeResponse).basic();
-        if (basic == null) {
-            throw new IllegalArgumentException("VIN decode response is missing basic vehicle details");
-        }
-        return new VehicleIdentity(required(basic.year()), required(basic.make()), required(basic.model()),
-                required(basic.trim()));
+        VinDecodeResponse response = requireResponse(vinDecodeResponse);
+        return new VehicleIdentity(required(year(response)), required(make(response)), required(model(response)),
+                required(response.trim()), required(response.style()));
     }
 
     public List<MaintMileage> toMaintMileages(VehicleType vehicleType,
@@ -135,7 +100,10 @@ public class VehicleDataMapper {
             return recalls;
         }
         for (RecallResponse.RecallItem item : recallResponse.data()) {
-            String nhtsaCampaignNumber = clean(item != null ? item.nhtsaCampaignNumber() : null);
+            if (item == null) {
+                continue;
+            }
+            String nhtsaCampaignNumber = clean(item.nhtsaCampaignNumber());
             if (nhtsaCampaignNumber == null) {
                 continue;
             }
@@ -155,11 +123,39 @@ public class VehicleDataMapper {
         return recalls;
     }
 
-    private VinDecodeResponse.VinDecodeData requireData(VinDecodeResponse vinDecodeResponse) {
-        if (vinDecodeResponse == null || vinDecodeResponse.data() == null) {
-            throw new IllegalArgumentException("VIN decode response is missing data");
+    private VinDecodeResponse requireResponse(VinDecodeResponse vinDecodeResponse) {
+        if (vinDecodeResponse == null) {
+            throw new IllegalArgumentException("VIN decode response is missing");
         }
-        return vinDecodeResponse.data();
+        return vinDecodeResponse;
+    }
+
+    private String year(VinDecodeResponse vinDecodeResponse) {
+        if (vinDecodeResponse.vehicle() == null || vinDecodeResponse.vehicle().year() == null) {
+            return null;
+        }
+        return vinDecodeResponse.vehicle().year().toString();
+    }
+
+    private String make(VinDecodeResponse vinDecodeResponse) {
+        return firstPresent(vinDecodeResponse.make(), vinDecodeResponse.vehicle() != null
+                ? vinDecodeResponse.vehicle().make()
+                : null);
+    }
+
+    private String model(VinDecodeResponse vinDecodeResponse) {
+        return firstPresent(vinDecodeResponse.model(), vinDecodeResponse.vehicle() != null
+                ? vinDecodeResponse.vehicle().model()
+                : null);
+    }
+
+    private String vehicleVin(VinDecodeResponse vinDecodeResponse) {
+        return vinDecodeResponse.vehicle() != null ? vinDecodeResponse.vehicle().vin() : null;
+    }
+
+    private String firstPresent(String primary, String fallback) {
+        String cleanPrimary = clean(primary);
+        return cleanPrimary != null ? cleanPrimary : clean(fallback);
     }
 
     private RepairCostResponse.CostLine totalCost(List<RepairCostResponse.CostLine> costLines) {
@@ -208,6 +204,6 @@ public class VehicleDataMapper {
         return value.trim();
     }
 
-    public record VehicleIdentity(String year, String make, String model, String trim) {
+    public record VehicleIdentity(String year, String make, String model, String trim, String style) {
     }
 }

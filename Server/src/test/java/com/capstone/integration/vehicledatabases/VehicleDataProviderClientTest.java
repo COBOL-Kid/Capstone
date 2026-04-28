@@ -21,6 +21,35 @@ import com.capstone.configuration.WebClientConfig;
 class VehicleDataProviderClientTest {
 
     @Test
+    void shouldFetchVinDecodeFromAutoDevEndpoint() {
+        RestTemplate restTemplate = mock(RestTemplate.class);
+        WebClientConfig webClientConfig = mock(WebClientConfig.class);
+        VinDecodeResponse providerResponse = new VinDecodeResponse("3GCUDHEL3NG668790", true, "3GC", "Mexico",
+                "3GCUDHELNG", "3", true, "Active", "Chevrolet", "Silverado 1500", "ZR2",
+                "4x4 4dr Crew Cab 5.8 ft. SB", "Truck", "5.3L V8 OHV 16V FFV", "4WD", "Automatic",
+                new VinDecodeResponse.Vehicle("3GCUDHEL3NG668790", 2022, "Chevrolet", "Silverado 1500",
+                        "General Motors de Mexico"),
+                new VinDecodeResponse.Photos(true, false, true, 12), false);
+
+        when(webClientConfig.getVehicleDataBaseUrl()).thenReturn("https://api.auto.dev");
+        when(webClientConfig.getVehicleDataApiKey()).thenReturn("vin-api-key");
+        when(webClientConfig.getVehicleDataApiKeyHeader()).thenReturn("x-api-key");
+        when(restTemplate.exchange(eq("https://api.auto.dev/vin/3GCUDHEL3NG668790"), eq(HttpMethod.GET),
+                org.mockito.ArgumentMatchers.<HttpEntity<?>>any(), eq(VinDecodeResponse.class)))
+                .thenReturn(ResponseEntity.ok(providerResponse));
+
+        VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, webClientConfig);
+
+        VinDecodeResponse response = client.decodeVin("3GCUDHEL3NG668790");
+
+        assertSame(providerResponse, response);
+        ArgumentCaptor<HttpEntity<?>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
+        verify(restTemplate).exchange(eq("https://api.auto.dev/vin/3GCUDHEL3NG668790"), eq(HttpMethod.GET),
+                entityCaptor.capture(), eq(VinDecodeResponse.class));
+        assertEquals("vin-api-key", entityCaptor.getValue().getHeaders().getFirst("x-api-key"));
+    }
+
+    @Test
     void shouldFetchRecallsFromAutoDevEndpoint() {
         RestTemplate restTemplate = mock(RestTemplate.class);
         WebClientConfig webClientConfig = mock(WebClientConfig.class);

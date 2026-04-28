@@ -77,7 +77,7 @@ public class VehicleOnboardingService {
         VinDecodeResponse vinDecodeResponse = vehicleDataProviderClient.decodeVin(normalizedVin);
         VehicleIdentity identity = vehicleDataMapper.toVehicleIdentity(vinDecodeResponse);
         VehicleType existingVehicleType = vehicleTypeRepository.findByIdentity(identity.year(), identity.make(),
-                identity.model(), identity.trim())
+                identity.model(), identity.trim(), identity.style())
                 .orElse(null);
 
         if (existingVehicleType != null) {
@@ -128,7 +128,7 @@ public class VehicleOnboardingService {
         return transactionTemplate.execute(status -> {
             VehicleType vehicleType = vehicleTypeRepository.findByIdentity(incomingVehicleType.getVehicleYear(),
                     incomingVehicleType.getVehicleMake(), incomingVehicleType.getVehicleModel(),
-                    incomingVehicleType.getVehicleTrim())
+                    incomingVehicleType.getVehicleTrim(), incomingVehicleType.getVehicleStyle())
                     .orElse(null);
             boolean createdVehicleType = false;
             if (vehicleType == null) {

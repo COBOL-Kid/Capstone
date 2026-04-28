@@ -22,7 +22,7 @@ public class VehicleDataProviderClient {
     }
 
     public VinDecodeResponse decodeVin(String vin) {
-        return get("/vin-decode/{vin}", vin, VinDecodeResponse.class);
+        return get("/vin/{vin}", vin, VinDecodeResponse.class);
     }
 
     public MaintenanceScheduleResponse getMaintenanceSchedule(String vin) {

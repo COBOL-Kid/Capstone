@@ -14,13 +14,13 @@ public class WebClientConfig {
     @Value("${API_TOKEN:}")
     private String partnerToken;
 
-    @Value("${vehicle-data.base-url:https://api.vehicledatabases.com}")
+    @Value("${vehicle-data.base-url:https://api.auto.dev}")
     private String vehicleDataBaseUrl;
 
     @Value("${vehicle-data.api-key:}")
     private String vehicleDataApiKey;
 
-    @Value("${vehicle-data.api-key-header:x-AuthKey}")
+    @Value("${vehicle-data.api-key-header:x-api-key}")
     private String vehicleDataApiKeyHeader;
 
     @Value("${vehicle-data.recall-base-url:https://api.auto.dev}")

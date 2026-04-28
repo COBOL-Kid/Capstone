@@ -113,12 +113,14 @@ class VehicleOnboardingServiceTest {
         VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
         TransactionTemplate transactionTemplate = transactionTemplate();
         User user = user();
-        VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
+        VehicleType vehicleType = new VehicleType("Chevrolet", "Silverado 1500", "ZR2", "2022");
+        vehicleType.setVehicleStyle("4x4 4dr Crew Cab 5.8 ft. SB");
         vehicleType.setVehicleTypeId(7L);
 
         when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.empty());
         when(providerClient.decodeVin("JTENU5JR6M5962554")).thenReturn(vinDecodeResponse());
-        when(vehicleTypeRepository.findByIdentity("2021", "Toyota", "4RUNNER", "SRS Prem"))
+        when(vehicleTypeRepository.findByIdentity("2022", "Chevrolet", "Silverado 1500", "ZR2",
+                "4x4 4dr Crew Cab 5.8 ft. SB"))
                 .thenReturn(Optional.of(vehicleType));
         when(vinRepository.save(any(Vin.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
@@ -185,17 +187,11 @@ class VehicleOnboardingServiceTest {
     }
 
     private VinDecodeResponse vinDecodeResponse() {
-        return new VinDecodeResponse("success", new VinDecodeResponse.VinDecodeData(
-                new VinDecodeResponse.Intro("JTENU5JR6M5962554"),
-                new VinDecodeResponse.Basic("Toyota", "4RUNNER", "2021", "SRS Prem",
-                        "Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)",
-                        "Multipurpose Passenger Vehicle (MPV)", "5", "", "5"),
-                new VinDecodeResponse.Engine("6", "4.0", "1GR-FE V-Shaped", "4000.0", "V-Shaped", ""),
-                new VinDecodeResponse.Manufacturer("Toyota Motor Corporation", "Aichi", "Japan", "Tahara"),
-                new VinDecodeResponse.Transmission("Automatic"),
-                new VinDecodeResponse.Restraint("Manual Seat Belt"),
-                new VinDecodeResponse.Dimensions("Class 2E: 6,001 - 7,000 lb (2,722 - 3,175 kg)"),
-                new VinDecodeResponse.Drivetrain("4WD/4-Wheel Drive/4x4"),
-                new VinDecodeResponse.Fuel("Gasoline", "")));
+        return new VinDecodeResponse("3GCUDHEL3NG668790", true, "3GC", "Mexico", "3GCUDHELNG", "3", true,
+                "Active", "Chevrolet", "Silverado 1500", "ZR2", "4x4 4dr Crew Cab 5.8 ft. SB", "Truck",
+                "5.3L V8 OHV 16V FFV", "4WD", "Automatic",
+                new VinDecodeResponse.Vehicle("3GCUDHEL3NG668790", 2022, "Chevrolet", "Silverado 1500",
+                        "General Motors de Mexico"),
+                new VinDecodeResponse.Photos(true, false, true, 12), false);
     }
 }

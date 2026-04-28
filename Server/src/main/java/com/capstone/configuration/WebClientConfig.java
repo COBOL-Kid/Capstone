@@ -29,7 +29,7 @@ public class WebClientConfig {
     @Value("${vehicle-data.recall-api-key:${vehicle-data.api-key:}}")
     private String vehicleDataRecallApiKey;
 
-    @Value("${vehicle-data.recall-api-key-header:${vehicle-data.api-key-header:x-AuthKey}}")
+    @Value("${vehicle-data.recall-api-key-header:${vehicle-data.api-key-header:x-api-key}}")
     private String vehicleDataRecallApiKeyHeader;
 
     @Bean

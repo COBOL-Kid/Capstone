@@ -64,7 +64,7 @@ export default function VinConfirm({ vehicleData, user, setErrors }) {
       <CardMedia
         component="img"
         height="200"
-        image={vehicleData.selectedImageUrl || "/honestCar.png"}
+        image={vehicleData.image}
         alt="vehicle image"
       />
       <CardContent>
@@ -75,7 +75,7 @@ export default function VinConfirm({ vehicleData, user, setErrors }) {
           VIN: {vehicleData.vin}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Mileage: {vehicleData.currentMileage}
+          Mileage: {vehicleData.mileage}
         </Typography>
       </CardContent>
 

@@ -16,11 +16,11 @@ export default function FleetOverview({
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/vin", {
+    fetch(`http://localhost:8080/api/vin/${user.ownerId}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${user.jwt}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/jason",
       },
     })
       .then((response) => {
@@ -33,7 +33,7 @@ export default function FleetOverview({
         }
       })
       .catch((errors) => setErrors(errors));
-  }, [setVehicles, user.jwt]);
+  }, []);
 
   return (
     <Box

@@ -2,19 +2,35 @@ import { Button, Container, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Errors } from "./Errors.jsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import VinConfirm from "./VinConfirm.jsx";
 
 export default function AddVehicleForm({ user }) {
   const navigate = useNavigate();
 
   const initialVehicleData = {
+    vinId: 0,
+    ownerId: user.ownerId,
     vin: "",
-    currentMileage: 1,
+    mileage: 1,
+    year: 1,
+    make: "",
+    model: "",
+    image: "",
   };
 
   const [errors, setErrors] = useState([]);
   const [vehicleData, setVehicleData] = useState(initialVehicleData);
+  const [isVehicleInfoUpdated, setIsVehicleInfoUpdated] = useState(false);
+
+  useEffect(() => {
+    if (vehicleData.year !== initialVehicleData.year) {
+      setIsVehicleInfoUpdated(true);
+    } else {
+      setIsVehicleInfoUpdated(false);
+    }
+  }, [vehicleData]);
 
   const handleInputChange = (event) => {
     setVehicleData({
@@ -25,24 +41,29 @@ export default function AddVehicleForm({ user }) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    fetch("http://localhost:8080/api/vin", {
-      method: "POST",
+    fetch(`http://localhost:8080/api/external/find_vin/${vehicleData.vin}`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${user.jwt}`,
       },
-      body: JSON.stringify(vehicleData),
     })
       .then((response) => {
-        if (response.status === 201 || response.status === 200) {
-          navigate("/fleet_overview");
-        } else if (response.status === 403) {
+        if (response.status === 200) {
+          response.json().then((data) => {
+            setVehicleData({
+              ...vehicleData,
+              year: data.year,
+              make: data.make,
+              model: data.model,
+              image: data.image,
+            });
+          });
+        }
+        if (response.status === 403) {
           localStorage.removeItem("user");
           navigate("/");
         } else {
-          return response.text().then((message) => {
-            throw new Error(message || `Problem with response. Status: ${response.status}`);
-          });
+          Promise.reject(`Problem with response. Status: ${response.status}`);
         }
       })
       .catch((error) => {
@@ -74,11 +95,11 @@ export default function AddVehicleForm({ user }) {
         />
         <TextField
           label="Mileage"
-          name="currentMileage"
+          name="mileage"
           fullWidth
           required
           mx={2}
-          value={vehicleData.currentMileage}
+          value={vehicleData.mileage}
           onChange={handleInputChange}
         />
         <Button
@@ -90,6 +111,16 @@ export default function AddVehicleForm({ user }) {
         >
           Submit
         </Button>
+
+        {isVehicleInfoUpdated && (
+          <Box sx={{ mt: 2 }}>
+            <VinConfirm
+              vehicleData={vehicleData}
+              user={user}
+              setErrors={setErrors}
+            />
+          </Box>
+        )}
       </Box>
     </Container>
   );

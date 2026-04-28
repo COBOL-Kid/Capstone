@@ -46,11 +46,11 @@ export default function UpdateMileageForm({
   }
 
   useEffect(() => {
-    setFixedMiles(chosenVehicle.currentMileage);
-  }, [change, chosenVehicle.currentMileage]);
+    setFixedMiles(chosenVehicle.mileage);
+  }, [change]);
 
   function handleInputChange(e) {
-    setChosenVehicle({ ...chosenVehicle, currentMileage: e.target.value });
+    setChosenVehicle({ ...chosenVehicle, mileage: e.target.value });
   }
 
   return (

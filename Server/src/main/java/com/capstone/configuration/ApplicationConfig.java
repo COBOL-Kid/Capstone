@@ -11,20 +11,20 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.capstone.data.OwnerRepositoryJPA;
+import com.capstone.data.UserRepositoryJPA;
 
 @Configuration
 public class ApplicationConfig {
 
-    private final OwnerRepositoryJPA repository;
+    private final UserRepositoryJPA repository;
 
-    public ApplicationConfig(OwnerRepositoryJPA repository) {
+    public ApplicationConfig(UserRepositoryJPA repository) {
         this.repository = repository;
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> repository.getOwnerByEmail(username)
+        return username -> repository.findByUserEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 

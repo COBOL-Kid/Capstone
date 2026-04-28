@@ -16,48 +16,46 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.capstone.domain.MaintenanceTrackingService;
-import com.capstone.domain.dto.CompleteMaintenanceRequest;
-import com.capstone.domain.dto.CompletedMaintenanceResponse;
+import com.capstone.domain.RecallTrackingService;
+import com.capstone.domain.dto.CompleteRecallRequest;
+import com.capstone.domain.dto.CompletedRecallResponse;
 import com.capstone.models.User;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 
 @RestController
-@RequestMapping("/api/maintenance")
+@RequestMapping("/api/recall")
 @Validated
-public class MaintenanceController {
+public class RecallController {
 
-    private final MaintenanceTrackingService maintenanceTrackingService;
+    private final RecallTrackingService recallTrackingService;
 
-    public MaintenanceController(MaintenanceTrackingService maintenanceTrackingService) {
-        this.maintenanceTrackingService = maintenanceTrackingService;
+    public RecallController(RecallTrackingService recallTrackingService) {
+        this.recallTrackingService = recallTrackingService;
     }
 
     @GetMapping("/{vin}/completed")
-    public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user,
+    public ResponseEntity<?> getCompletedRecalls(@AuthenticationPrincipal User user,
             @PathVariable
             @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
             String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        List<CompletedMaintenanceResponse> completedMaintenance = maintenanceTrackingService.findCompletedMaintenance(
-                user,
-                vin);
-        if (completedMaintenance.isEmpty()) {
+        List<CompletedRecallResponse> completedRecalls = recallTrackingService.findCompletedRecalls(user, vin);
+        if (completedRecalls.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(completedMaintenance, HttpStatus.OK);
+        return new ResponseEntity<>(completedRecalls, HttpStatus.OK);
     }
 
     @PostMapping("/completed")
-    public ResponseEntity<?> completeMaintenance(@AuthenticationPrincipal User user,
-            @Valid @RequestBody CompleteMaintenanceRequest request) {
+    public ResponseEntity<?> completeRecall(@AuthenticationPrincipal User user,
+            @Valid @RequestBody CompleteRecallRequest request) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return new ResponseEntity<>(maintenanceTrackingService.completeMaintenance(user, request), HttpStatus.CREATED);
+        return new ResponseEntity<>(recallTrackingService.completeRecall(user, request), HttpStatus.CREATED);
     }
 }

@@ -16,32 +16,32 @@ import com.capstone.data.UserRepositoryJPA;
 @Configuration
 public class ApplicationConfig {
 
-    private final UserRepositoryJPA repository;
+	private final UserRepositoryJPA repository;
 
-    public ApplicationConfig(UserRepositoryJPA repository) {
-        this.repository = repository;
-    }
+	public ApplicationConfig(UserRepositoryJPA repository) {
+		this.repository = repository;
+	}
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> repository.findByUserEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-    }
+	@Bean
+	public UserDetailsService userDetailsService() {
+		return username -> repository.findByUserEmail(username)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	}
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService());
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        return authenticationProvider;
-    }
+	@Bean
+	public AuthenticationProvider authenticationProvider() {
+		DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService());
+		authenticationProvider.setPasswordEncoder(passwordEncoder());
+		return authenticationProvider;
+	}
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+		return config.getAuthenticationManager();
+	}
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 }

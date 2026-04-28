@@ -20,89 +20,87 @@ import jakarta.validation.ValidatorFactory;
 
 class RequestValidationTest {
 
-    private static ValidatorFactory validatorFactory;
-    private static Validator validator;
+	private static ValidatorFactory validatorFactory;
+	private static Validator validator;
 
-    @BeforeAll
-    static void createValidator() {
-        validatorFactory = Validation.buildDefaultValidatorFactory();
-        validator = validatorFactory.getValidator();
-    }
+	@BeforeAll
+	static void createValidator() {
+		validatorFactory = Validation.buildDefaultValidatorFactory();
+		validator = validatorFactory.getValidator();
+	}
 
-    @AfterAll
-    static void closeValidator() {
-        validatorFactory.close();
-    }
+	@AfterAll
+	static void closeValidator() {
+		validatorFactory.close();
+	}
 
-    @Test
-    void shouldValidateAuthenticationRequests() {
-        assertTrue(validator.validate(new AuthenticationRequest("driver@example.com", "secret")).isEmpty());
+	@Test
+	void shouldValidateAuthenticationRequests() {
+		assertTrue(validator.validate(new AuthenticationRequest("driver@example.com", "secret")).isEmpty());
 
-        Set<String> messages = messages(new AuthenticationRequest("not-an-email", ""));
+		Set<String> messages = messages(new AuthenticationRequest("not-an-email", ""));
 
-        assertTrue(messages.contains("Email must be valid"));
-        assertTrue(messages.contains("Password is required"));
-    }
+		assertTrue(messages.contains("Email must be valid"));
+		assertTrue(messages.contains("Password is required"));
+	}
 
-    @Test
-    void shouldValidateRegistrationRequests() {
-        assertTrue(validator.validate(new RegisterRequest("Pat", "Driver", "driver@example.com", "long-secret"))
-                .isEmpty());
+	@Test
+	void shouldValidateRegistrationRequests() {
+		assertTrue(validator.validate(new RegisterRequest("Pat", "Driver", "driver@example.com", "long-secret"))
+				.isEmpty());
 
-        Set<String> messages = messages(new RegisterRequest("", "", "bad", "short"));
+		Set<String> messages = messages(new RegisterRequest("", "", "bad", "short"));
 
-        assertTrue(messages.contains("First name is required"));
-        assertTrue(messages.contains("Last name is required"));
-        assertTrue(messages.contains("Email must be valid"));
-        assertTrue(messages.contains("Password must be between 8 and 72 characters"));
-    }
+		assertTrue(messages.contains("First name is required"));
+		assertTrue(messages.contains("Last name is required"));
+		assertTrue(messages.contains("Email must be valid"));
+		assertTrue(messages.contains("Password must be between 8 and 72 characters"));
+	}
 
-    @Test
-    void shouldValidateAddVinRequests() {
-        assertTrue(validator.validate(new AddVinRequest(" jtenu5jr6m5962554 ", 0)).isEmpty());
+	@Test
+	void shouldValidateAddVinRequests() {
+		assertTrue(validator.validate(new AddVinRequest(" jtenu5jr6m5962554 ", 0)).isEmpty());
 
-        Set<String> messages = messages(new AddVinRequest("too-short", -1));
+		Set<String> messages = messages(new AddVinRequest("too-short", -1));
 
-        assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
-        assertTrue(messages.contains("Current mileage cannot be negative"));
-        assertTrue(messages(new AddVinRequest("JTENU5JR6M5962554", null)).contains("Current mileage is required"));
-    }
+		assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
+		assertTrue(messages.contains("Current mileage cannot be negative"));
+		assertTrue(messages(new AddVinRequest("JTENU5JR6M5962554", null)).contains("Current mileage is required"));
+	}
 
-    @Test
-    void shouldValidateCompleteMaintenanceRequests() {
-        assertTrue(validator.validate(new CompleteMaintenanceRequest("JTENU5JR6M5962554", 11L,
-                LocalDate.now(), 45100, 120.50, "Dealer service")).isEmpty());
+	@Test
+	void shouldValidateCompleteMaintenanceRequests() {
+		assertTrue(validator.validate(new CompleteMaintenanceRequest("JTENU5JR6M5962554", 11L, LocalDate.now(), 45100,
+				120.50, "Dealer service")).isEmpty());
 
-        Set<String> messages = messages(new CompleteMaintenanceRequest("JTI NU5JR6M596255", -1L,
-                LocalDate.now().plusDays(1), null, -0.01, "x".repeat(1001)));
+		Set<String> messages = messages(new CompleteMaintenanceRequest("JTI NU5JR6M596255", -1L,
+				LocalDate.now().plusDays(1), null, -0.01, "x".repeat(1001)));
 
-        assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
-        assertTrue(messages.contains("Maintenance item must be positive"));
-        assertTrue(messages.contains("Completed date cannot be in the future"));
-        assertTrue(messages.contains("Mileage completed is required"));
-        assertTrue(messages.contains("Cost cannot be negative"));
-        assertTrue(messages.contains("Notes must be 1000 characters or fewer"));
-    }
+		assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
+		assertTrue(messages.contains("Maintenance item must be positive"));
+		assertTrue(messages.contains("Completed date cannot be in the future"));
+		assertTrue(messages.contains("Mileage completed is required"));
+		assertTrue(messages.contains("Cost cannot be negative"));
+		assertTrue(messages.contains("Notes must be 1000 characters or fewer"));
+	}
 
-    @Test
-    void shouldValidateCompleteRecallRequests() {
-        assertTrue(validator.validate(new CompleteRecallRequest("JTENU5JR6M5962554", 22L,
-                LocalDate.now(), "Toyota dealer", 0.0, "Airbag recall done")).isEmpty());
+	@Test
+	void shouldValidateCompleteRecallRequests() {
+		assertTrue(validator.validate(new CompleteRecallRequest("JTENU5JR6M5962554", 22L, LocalDate.now(),
+				"Toyota dealer", 0.0, "Airbag recall done")).isEmpty());
 
-        Set<String> messages = messages(new CompleteRecallRequest("JTENU5JR6M596255Q", null,
-                LocalDate.now().plusDays(1), "x".repeat(256), -0.01, "x".repeat(1001)));
+		Set<String> messages = messages(new CompleteRecallRequest("JTENU5JR6M596255Q", null,
+				LocalDate.now().plusDays(1), "x".repeat(256), -0.01, "x".repeat(1001)));
 
-        assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
-        assertTrue(messages.contains("Recall is required"));
-        assertTrue(messages.contains("Completed date cannot be in the future"));
-        assertTrue(messages.contains("Repair shop must be 255 characters or fewer"));
-        assertTrue(messages.contains("Cost cannot be negative"));
-        assertTrue(messages.contains("Notes must be 1000 characters or fewer"));
-    }
+		assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
+		assertTrue(messages.contains("Recall is required"));
+		assertTrue(messages.contains("Completed date cannot be in the future"));
+		assertTrue(messages.contains("Repair shop must be 255 characters or fewer"));
+		assertTrue(messages.contains("Cost cannot be negative"));
+		assertTrue(messages.contains("Notes must be 1000 characters or fewer"));
+	}
 
-    private Set<String> messages(Object target) {
-        return validator.validate(target).stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.toSet());
-    }
+	private Set<String> messages(Object target) {
+		return validator.validate(target).stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet());
+	}
 }

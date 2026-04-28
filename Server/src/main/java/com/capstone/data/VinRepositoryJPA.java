@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface VinRepositoryJPA extends JpaRepository<Vin, String> {
 
-    @Query("SELECT uv.vin FROM UserVin uv WHERE uv.user.userId = :userId")
-    List<Vin> getVinsByUserId(@Param("userId") Long userId);
+	@Query("SELECT uv.vin FROM UserVin uv WHERE uv.user.userId = :userId")
+	List<Vin> getVinsByUserId(@Param("userId") Long userId);
 
 }

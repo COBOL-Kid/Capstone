@@ -31,56 +31,52 @@ import jakarta.validation.constraints.Pattern;
 @Validated
 public class VinController {
 
-    VinService vinService;
-    VehicleOnboardingService vehicleOnboardingService;
+	VinService vinService;
+	VehicleOnboardingService vehicleOnboardingService;
 
-    public VinController(VinService vinService, VehicleOnboardingService vehicleOnboardingService) {
-        this.vinService = vinService;
-        this.vehicleOnboardingService = vehicleOnboardingService;
-    }
+	public VinController(VinService vinService, VehicleOnboardingService vehicleOnboardingService) {
+		this.vinService = vinService;
+		this.vehicleOnboardingService = vehicleOnboardingService;
+	}
 
-    @GetMapping
-    public ResponseEntity<?> getCurrentUserVins(@AuthenticationPrincipal User user) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        var vinList = vinService.findVinsByUserId(user.getUserId());
-        if (vinList.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(vinList, HttpStatus.OK);
-    }
+	@GetMapping
+	public ResponseEntity<?> getCurrentUserVins(@AuthenticationPrincipal User user) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		var vinList = vinService.findVinsByUserId(user.getUserId());
+		if (vinList.isEmpty()) {
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		return new ResponseEntity<>(vinList, HttpStatus.OK);
+	}
 
-    @GetMapping("/{vin}")
-    public ResponseEntity<?> getVin(
-            @PathVariable
-            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
-            String vin) {
-        return vinService.findByVin(vin)
-                .<ResponseEntity<?>>map(foundVin -> new ResponseEntity<Vin>(foundVin, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
+	@GetMapping("/{vin}")
+	public ResponseEntity<?> getVin(
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+		return vinService.findByVin(vin)
+				.<ResponseEntity<?>>map(foundVin -> new ResponseEntity<Vin>(foundVin, HttpStatus.OK))
+				.orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
 
-    @PostMapping
-    public ResponseEntity<?> addVin(@AuthenticationPrincipal User user, @Valid @RequestBody AddVinRequest request) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        AddVinResponse response = vehicleOnboardingService.addVinToUser(user, request);
-        return new ResponseEntity<>(response, response.createdAssociation() ? HttpStatus.CREATED : HttpStatus.OK);
-    }
+	@PostMapping
+	public ResponseEntity<?> addVin(@AuthenticationPrincipal User user, @Valid @RequestBody AddVinRequest request) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		AddVinResponse response = vehicleOnboardingService.addVinToUser(user, request);
+		return new ResponseEntity<>(response, response.createdAssociation() ? HttpStatus.CREATED : HttpStatus.OK);
+	}
 
-    @PatchMapping("/{vin}/photo")
-    public ResponseEntity<?> updateSelectedPhoto(@AuthenticationPrincipal User user,
-            @PathVariable
-            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
-            String vin,
-            @Valid @RequestBody UpdateVehiclePhotoRequest request) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        return vinService.updateSelectedImage(user.getUserId(), vin, request.selectedImageUrl())
-                .<ResponseEntity<?>>map(response -> new ResponseEntity<>(response, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
+	@PatchMapping("/{vin}/photo")
+	public ResponseEntity<?> updateSelectedPhoto(@AuthenticationPrincipal User user,
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin,
+			@Valid @RequestBody UpdateVehiclePhotoRequest request) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return vinService.updateSelectedImage(user.getUserId(), vin, request.selectedImageUrl())
+				.<ResponseEntity<?>>map(response -> new ResponseEntity<>(response, HttpStatus.OK))
+				.orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
 }

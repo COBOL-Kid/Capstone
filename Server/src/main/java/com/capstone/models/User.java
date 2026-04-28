@@ -15,148 +15,148 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Entity(name = "USER")
 public class User implements UserDetails {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "user_id")
+	private Long userId;
 
-    @Email
-    @Column(name = "user_email", nullable = false, columnDefinition = "varchar(50)")
-    private String userEmail;
+	@Email
+	@Column(name = "user_email", nullable = false, columnDefinition = "varchar(50)")
+	private String userEmail;
 
-    @Column(name = "first_name", columnDefinition = "varchar(50)")
-    private String firstName;
+	@Column(name = "first_name", columnDefinition = "varchar(50)")
+	private String firstName;
 
-    @Column(name = "last_name", columnDefinition = "varchar(50)")
-    private String lastName;
+	@Column(name = "last_name", columnDefinition = "varchar(50)")
+	private String lastName;
 
-    @Column(name = "user_sms", columnDefinition = "varchar(12)")
-    private String userSms;
+	@Column(name = "user_sms", columnDefinition = "varchar(12)")
+	private String userSms;
 
-    @Column(name = "user_pw", nullable = false, columnDefinition = "varchar(100)")
-    private String userPw;
+	@Column(name = "user_pw", nullable = false, columnDefinition = "varchar(100)")
+	private String userPw;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, columnDefinition = "varchar(20)")
-    private Role role = Role.USER;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "role", nullable = false, columnDefinition = "varchar(20)")
+	private Role role = Role.USER;
 
-    @OneToMany(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
-    private Set<UserVin> userVins = new HashSet<>();
+	@OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
+	private Set<UserVin> userVins = new HashSet<>();
 
-    public User() {
-    }
+	public User() {
+	}
 
-    public User(String userEmail, String userSms, String userPw) {
-        this.userEmail = userEmail;
-        this.userSms = userSms;
-        this.userPw = userPw;
-    }
+	public User(String userEmail, String userSms, String userPw) {
+		this.userEmail = userEmail;
+		this.userSms = userSms;
+		this.userPw = userPw;
+	}
 
-    public User(Long userId, String userEmail, String userSms, String userPw, Set<UserVin> userVins) {
-        this.userId = userId;
-        this.userEmail = userEmail;
-        this.userSms = userSms;
-        this.userPw = userPw;
-        this.userVins = userVins != null ? userVins : new HashSet<>();
-    }
+	public User(Long userId, String userEmail, String userSms, String userPw, Set<UserVin> userVins) {
+		this.userId = userId;
+		this.userEmail = userEmail;
+		this.userSms = userSms;
+		this.userPw = userPw;
+		this.userVins = userVins != null ? userVins : new HashSet<>();
+	}
 
-    public Long getUserId() {
-        return userId;
-    }
+	public Long getUserId() {
+		return userId;
+	}
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
 
-    public String getUserEmail() {
-        return userEmail;
-    }
+	public String getUserEmail() {
+		return userEmail;
+	}
 
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
-    }
+	public void setUserEmail(String userEmail) {
+		this.userEmail = userEmail;
+	}
 
-    public String getFirstName() {
-        return firstName;
-    }
+	public String getFirstName() {
+		return firstName;
+	}
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
 
-    public String getLastName() {
-        return lastName;
-    }
+	public String getLastName() {
+		return lastName;
+	}
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
 
-    public String getUserSms() {
-        return userSms;
-    }
+	public String getUserSms() {
+		return userSms;
+	}
 
-    public void setUserSms(String userSms) {
-        this.userSms = userSms;
-    }
+	public void setUserSms(String userSms) {
+		this.userSms = userSms;
+	}
 
-    public String getUserPw() {
-        return userPw;
-    }
+	public String getUserPw() {
+		return userPw;
+	}
 
-    public void setUserPw(String userPw) {
-        this.userPw = userPw;
-    }
+	public void setUserPw(String userPw) {
+		this.userPw = userPw;
+	}
 
-    public Role getRole() {
-        return role;
-    }
+	public Role getRole() {
+		return role;
+	}
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+	public void setRole(Role role) {
+		this.role = role;
+	}
 
-    public Set<UserVin> getUserVins() {
-        return userVins;
-    }
+	public Set<UserVin> getUserVins() {
+		return userVins;
+	}
 
-    public void setUserVins(Set<UserVin> userVins) {
-        this.userVins = userVins != null ? userVins : new HashSet<>();
-    }
+	public void setUserVins(Set<UserVin> userVins) {
+		this.userVins = userVins != null ? userVins : new HashSet<>();
+	}
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
-    }
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return List.of(new SimpleGrantedAuthority(role.name()));
+	}
 
-    @Override
-    public String getPassword() {
-        return userPw;
-    }
+	@Override
+	public String getPassword() {
+		return userPw;
+	}
 
-    @Override
-    public String getUsername() {
-        return userEmail;
-    }
+	@Override
+	public String getUsername() {
+		return userEmail;
+	}
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
 
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
+	@Override
+	public boolean isEnabled() {
+		return true;
+	}
 
 }

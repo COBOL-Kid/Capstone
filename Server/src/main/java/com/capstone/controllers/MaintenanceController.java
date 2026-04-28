@@ -29,35 +29,32 @@ import jakarta.validation.constraints.Pattern;
 @Validated
 public class MaintenanceController {
 
-    private final MaintenanceTrackingService maintenanceTrackingService;
+	private final MaintenanceTrackingService maintenanceTrackingService;
 
-    public MaintenanceController(MaintenanceTrackingService maintenanceTrackingService) {
-        this.maintenanceTrackingService = maintenanceTrackingService;
-    }
+	public MaintenanceController(MaintenanceTrackingService maintenanceTrackingService) {
+		this.maintenanceTrackingService = maintenanceTrackingService;
+	}
 
-    @GetMapping("/{vin}/completed")
-    public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user,
-            @PathVariable
-            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
-            String vin) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        List<CompletedMaintenanceResponse> completedMaintenance = maintenanceTrackingService.findCompletedMaintenance(
-                user,
-                vin);
-        if (completedMaintenance.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(completedMaintenance, HttpStatus.OK);
-    }
+	@GetMapping("/{vin}/completed")
+	public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user,
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		List<CompletedMaintenanceResponse> completedMaintenance = maintenanceTrackingService
+				.findCompletedMaintenance(user, vin);
+		if (completedMaintenance.isEmpty()) {
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		return new ResponseEntity<>(completedMaintenance, HttpStatus.OK);
+	}
 
-    @PostMapping("/completed")
-    public ResponseEntity<?> completeMaintenance(@AuthenticationPrincipal User user,
-            @Valid @RequestBody CompleteMaintenanceRequest request) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        return new ResponseEntity<>(maintenanceTrackingService.completeMaintenance(user, request), HttpStatus.CREATED);
-    }
+	@PostMapping("/completed")
+	public ResponseEntity<?> completeMaintenance(@AuthenticationPrincipal User user,
+			@Valid @RequestBody CompleteMaintenanceRequest request) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return new ResponseEntity<>(maintenanceTrackingService.completeMaintenance(user, request), HttpStatus.CREATED);
+	}
 }

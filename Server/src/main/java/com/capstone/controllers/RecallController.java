@@ -29,33 +29,31 @@ import jakarta.validation.constraints.Pattern;
 @Validated
 public class RecallController {
 
-    private final RecallTrackingService recallTrackingService;
+	private final RecallTrackingService recallTrackingService;
 
-    public RecallController(RecallTrackingService recallTrackingService) {
-        this.recallTrackingService = recallTrackingService;
-    }
+	public RecallController(RecallTrackingService recallTrackingService) {
+		this.recallTrackingService = recallTrackingService;
+	}
 
-    @GetMapping("/{vin}/completed")
-    public ResponseEntity<?> getCompletedRecalls(@AuthenticationPrincipal User user,
-            @PathVariable
-            @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE)
-            String vin) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        List<CompletedRecallResponse> completedRecalls = recallTrackingService.findCompletedRecalls(user, vin);
-        if (completedRecalls.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(completedRecalls, HttpStatus.OK);
-    }
+	@GetMapping("/{vin}/completed")
+	public ResponseEntity<?> getCompletedRecalls(@AuthenticationPrincipal User user,
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		List<CompletedRecallResponse> completedRecalls = recallTrackingService.findCompletedRecalls(user, vin);
+		if (completedRecalls.isEmpty()) {
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		return new ResponseEntity<>(completedRecalls, HttpStatus.OK);
+	}
 
-    @PostMapping("/completed")
-    public ResponseEntity<?> completeRecall(@AuthenticationPrincipal User user,
-            @Valid @RequestBody CompleteRecallRequest request) {
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        return new ResponseEntity<>(recallTrackingService.completeRecall(user, request), HttpStatus.CREATED);
-    }
+	@PostMapping("/completed")
+	public ResponseEntity<?> completeRecall(@AuthenticationPrincipal User user,
+			@Valid @RequestBody CompleteRecallRequest request) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return new ResponseEntity<>(recallTrackingService.completeRecall(user, request), HttpStatus.CREATED);
+	}
 }

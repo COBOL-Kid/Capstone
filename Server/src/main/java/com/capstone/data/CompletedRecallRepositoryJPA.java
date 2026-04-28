@@ -13,8 +13,8 @@ import com.capstone.models.UserVin;
 
 public interface CompletedRecallRepositoryJPA extends JpaRepository<CompletedRecall, Long> {
 
-    @Query("select cr from CompletedRecall cr where cr.userVin.user.userId = :userId and cr.userVin.vin.vin = :vin")
-    List<CompletedRecall> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
+	@Query("select cr from CompletedRecall cr where cr.userVin.user.userId = :userId and cr.userVin.vin.vin = :vin")
+	List<CompletedRecall> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 
-    Optional<CompletedRecall> findByUserVinAndRecall(UserVin userVin, Recall recall);
+	Optional<CompletedRecall> findByUserVinAndRecall(UserVin userVin, Recall recall);
 }

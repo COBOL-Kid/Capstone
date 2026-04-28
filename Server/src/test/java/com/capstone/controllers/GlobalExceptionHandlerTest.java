@@ -24,63 +24,63 @@ import jakarta.validation.Valid;
 
 class GlobalExceptionHandlerTest {
 
-    @Test
-    @DisplayName("should return structured bad request response for validation errors")
-    void shouldReturnStructuredBadRequestForValidationErrors() throws Exception {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        AddVinRequest request = new AddVinRequest("too-short", -1);
-        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
-        bindingResult.addError(new FieldError("request", "vin", "VIN must be 17 characters"));
-        MethodArgumentNotValidException exception = new MethodArgumentNotValidException(validationMethodParameter(),
-                bindingResult);
+	@Test
+	@DisplayName("should return structured bad request response for validation errors")
+	void shouldReturnStructuredBadRequestForValidationErrors() throws Exception {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
+		AddVinRequest request = new AddVinRequest("too-short", -1);
+		BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
+		bindingResult.addError(new FieldError("request", "vin", "VIN must be 17 characters"));
+		MethodArgumentNotValidException exception = new MethodArgumentNotValidException(validationMethodParameter(),
+				bindingResult);
 
-        var response = handler.handleMethodArgumentNotValidException(exception);
+		var response = handler.handleMethodArgumentNotValidException(exception);
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Validation failed", response.getBody().message());
-        assertEquals("vin", response.getBody().errors().get(0).field());
-        assertEquals("VIN must be 17 characters", response.getBody().errors().get(0).message());
-    }
+		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		assertEquals("Validation failed", response.getBody().message());
+		assertEquals("vin", response.getBody().errors().get(0).field());
+		assertEquals("VIN must be 17 characters", response.getBody().errors().get(0).message());
+	}
 
-    @Test
-    void shouldReturnBadRequestForMessageConversionErrors() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+	@Test
+	void shouldReturnBadRequestForMessageConversionErrors() {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-        var response = handler.handleHttpMessageConversionException(new HttpMessageConversionException("Bad JSON"));
+		var response = handler.handleHttpMessageConversionException(new HttpMessageConversionException("Bad JSON"));
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Bad JSON", response.getBody());
-    }
+		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		assertEquals("Bad JSON", response.getBody());
+	}
 
-    @Test
-    void shouldReturnUnsupportedMediaTypeForMediaTypeErrors() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpMediaTypeNotSupportedException exception = mock(HttpMediaTypeNotSupportedException.class);
+	@Test
+	void shouldReturnUnsupportedMediaTypeForMediaTypeErrors() {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
+		HttpMediaTypeNotSupportedException exception = mock(HttpMediaTypeNotSupportedException.class);
 
-        when(exception.getMessage()).thenReturn("Unsupported media type");
+		when(exception.getMessage()).thenReturn("Unsupported media type");
 
-        var response = handler.handleUnsupportedMediaType(exception);
+		var response = handler.handleUnsupportedMediaType(exception);
 
-        assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, response.getStatusCode());
-        assertEquals("Unsupported media type", response.getBody());
-    }
+		assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, response.getStatusCode());
+		assertEquals("Unsupported media type", response.getBody());
+	}
 
-    @Test
-    void shouldReturnGenericInternalServerErrorMessage() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+	@Test
+	void shouldReturnGenericInternalServerErrorMessage() {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-        var response = handler.handleException(new RuntimeException("Database unavailable"));
+		var response = handler.handleException(new RuntimeException("Database unavailable"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Sometimes things just don't go as planned.", response.getBody());
-    }
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+		assertEquals("Sometimes things just don't go as planned.", response.getBody());
+	}
 
-    private MethodParameter validationMethodParameter() throws NoSuchMethodException {
-        Method method = getClass().getDeclaredMethod("validationTarget", AddVinRequest.class);
-        return new MethodParameter(method, 0);
-    }
+	private MethodParameter validationMethodParameter() throws NoSuchMethodException {
+		Method method = getClass().getDeclaredMethod("validationTarget", AddVinRequest.class);
+		return new MethodParameter(method, 0);
+	}
 
-    @SuppressWarnings("unused")
-    private void validationTarget(@Valid @RequestBody AddVinRequest request) {
-    }
+	@SuppressWarnings("unused")
+	private void validationTarget(@Valid @RequestBody AddVinRequest request) {
+	}
 }

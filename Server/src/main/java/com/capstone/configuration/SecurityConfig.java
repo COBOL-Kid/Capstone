@@ -16,30 +16,26 @@ import com.capstone.Authentication.JwtAuthenticationFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final AuthenticationProvider authenticationProvider;
+	private final JwtAuthenticationFilter jwtAuthFilter;
+	private final AuthenticationProvider authenticationProvider;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.authenticationProvider = authenticationProvider;
-    }
+	public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
+		this.jwtAuthFilter = jwtAuthFilter;
+		this.authenticationProvider = authenticationProvider;
+	}
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/external/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/maintenance/**").hasAuthority("USER")
-                        .requestMatchers("/api/recall/**").hasAuthority("USER")
-                        .requestMatchers("/api/vin/**").hasAuthority("USER")
-                        .requestMatchers("/api/reminder/**").hasAuthority("USER")
-                        .anyRequest().authenticated())
-                .sessionManagement(sessionManagement -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .authenticationProvider(authenticationProvider);
-        return http.build();
-    }
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers("/api/auth/**")
+						.permitAll().requestMatchers("/api/external/**").hasAuthority("ADMIN")
+						.requestMatchers("/api/maintenance/**").hasAuthority("USER").requestMatchers("/api/recall/**")
+						.hasAuthority("USER").requestMatchers("/api/vin/**").hasAuthority("USER")
+						.requestMatchers("/api/reminder/**").hasAuthority("USER").anyRequest().authenticated())
+				.sessionManagement(
+						sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+				.authenticationProvider(authenticationProvider);
+		return http.build();
+	}
 }

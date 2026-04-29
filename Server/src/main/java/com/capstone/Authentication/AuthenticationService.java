@@ -3,6 +3,7 @@ package com.capstone.Authentication;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -33,7 +34,7 @@ public class AuthenticationService {
 
 	@Transactional
 	public AuthenticationResponse register(RegisterRequest request) {
-		String email = normalizeEmail(request.getEmail());
+		String email = EmailNormalizer.normalize(request.getEmail());
 		if (repository.existsByUserEmail(email)) {
 			throw new DuplicateEmailException();
 		}
@@ -44,7 +45,11 @@ public class AuthenticationService {
 		user.setUserPw(passwordEncoder.encode(request.getPassword()));
 		user.setRole(Role.USER);
 
-		repository.save(user);
+		try {
+			repository.saveAndFlush(user);
+		} catch (DataIntegrityViolationException ex) {
+			throw new DuplicateEmailException();
+		}
 
 		Map<String, Object> extraClaims = buildExtraClaims(user);
 
@@ -56,7 +61,7 @@ public class AuthenticationService {
 	}
 
 	public AuthenticationResponse authenticate(AuthenticationRequest request) {
-		String email = normalizeEmail(request.getEmail());
+		String email = EmailNormalizer.normalize(request.getEmail());
 		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 		User user = repository.findByUserEmail(email)
 				.orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
@@ -74,13 +79,6 @@ public class AuthenticationService {
 		Map<String, Object> extraClaims = new HashMap<>();
 		extraClaims.put("userId", user.getUserId());
 		return extraClaims;
-	}
-
-	private String normalizeEmail(String email) {
-		if (email == null || email.isBlank()) {
-			throw new IllegalArgumentException("Email is required");
-		}
-		return email.trim().toLowerCase();
 	}
 
 	private String clean(String value) {

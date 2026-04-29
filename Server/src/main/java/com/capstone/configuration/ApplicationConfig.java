@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.capstone.Authentication.EmailNormalizer;
 import com.capstone.data.UserRepositoryJPA;
 
 @Configuration
@@ -24,8 +25,16 @@ public class ApplicationConfig {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		return username -> repository.findByUserEmail(normalizeEmail(username))
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		return username -> {
+			String normalized;
+			try {
+				normalized = EmailNormalizer.normalize(username);
+			} catch (IllegalArgumentException ex) {
+				throw new UsernameNotFoundException("User not found");
+			}
+			return repository.findByUserEmail(normalized)
+					.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		};
 	}
 
 	@Bean
@@ -43,12 +52,5 @@ public class ApplicationConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
-	}
-
-	private String normalizeEmail(String email) {
-		if (email == null || email.isBlank()) {
-			throw new UsernameNotFoundException("User not found");
-		}
-		return email.trim().toLowerCase();
 	}
 }

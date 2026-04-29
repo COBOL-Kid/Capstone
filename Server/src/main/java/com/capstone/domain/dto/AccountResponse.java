@@ -1,7 +1,7 @@
 package com.capstone.domain.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AccountResponse(Long userId, String email, String firstName, String lastName, String userSms,
-		LocalDateTime createdAt, LocalDateTime updatedAt) {
+		Instant createdAt, Instant updatedAt) {
 }

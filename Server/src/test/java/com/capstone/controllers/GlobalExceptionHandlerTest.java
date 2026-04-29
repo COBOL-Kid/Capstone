@@ -78,12 +78,12 @@ class GlobalExceptionHandlerTest {
 	}
 
 	@Test
-	void shouldReturnBadRequestForInvalidAccountCredentials() {
+	void shouldReturnUnauthorizedForInvalidAccountCredentials() {
 		GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
 		var response = handler.handleInvalidAccountCredentialsException(new InvalidAccountCredentialsException());
 
-		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 		assertEquals("Invalid account credentials", response.getBody());
 	}
 

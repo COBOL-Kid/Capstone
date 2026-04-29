@@ -3,7 +3,7 @@ package com.capstone.models;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.List;
@@ -45,10 +45,10 @@ public class User implements UserDetails {
 	private Set<UserVin> userVins = new HashSet<>();
 
 	@Column(name = "created_at", nullable = false)
-	private LocalDateTime createdAt;
+	private Instant createdAt;
 
 	@Column(name = "updated_at", nullable = false)
-	private LocalDateTime updatedAt;
+	private Instant updatedAt;
 
 	public User() {
 	}
@@ -131,32 +131,32 @@ public class User implements UserDetails {
 		this.userVins = userVins != null ? userVins : new HashSet<>();
 	}
 
-	public LocalDateTime getCreatedAt() {
+	public Instant getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(LocalDateTime createdAt) {
+	public void setCreatedAt(Instant createdAt) {
 		this.createdAt = createdAt;
 	}
 
-	public LocalDateTime getUpdatedAt() {
+	public Instant getUpdatedAt() {
 		return updatedAt;
 	}
 
-	public void setUpdatedAt(LocalDateTime updatedAt) {
+	public void setUpdatedAt(Instant updatedAt) {
 		this.updatedAt = updatedAt;
 	}
 
 	@PrePersist
 	void beforeCreate() {
-		LocalDateTime now = LocalDateTime.now();
+		Instant now = Instant.now();
 		createdAt = createdAt != null ? createdAt : now;
 		updatedAt = now;
 	}
 
 	@PreUpdate
 	void beforeUpdate() {
-		updatedAt = LocalDateTime.now();
+		updatedAt = Instant.now();
 	}
 
 	@Override

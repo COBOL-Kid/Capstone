@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +43,7 @@ class AuthenticationServiceTest {
 		var response = service.register(request);
 
 		ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-		verify(repository).save(userCaptor.capture());
+		verify(repository).saveAndFlush(userCaptor.capture());
 		User savedUser = userCaptor.getValue();
 		assertEquals("Pat", savedUser.getFirstName());
 		assertEquals("Driver", savedUser.getLastName());
@@ -64,8 +65,24 @@ class AuthenticationServiceTest {
 
 		assertThrows(DuplicateEmailException.class,
 				() -> service.register(new RegisterRequest("Pat", "Driver", " Driver@Example.COM ", "secret")));
-		verify(repository, never()).save(any(User.class));
+		verify(repository, never()).saveAndFlush(any(User.class));
 		verify(passwordEncoder, never()).encode(any());
+	}
+
+	@Test
+	void shouldTranslateDataIntegrityViolationOnConcurrentRegistrationToDuplicateEmail() {
+		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, mock(JwtService.class),
+				mock(AuthenticationManager.class));
+
+		when(repository.existsByUserEmail("driver@example.com")).thenReturn(false);
+		when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
+		when(repository.saveAndFlush(any(User.class)))
+				.thenThrow(new DataIntegrityViolationException("uk_user_email"));
+
+		assertThrows(DuplicateEmailException.class,
+				() -> service.register(new RegisterRequest("Pat", "Driver", "driver@example.com", "secret")));
 	}
 
 	@Test

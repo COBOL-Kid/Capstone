@@ -8,7 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -158,8 +158,8 @@ class AccountServiceTest {
 		user.setLastName("Driver");
 		user.setUserSms("+15551234567");
 		user.setUserPw("encoded-old");
-		user.setCreatedAt(LocalDateTime.of(2026, 1, 2, 3, 4));
-		user.setUpdatedAt(LocalDateTime.of(2026, 2, 3, 4, 5));
+		user.setCreatedAt(Instant.parse("2026-01-02T03:04:00Z"));
+		user.setUpdatedAt(Instant.parse("2026-02-03T04:05:00Z"));
 		return user;
 	}
 }

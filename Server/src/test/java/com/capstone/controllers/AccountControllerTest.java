@@ -5,7 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -86,6 +86,6 @@ class AccountControllerTest {
 
 	private AccountResponse account() {
 		return new AccountResponse(1L, "driver@example.com", "Pat", "Driver", "+15551234567",
-				LocalDateTime.of(2026, 1, 2, 3, 4), LocalDateTime.of(2026, 2, 3, 4, 5));
+				Instant.parse("2026-01-02T03:04:00Z"), Instant.parse("2026-02-03T04:05:00Z"));
 	}
 }

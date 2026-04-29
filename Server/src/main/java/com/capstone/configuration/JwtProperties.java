@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "security.jwt")
 public class JwtProperties {
 
-	private String secret = System.getenv("SECRET_KEY");
-	private long expirationMinutes = 24;
+	private String secret;
+	private long expirationMinutes = 1440;
 
 	public String getSecret() {
 		return secret;

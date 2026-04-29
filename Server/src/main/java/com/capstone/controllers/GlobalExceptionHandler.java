@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler({InvalidAccountCredentialsException.class, BadCredentialsException.class})
 	public ResponseEntity<String> handleInvalidAccountCredentialsException(Exception ex) {
-		return new ResponseEntity<String>("Invalid account credentials", HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<String>("Invalid account credentials", HttpStatus.UNAUTHORIZED);
 	}
 
 	@ExceptionHandler(Exception.class)

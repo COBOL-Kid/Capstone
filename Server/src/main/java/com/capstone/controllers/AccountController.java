@@ -3,7 +3,6 @@ package com.capstone.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,7 +55,7 @@ public class AccountController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	@DeleteMapping("/me")
+	@PostMapping("/delete")
 	public ResponseEntity<?> deleteAccount(@AuthenticationPrincipal User user,
 			@Valid @RequestBody DeleteAccountRequest request) {
 		if (user == null) {

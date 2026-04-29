@@ -1,4 +1,4 @@
-package com.capstone.integration.vehicledatabases;
+package com.capstone.integration;
 
 public record VinDecodeResponse(String vin, Boolean vinValid, String wmi, String origin, String squishVin,
 		String checkDigit, Boolean checksum, String type, String make, String model, String trim, String style,

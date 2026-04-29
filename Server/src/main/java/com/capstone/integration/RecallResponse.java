@@ -1,4 +1,4 @@
-package com.capstone.integration.vehicledatabases;
+package com.capstone.integration;
 
 import java.util.List;
 

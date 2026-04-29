@@ -29,9 +29,10 @@ public class SecurityConfig {
 		http.csrf(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers("/api/auth/**")
 						.permitAll().requestMatchers("/api/external/**").hasAuthority("ADMIN")
-						.requestMatchers("/api/maintenance/**").hasAuthority("USER").requestMatchers("/api/recall/**")
-						.hasAuthority("USER").requestMatchers("/api/vin/**").hasAuthority("USER")
-						.requestMatchers("/api/reminder/**").hasAuthority("USER").anyRequest().authenticated())
+						.requestMatchers("/api/account/**").hasAuthority("USER").requestMatchers("/api/maintenance/**")
+						.hasAuthority("USER").requestMatchers("/api/recall/**").hasAuthority("USER")
+						.requestMatchers("/api/vin/**").hasAuthority("USER").requestMatchers("/api/reminder/**")
+						.hasAuthority("USER").anyRequest().authenticated())
 				.sessionManagement(
 						sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

@@ -19,6 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.capstone.domain.dto.AddVinRequest;
+import com.capstone.domain.DuplicateEmailException;
+import com.capstone.domain.InvalidAccountCredentialsException;
 
 import jakarta.validation.Valid;
 
@@ -63,6 +65,26 @@ class GlobalExceptionHandlerTest {
 
 		assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, response.getStatusCode());
 		assertEquals("Unsupported media type", response.getBody());
+	}
+
+	@Test
+	void shouldReturnConflictForDuplicateEmail() {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+		var response = handler.handleDuplicateEmailException(new DuplicateEmailException());
+
+		assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+		assertEquals("Email is already registered", response.getBody());
+	}
+
+	@Test
+	void shouldReturnBadRequestForInvalidAccountCredentials() {
+		GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+		var response = handler.handleInvalidAccountCredentialsException(new InvalidAccountCredentialsException());
+
+		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		assertEquals("Invalid account credentials", response.getBody());
 	}
 
 	@Test

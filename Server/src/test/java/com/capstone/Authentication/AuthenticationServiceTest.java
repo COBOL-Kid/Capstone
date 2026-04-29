@@ -1,9 +1,12 @@
 package com.capstone.Authentication;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.domain.DuplicateEmailException;
 import com.capstone.models.Role;
 import com.capstone.models.User;
 
@@ -30,7 +34,7 @@ class AuthenticationServiceTest {
 		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
 		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, jwtService,
 				authenticationManager);
-		RegisterRequest request = new RegisterRequest("Pat", "Driver", "driver@example.com", "secret");
+		RegisterRequest request = new RegisterRequest(" Pat ", " Driver ", " DRIVER@Example.COM ", "secret");
 
 		when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
 		when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("jwt-token");
@@ -50,6 +54,21 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void shouldRejectDuplicateRegistrationEmail() {
+		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, mock(JwtService.class),
+				mock(AuthenticationManager.class));
+
+		when(repository.existsByUserEmail("driver@example.com")).thenReturn(true);
+
+		assertThrows(DuplicateEmailException.class,
+				() -> service.register(new RegisterRequest("Pat", "Driver", " Driver@Example.COM ", "secret")));
+		verify(repository, never()).save(any(User.class));
+		verify(passwordEncoder, never()).encode(any());
+	}
+
+	@Test
 	void shouldAuthenticateCredentialsBeforeGeneratingToken() {
 		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
 		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
@@ -57,7 +76,7 @@ class AuthenticationServiceTest {
 		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
 		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, jwtService,
 				authenticationManager);
-		AuthenticationRequest request = new AuthenticationRequest("driver@example.com", "secret");
+		AuthenticationRequest request = new AuthenticationRequest(" DRIVER@Example.COM ", "secret");
 		User user = new User();
 		user.setUserId(1L);
 		user.setFirstName("Pat");
@@ -80,13 +99,20 @@ class AuthenticationServiceTest {
 		assertTokenClaims(jwtService, user);
 	}
 
+	@Test
+	void shouldRedactSensitiveValuesFromToString() {
+		assertFalse(new RegisterRequest("Pat", "Driver", "driver@example.com", "secret").toString().contains("secret"));
+		assertFalse(new AuthenticationRequest("driver@example.com", "secret").toString().contains("secret"));
+		assertFalse(new AuthenticationResponse("jwt-token").toString().contains("jwt-token"));
+	}
+
 	@SuppressWarnings("unchecked")
 	private void assertTokenClaims(JwtService jwtService, User user) {
 		ArgumentCaptor<Map<String, Object>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
 		verify(jwtService).generateToken(claimsCaptor.capture(), org.mockito.ArgumentMatchers.same(user));
 		Map<String, Object> claims = claimsCaptor.getValue();
-		assertEquals(user.getFirstName(), claims.get("firstName"));
-		assertEquals(user.getLastName(), claims.get("lastName"));
+		assertFalse(claims.containsKey("firstName"));
+		assertFalse(claims.containsKey("lastName"));
 		assertEquals(user.getUserId(), claims.get("userId"));
 	}
 }

@@ -24,7 +24,7 @@ public class ApplicationConfig {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		return username -> repository.findByUserEmail(username)
+		return username -> repository.findByUserEmail(normalizeEmail(username))
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 	}
 
@@ -43,5 +43,12 @@ public class ApplicationConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
+	}
+
+	private String normalizeEmail(String email) {
+		if (email == null || email.isBlank()) {
+			throw new UsernameNotFoundException("User not found");
+		}
+		return email.trim().toLowerCase();
 	}
 }

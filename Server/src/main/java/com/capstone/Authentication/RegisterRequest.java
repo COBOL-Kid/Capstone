@@ -86,6 +86,6 @@ public class RegisterRequest {
 	@Override
 	public String toString() {
 		return "RegisterRequest{" + "firstname='" + firstname + '\'' + ", lastname='" + lastname + '\'' + ", email='"
-				+ email + '\'' + ", password='" + password + '\'' + '}';
+				+ email + '\'' + ", password='[PROTECTED]'}";
 	}
 }

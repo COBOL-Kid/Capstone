@@ -19,65 +19,66 @@ import com.capstone.models.UserVin;
 @Service
 public class MaintenanceTrackingService {
 
-    private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
-    private final MaintMileageRepositoryJPA maintMileageRepository;
-    private final UserVinRepositoryJPA userVinRepository;
+	private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
+	private final MaintMileageRepositoryJPA maintMileageRepository;
+	private final UserVinRepositoryJPA userVinRepository;
 
-    public MaintenanceTrackingService(CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
-            MaintMileageRepositoryJPA maintMileageRepository, UserVinRepositoryJPA userVinRepository) {
-        this.completedMaintenanceRepository = completedMaintenanceRepository;
-        this.maintMileageRepository = maintMileageRepository;
-        this.userVinRepository = userVinRepository;
-    }
+	public MaintenanceTrackingService(CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
+			MaintMileageRepositoryJPA maintMileageRepository, UserVinRepositoryJPA userVinRepository) {
+		this.completedMaintenanceRepository = completedMaintenanceRepository;
+		this.maintMileageRepository = maintMileageRepository;
+		this.userVinRepository = userVinRepository;
+	}
 
-    @Transactional(readOnly = true)
-    public List<CompletedMaintenanceResponse> findCompletedMaintenance(User user, String vin) {
-        return completedMaintenanceRepository.findAllForUserVin(user.getUserId(), normalizeVin(vin)).stream()
-                .map(this::toResponse)
-                .toList();
-    }
+	@Transactional(readOnly = true)
+	public List<CompletedMaintenanceResponse> findCompletedMaintenance(User user, String vin) {
+		return completedMaintenanceRepository.findAllForUserVin(user.getUserId(), normalizeVin(vin)).stream()
+				.map(this::toResponse).toList();
+	}
 
-    @Transactional
-    public CompletedMaintenanceResponse completeMaintenance(User user, CompleteMaintenanceRequest request) {
-        if (request == null || request.maintMileageId() == null) {
-            throw new IllegalArgumentException("Maintenance item is required");
-        }
-        if (request.mileageCompleted() == null) {
-            throw new IllegalArgumentException("Mileage completed is required");
-        }
-        if (request.mileageCompleted() < 0) {
-            throw new IllegalArgumentException("Mileage completed cannot be negative");
-        }
-        UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
-                .orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
-        MaintMileage maintMileage = maintMileageRepository.findById(request.maintMileageId())
-                .orElseThrow(() -> new IllegalArgumentException("Maintenance item not found"));
-        CompletedMaintenance completedMaintenance = completedMaintenanceRepository.findByUserVinAndMaintMileage(userVin,
-            maintMileage)
-            .orElseGet(() -> saveCompletedMaintenance(userVin, maintMileage, request));
-        return toResponse(completedMaintenance);
-    }
+	@Transactional
+	public CompletedMaintenanceResponse completeMaintenance(User user, CompleteMaintenanceRequest request) {
+		if (request == null || request.maintMileageId() == null) {
+			throw new IllegalArgumentException("Maintenance item is required");
+		}
+		if (request.mileageCompleted() == null) {
+			throw new IllegalArgumentException("Mileage completed is required");
+		}
+		if (request.mileageCompleted() < 0) {
+			throw new IllegalArgumentException("Mileage completed cannot be negative");
+		}
+		UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
+				.orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
+		MaintMileage maintMileage = maintMileageRepository.findById(request.maintMileageId())
+				.orElseThrow(() -> new IllegalArgumentException("Maintenance item not found"));
+		CompletedMaintenance completedMaintenance = completedMaintenanceRepository
+				.findByUserVinAndMaintMileage(userVin, maintMileage)
+				.orElseGet(() -> saveCompletedMaintenance(userVin, maintMileage, request));
+		return toResponse(completedMaintenance);
+	}
 
-    private CompletedMaintenance saveCompletedMaintenance(UserVin userVin, MaintMileage maintMileage,
-            CompleteMaintenanceRequest request) {
-        CompletedMaintenance completedMaintenance = new CompletedMaintenance(userVin, maintMileage,
-                request.completedDate() != null ? request.completedDate() : LocalDate.now(), request.mileageCompleted());
-        completedMaintenance.setCost(request.cost());
-        completedMaintenance.setNotes(request.notes());
-        return completedMaintenanceRepository.save(completedMaintenance);
-    }
+	private CompletedMaintenance saveCompletedMaintenance(UserVin userVin, MaintMileage maintMileage,
+			CompleteMaintenanceRequest request) {
+		CompletedMaintenance completedMaintenance = new CompletedMaintenance(userVin, maintMileage,
+				request.completedDate() != null ? request.completedDate() : LocalDate.now(),
+				request.mileageCompleted());
+		completedMaintenance.setCost(request.cost());
+		completedMaintenance.setNotes(request.notes());
+		return completedMaintenanceRepository.save(completedMaintenance);
+	}
 
-    private CompletedMaintenanceResponse toResponse(CompletedMaintenance completedMaintenance) {
-        return new CompletedMaintenanceResponse(completedMaintenance.getCompletedMaintenanceId(),
-                completedMaintenance.getUserVin().getVin().getVin(),
-                completedMaintenance.getMaintMileage().getMaintMileageId(), completedMaintenance.getCompletedDate(),
-                completedMaintenance.getMileageCompleted(), completedMaintenance.getCost(), completedMaintenance.getNotes());
-    }
+	private CompletedMaintenanceResponse toResponse(CompletedMaintenance completedMaintenance) {
+		return new CompletedMaintenanceResponse(completedMaintenance.getCompletedMaintenanceId(),
+				completedMaintenance.getUserVin().getVin().getVin(),
+				completedMaintenance.getMaintMileage().getMaintMileageId(), completedMaintenance.getCompletedDate(),
+				completedMaintenance.getMileageCompleted(), completedMaintenance.getCost(),
+				completedMaintenance.getNotes());
+	}
 
-    private String normalizeVin(String vin) {
-        if (vin == null || vin.isBlank()) {
-            throw new IllegalArgumentException("VIN is required");
-        }
-        return vin.trim().toUpperCase();
-    }
+	private String normalizeVin(String vin) {
+		if (vin == null || vin.isBlank()) {
+			throw new IllegalArgumentException("VIN is required");
+		}
+		return vin.trim().toUpperCase();
+	}
 }

@@ -13,8 +13,8 @@ import com.capstone.models.UserVin;
 
 public interface CompletedMaintenanceRepositoryJPA extends JpaRepository<CompletedMaintenance, Long> {
 
-    @Query("select cm from CompletedMaintenance cm where cm.userVin.user.userId = :userId and cm.userVin.vin.vin = :vin")
-    List<CompletedMaintenance> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
+	@Query("select cm from CompletedMaintenance cm where cm.userVin.user.userId = :userId and cm.userVin.vin.vin = :vin")
+	List<CompletedMaintenance> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 
-    Optional<CompletedMaintenance> findByUserVinAndMaintMileage(UserVin userVin, MaintMileage maintMileage);
+	Optional<CompletedMaintenance> findByUserVinAndMaintMileage(UserVin userVin, MaintMileage maintMileage);
 }

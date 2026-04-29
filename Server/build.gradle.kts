@@ -2,6 +2,7 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.diffplug.spotless") version "6.25.0"
     `maven-publish`
 }
 
@@ -23,9 +24,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly(libs.postgresql)
 
     implementation(libs.jjwt.api)
@@ -57,6 +60,15 @@ tasks.test {
 
 tasks.jar {
     enabled = false
+}
+
+spotless {
+    java {
+        target("src/*/java/**/*.java")
+        eclipse()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
 
 publishing {

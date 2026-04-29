@@ -12,19 +12,19 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
-    private final AuthenticationService service;
+	private final AuthenticationService service;
 
-    public AuthenticationController(AuthenticationService service) {
-        this.service = service;
-    }
+	public AuthenticationController(AuthenticationService service) {
+		this.service = service;
+	}
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(service.register(request));
-    }
+	@PostMapping("/register")
+	public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) {
+		return ResponseEntity.ok(service.register(request));
+	}
 
-    @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
-        return ResponseEntity.ok(service.authenticate(request));
-    }
+	@PostMapping("/authenticate")
+	public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
+		return ResponseEntity.ok(service.authenticate(request));
+	}
 }

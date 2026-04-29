@@ -1,9 +1,8 @@
 package com.capstone.models;
 
 public enum Role {
-    USER,
-    ADMIN;
+	USER, ADMIN;
 
-    Role() {
-    }
+	Role() {
+	}
 }

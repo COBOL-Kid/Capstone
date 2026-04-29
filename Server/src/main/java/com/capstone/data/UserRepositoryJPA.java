@@ -8,5 +8,5 @@ import com.capstone.models.User;
 
 public interface UserRepositoryJPA extends JpaRepository<User, Long> {
 
-    Optional<User> findByUserEmail(String userEmail);
+	Optional<User> findByUserEmail(String userEmail);
 }

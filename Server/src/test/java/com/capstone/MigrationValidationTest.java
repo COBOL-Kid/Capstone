@@ -44,4 +44,26 @@ class MigrationValidationTest {
 
 		assertEquals(2, columnCount);
 	}
+
+	@Test
+	void accountMigrationHardensUserColumns() {
+		new ResourceDatabasePopulator(new ClassPathResource("db/migration/V4__harden_user_accounts.sql"))
+				.execute(dataSource);
+
+		Integer columnCount = new JdbcTemplate(dataSource).queryForObject("""
+				SELECT COUNT(*)
+				FROM information_schema.columns
+				WHERE lower(table_name) = 'user'
+				  AND lower(column_name) IN ('created_at', 'updated_at')
+				""", Integer.class);
+		Integer emailLength = new JdbcTemplate(dataSource).queryForObject("""
+				SELECT character_maximum_length
+				FROM information_schema.columns
+				WHERE lower(table_name) = 'user'
+				  AND lower(column_name) = 'user_email'
+				""", Integer.class);
+
+		assertEquals(2, columnCount);
+		assertEquals(254, emailLength);
+	}
 }

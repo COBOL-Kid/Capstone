@@ -9,4 +9,6 @@ import com.capstone.models.User;
 public interface UserRepositoryJPA extends JpaRepository<User, Long> {
 
 	Optional<User> findByUserEmail(String userEmail);
+
+	boolean existsByUserEmail(String userEmail);
 }

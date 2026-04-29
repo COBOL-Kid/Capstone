@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,4 +21,11 @@ public interface UserVinRepositoryJPA extends JpaRepository<UserVin, UserVinId> 
 	@Query("SELECT uv FROM UserVin uv JOIN FETCH uv.vin v JOIN FETCH v.vehicleTypeId "
 			+ "WHERE uv.user.userId = :userId AND uv.vin.vin = :vin")
 	Optional<UserVin> findForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
+
+	@Query("select uv.id.vin from UserVin uv where uv.id.userId = :userId")
+	List<String> findVinNumbersForUser(@Param("userId") Long userId);
+
+	@Modifying
+	@Query("delete from UserVin uv where uv.id.userId = :userId")
+	int deleteAllForUserId(@Param("userId") Long userId);
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,4 +18,8 @@ public interface CompletedMaintenanceRepositoryJPA extends JpaRepository<Complet
 	List<CompletedMaintenance> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 
 	Optional<CompletedMaintenance> findByUserVinAndMaintMileage(UserVin userVin, MaintMileage maintMileage);
+
+	@Modifying
+	@Query("delete from CompletedMaintenance cm where cm.userVin.id.userId = :userId")
+	int deleteAllForUserId(@Param("userId") Long userId);
 }

@@ -1,4 +1,4 @@
-package com.capstone.integration.vehicledatabases;
+package com.capstone.integration;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;

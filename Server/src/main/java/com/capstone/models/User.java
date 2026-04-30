@@ -3,6 +3,7 @@ package com.capstone.models;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.List;
@@ -21,16 +22,16 @@ public class User implements UserDetails {
 	private Long userId;
 
 	@Email
-	@Column(name = "user_email", nullable = false, columnDefinition = "varchar(50)")
+	@Column(name = "user_email", nullable = false, columnDefinition = "varchar(254)")
 	private String userEmail;
 
-	@Column(name = "first_name", columnDefinition = "varchar(50)")
+	@Column(name = "first_name", columnDefinition = "varchar(100)")
 	private String firstName;
 
-	@Column(name = "last_name", columnDefinition = "varchar(50)")
+	@Column(name = "last_name", columnDefinition = "varchar(100)")
 	private String lastName;
 
-	@Column(name = "user_sms", columnDefinition = "varchar(12)")
+	@Column(name = "user_sms", columnDefinition = "varchar(20)")
 	private String userSms;
 
 	@Column(name = "user_pw", nullable = false, columnDefinition = "varchar(100)")
@@ -42,6 +43,12 @@ public class User implements UserDetails {
 
 	@OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
 	private Set<UserVin> userVins = new HashSet<>();
+
+	@Column(name = "created_at", nullable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at", nullable = false)
+	private Instant updatedAt;
 
 	public User() {
 	}
@@ -122,6 +129,34 @@ public class User implements UserDetails {
 
 	public void setUserVins(Set<UserVin> userVins) {
 		this.userVins = userVins != null ? userVins : new HashSet<>();
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public Instant getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(Instant updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
+	@PrePersist
+	void beforeCreate() {
+		Instant now = Instant.now();
+		createdAt = createdAt != null ? createdAt : now;
+		updatedAt = now;
+	}
+
+	@PreUpdate
+	void beforeUpdate() {
+		updatedAt = Instant.now();
 	}
 
 	@Override

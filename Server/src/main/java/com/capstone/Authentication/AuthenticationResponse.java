@@ -38,6 +38,6 @@ public class AuthenticationResponse {
 
 	@Override
 	public String toString() {
-		return "AuthenticationResponse{" + "token='" + token + '\'' + '}';
+		return "AuthenticationResponse{token='[PROTECTED]'}";
 	}
 }

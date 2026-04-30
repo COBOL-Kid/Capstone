@@ -1,4 +1,4 @@
-package com.capstone.integration.vehicledatabases;
+package com.capstone.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;

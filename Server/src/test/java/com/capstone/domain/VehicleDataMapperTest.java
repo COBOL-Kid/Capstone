@@ -8,11 +8,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.capstone.integration.vehicledatabases.MaintenanceScheduleResponse;
-import com.capstone.integration.vehicledatabases.OwnerManualResponse;
-import com.capstone.integration.vehicledatabases.RecallResponse;
-import com.capstone.integration.vehicledatabases.RepairCostResponse;
-import com.capstone.integration.vehicledatabases.VinDecodeResponse;
+import com.capstone.integration.MaintenanceScheduleResponse;
+import com.capstone.integration.OwnerManualResponse;
+import com.capstone.integration.RecallResponse;
+import com.capstone.integration.RepairCostResponse;
+import com.capstone.integration.VinDecodeResponse;
 import com.capstone.models.MaintCost;
 import com.capstone.models.Recall;
 import com.capstone.models.VehicleType;

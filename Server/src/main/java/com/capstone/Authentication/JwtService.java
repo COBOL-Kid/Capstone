@@ -8,14 +8,21 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.capstone.configuration.JwtProperties;
+
 @Service
 public class JwtService {
-	private static final String secretKey = System.getenv("SECRET_KEY");
+	private final JwtProperties jwtProperties;
+
+	public JwtService(JwtProperties jwtProperties) {
+		this.jwtProperties = jwtProperties;
+	}
 
 	public String extractUserEmail(String token) {
 		return extractClaim(token, Claims::getSubject);
@@ -33,7 +40,7 @@ public class JwtService {
 	public String generateToken(Map<String, Object> extraClaims, UserDetails ownerDetails) {
 		return Jwts.builder().claims(extraClaims).subject(ownerDetails.getUsername())
 				.issuedAt(new Date(System.currentTimeMillis()))
-				.expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
+				.expiration(new Date(System.currentTimeMillis() + expirationMillis()))
 				.signWith(getSignInKey(), Jwts.SIG.HS256).compact();
 	}
 
@@ -55,7 +62,18 @@ public class JwtService {
 	}
 
 	private SecretKey getSignInKey() {
+		String secretKey = jwtProperties.getSecret();
+		if (secretKey == null || secretKey.isBlank()) {
+			throw new IllegalStateException("JWT secret is required");
+		}
 		byte[] keyBytes = Decoders.BASE64.decode(secretKey);
 		return Keys.hmacShaKeyFor(keyBytes);
+	}
+
+	private long expirationMillis() {
+		if (jwtProperties.getExpirationMinutes() <= 0) {
+			throw new IllegalStateException("JWT expiration must be positive");
+		}
+		return Duration.ofMinutes(jwtProperties.getExpirationMinutes()).toMillis();
 	}
 }

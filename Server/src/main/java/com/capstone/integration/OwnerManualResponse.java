@@ -1,4 +1,4 @@
-package com.capstone.integration.vehicledatabases;
+package com.capstone.integration;
 
 public record OwnerManualResponse(String status, OwnerManualData data) {
 

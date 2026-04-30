@@ -32,9 +32,6 @@ class MigrationValidationTest {
 
 	@Test
 	void photoMigrationAddsUserVinPhotoColumns() {
-		new ResourceDatabasePopulator(new ClassPathResource("db/migration/V3__add_user_vehicle_photos.sql"))
-				.execute(dataSource);
-
 		Integer columnCount = new JdbcTemplate(dataSource).queryForObject("""
 				SELECT COUNT(*)
 				FROM information_schema.columns
@@ -47,9 +44,6 @@ class MigrationValidationTest {
 
 	@Test
 	void accountMigrationHardensUserColumns() {
-		new ResourceDatabasePopulator(new ClassPathResource("db/migration/V4__harden_user_accounts.sql"))
-				.execute(dataSource);
-
 		Integer columnCount = new JdbcTemplate(dataSource).queryForObject("""
 				SELECT COUNT(*)
 				FROM information_schema.columns

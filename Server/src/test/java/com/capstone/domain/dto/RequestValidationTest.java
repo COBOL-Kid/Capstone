@@ -6,12 +6,13 @@ import java.time.LocalDate;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.capstone.models.dto.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.capstone.Authentication.AuthenticationRequest;
-import com.capstone.Authentication.RegisterRequest;
+import com.capstone.authentication.AuthenticationRequest;
+import com.capstone.authentication.RegisterRequest;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -46,7 +47,7 @@ class RequestValidationTest {
 
 	@Test
 	void shouldValidateRegistrationRequests() {
-		assertTrue(validator.validate(new RegisterRequest("Pat", "Driver", "driver@example.com", "long-secret"))
+		assertTrue(validator.validate(new RegisterRequest("Pat", "Driver", "driver@example.com", "LongSecret1!"))
 				.isEmpty());
 
 		Set<String> messages = messages(new RegisterRequest("", "", "bad", "short"));
@@ -55,6 +56,7 @@ class RequestValidationTest {
 		assertTrue(messages.contains("Last name is required"));
 		assertTrue(messages.contains("Email must be valid"));
 		assertTrue(messages.contains("Password must be between 8 and 72 characters"));
+		assertTrue(messages.contains("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"));
 	}
 
 	@Test

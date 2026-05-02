@@ -1,4 +1,4 @@
-package com.capstone.domain.dto;
+package com.capstone.models.dto;
 
 public final class VinValidation {
 

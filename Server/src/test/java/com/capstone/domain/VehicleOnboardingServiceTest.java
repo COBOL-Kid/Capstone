@@ -23,7 +23,7 @@ import com.capstone.data.RecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VehicleTypeRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
-import com.capstone.domain.dto.AddVinRequest;
+import com.capstone.models.dto.AddVinRequest;
 import com.capstone.integration.VinDecodeResponse;
 import com.capstone.integration.VehicleDataProviderClient;
 import com.capstone.integration.VehiclePhotosResponse;

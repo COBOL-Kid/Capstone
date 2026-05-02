@@ -1,7 +1,7 @@
 package com.capstone.controllers;
 
-import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
-import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
+import static com.capstone.models.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.models.dto.VinValidation.VIN_PATTERN;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.domain.RecallTrackingService;
-import com.capstone.domain.dto.CompleteRecallRequest;
-import com.capstone.domain.dto.CompletedRecallResponse;
+import com.capstone.models.dto.CompleteRecallRequest;
+import com.capstone.models.dto.CompletedRecallResponse;
 import com.capstone.models.User;
 
 import jakarta.validation.Valid;

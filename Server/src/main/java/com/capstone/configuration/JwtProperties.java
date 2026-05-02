@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 public class JwtProperties {
 
 	private String secret;
-	private long expirationMinutes = 1440;
+	private long expirationMinutes = 15;
+	private long refreshExpirationDays = 7;
 
 	public String getSecret() {
 		return secret;
@@ -24,5 +25,13 @@ public class JwtProperties {
 
 	public void setExpirationMinutes(long expirationMinutes) {
 		this.expirationMinutes = expirationMinutes;
+	}
+
+	public long getRefreshExpirationDays() {
+		return refreshExpirationDays;
+	}
+
+	public void setRefreshExpirationDays(long refreshExpirationDays) {
+		this.refreshExpirationDays = refreshExpirationDays;
 	}
 }

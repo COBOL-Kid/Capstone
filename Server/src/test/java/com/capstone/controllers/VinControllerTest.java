@@ -14,10 +14,10 @@ import org.springframework.http.HttpStatus;
 
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
-import com.capstone.domain.dto.AddVinRequest;
-import com.capstone.domain.dto.AddVinResponse;
-import com.capstone.domain.dto.UpdateVehiclePhotoRequest;
-import com.capstone.domain.dto.UserVehicleResponse;
+import com.capstone.models.dto.AddVinRequest;
+import com.capstone.models.dto.AddVinResponse;
+import com.capstone.models.dto.UpdateVehiclePhotoRequest;
+import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.User;
 import com.capstone.models.VehicleType;
 import com.capstone.models.Vin;

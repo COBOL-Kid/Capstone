@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import com.capstone.domain.RecallTrackingService;
-import com.capstone.domain.dto.CompleteRecallRequest;
-import com.capstone.domain.dto.CompletedRecallResponse;
+import com.capstone.models.dto.CompleteRecallRequest;
+import com.capstone.models.dto.CompletedRecallResponse;
 import com.capstone.models.User;
 
 class RecallControllerTest {

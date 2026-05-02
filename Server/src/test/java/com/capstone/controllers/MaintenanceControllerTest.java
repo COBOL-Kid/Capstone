@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import com.capstone.domain.MaintenanceTrackingService;
-import com.capstone.domain.dto.CompleteMaintenanceRequest;
-import com.capstone.domain.dto.CompletedMaintenanceResponse;
+import com.capstone.models.dto.CompleteMaintenanceRequest;
+import com.capstone.models.dto.CompletedMaintenanceResponse;
 import com.capstone.models.User;
 
 class MaintenanceControllerTest {

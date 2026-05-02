@@ -11,10 +11,10 @@ import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
-import com.capstone.domain.dto.AccountResponse;
-import com.capstone.domain.dto.ChangePasswordRequest;
-import com.capstone.domain.dto.DeleteAccountRequest;
-import com.capstone.domain.dto.UpdateAccountRequest;
+import com.capstone.models.dto.AccountResponse;
+import com.capstone.models.dto.ChangePasswordRequest;
+import com.capstone.models.dto.DeleteAccountRequest;
+import com.capstone.models.dto.UpdateAccountRequest;
 import com.capstone.models.User;
 
 @Service

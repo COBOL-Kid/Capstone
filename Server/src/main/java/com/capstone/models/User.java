@@ -14,7 +14,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-@Entity(name = "USER")
+@Entity
+@Table(name = "user_detail")
 public class User implements UserDetails {
 
 	@Id
@@ -42,7 +43,7 @@ public class User implements UserDetails {
 	@Column(name = "role", nullable = false, columnDefinition = "varchar(20)")
 	private Role role = Role.USER;
 
-	@Column(name = "failed_login_attempts")
+	@Column(name = "failed_login_attempts", nullable = false)
 	private int failedLoginAttempts = 0;
 
 	@Column(name = "lockout_end")

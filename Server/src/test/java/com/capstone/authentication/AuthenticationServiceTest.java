@@ -128,6 +128,40 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void shouldRotateRefreshToken() {
+		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+		JwtService jwtService = mock(JwtService.class);
+		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+		RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+		JwtProperties jwtProperties = mock(JwtProperties.class);
+		AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+				authenticationManager, jwtProperties);
+
+		User user = new User();
+		user.setUserId(1L);
+		user.setUserEmail("driver@example.com");
+
+		RefreshToken oldToken = new RefreshToken();
+		oldToken.setToken("old-refresh-token");
+		oldToken.setUser(user);
+		oldToken.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
+
+		when(refreshTokenRepository.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+		when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+		when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("new-jwt-token");
+
+		var response = service.refreshToken("old-refresh-token");
+
+		verify(refreshTokenRepository).delete(oldToken);
+		verify(refreshTokenRepository).save(any(RefreshToken.class));
+		assertEquals("new-jwt-token", response.getToken());
+		assertFalse(response.getRefreshToken().isEmpty());
+		assertFalse(response.getRefreshToken().equals("old-refresh-token"));
+	}
+
+	@Test
 	void shouldRedactSensitiveValuesFromToString() {
 		assertFalse(new RegisterRequest("Pat", "Driver", "driver@example.com", "secret").toString().contains("secret"));
 		assertFalse(new AuthenticationRequest("driver@example.com", "secret").toString().contains("secret"));

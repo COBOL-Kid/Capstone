@@ -1,5 +1,7 @@
 package com.capstone.authentication;
 
+import java.time.Duration;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -59,7 +61,7 @@ public class AuthenticationController {
 	}
 	
 	private HttpHeaders createCookieHeader(String refreshToken) {
-		long maxAgeSeconds = jwtProperties.getRefreshExpirationDays() * 24 * 60 * 60;
+		long maxAgeSeconds = Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds();
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 				.httpOnly(true)
 				.secure(true)

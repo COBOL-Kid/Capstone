@@ -47,13 +47,13 @@ class MigrationValidationTest {
 		Integer columnCount = new JdbcTemplate(dataSource).queryForObject("""
 				SELECT COUNT(*)
 				FROM information_schema.columns
-				WHERE lower(table_name) = 'user'
+				WHERE lower(table_name) = 'user_detail'
 				  AND lower(column_name) IN ('created_at', 'updated_at')
 				""", Integer.class);
 		Integer emailLength = new JdbcTemplate(dataSource).queryForObject("""
 				SELECT character_maximum_length
 				FROM information_schema.columns
-				WHERE lower(table_name) = 'user'
+				WHERE lower(table_name) = 'user_detail'
 				  AND lower(column_name) = 'user_email'
 				""", Integer.class);
 

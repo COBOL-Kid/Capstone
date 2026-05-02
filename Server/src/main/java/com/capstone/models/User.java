@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +41,12 @@ public class User implements UserDetails {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "role", nullable = false, columnDefinition = "varchar(20)")
 	private Role role = Role.USER;
+
+	@Column(name = "failed_login_attempts")
+	private int failedLoginAttempts = 0;
+
+	@Column(name = "lockout_end")
+	private LocalDateTime lockoutEnd;
 
 	@OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
 	private Set<UserVin> userVins = new HashSet<>();
@@ -121,6 +128,22 @@ public class User implements UserDetails {
 
 	public void setRole(Role role) {
 		this.role = role;
+	}
+
+	public int getFailedLoginAttempts() {
+		return failedLoginAttempts;
+	}
+
+	public void setFailedLoginAttempts(int failedLoginAttempts) {
+		this.failedLoginAttempts = failedLoginAttempts;
+	}
+
+	public LocalDateTime getLockoutEnd() {
+		return lockoutEnd;
+	}
+
+	public void setLockoutEnd(LocalDateTime lockoutEnd) {
+		this.lockoutEnd = lockoutEnd;
 	}
 
 	public Set<UserVin> getUserVins() {

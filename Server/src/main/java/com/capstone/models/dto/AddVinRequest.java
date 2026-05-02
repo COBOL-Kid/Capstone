@@ -1,7 +1,7 @@
-package com.capstone.domain.dto;
+package com.capstone.models.dto;
 
-import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
-import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
+import static com.capstone.models.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.models.dto.VinValidation.VIN_PATTERN;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,4 +1,4 @@
-package com.capstone.Authentication;
+package com.capstone.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,8 +20,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.capstone.configuration.JwtProperties;
+import com.capstone.data.RefreshTokenRepository;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
+import com.capstone.models.RefreshToken;
 import com.capstone.models.Role;
 import com.capstone.models.User;
 
@@ -33,10 +36,14 @@ class AuthenticationServiceTest {
 		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 		JwtService jwtService = mock(JwtService.class);
 		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, jwtService,
-				authenticationManager);
+		RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+		JwtProperties jwtProperties = mock(JwtProperties.class);
+		AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+				authenticationManager, jwtProperties);
 		RegisterRequest request = new RegisterRequest(" Pat ", " Driver ", " DRIVER@Example.COM ", "secret");
 
+		when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+		when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
 		when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("jwt-token");
 
@@ -58,8 +65,8 @@ class AuthenticationServiceTest {
 	void shouldRejectDuplicateRegistrationEmail() {
 		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
 		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, mock(JwtService.class),
-				mock(AuthenticationManager.class));
+		AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepository.class), passwordEncoder, mock(JwtService.class),
+				mock(AuthenticationManager.class), mock(JwtProperties.class));
 
 		when(repository.existsByUserEmail("driver@example.com")).thenReturn(true);
 
@@ -73,8 +80,8 @@ class AuthenticationServiceTest {
 	void shouldTranslateDataIntegrityViolationOnConcurrentRegistrationToDuplicateEmail() {
 		UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
 		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, mock(JwtService.class),
-				mock(AuthenticationManager.class));
+		AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepository.class), passwordEncoder, mock(JwtService.class),
+				mock(AuthenticationManager.class), mock(JwtProperties.class));
 
 		when(repository.existsByUserEmail("driver@example.com")).thenReturn(false);
 		when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
@@ -91,8 +98,10 @@ class AuthenticationServiceTest {
 		PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 		JwtService jwtService = mock(JwtService.class);
 		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-		AuthenticationService service = new AuthenticationService(repository, passwordEncoder, jwtService,
-				authenticationManager);
+		RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+		JwtProperties jwtProperties = mock(JwtProperties.class);
+		AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+				authenticationManager, jwtProperties);
 		AuthenticationRequest request = new AuthenticationRequest(" DRIVER@Example.COM ", "secret");
 		User user = new User();
 		user.setUserId(1L);
@@ -103,6 +112,8 @@ class AuthenticationServiceTest {
 		user.setRole(Role.USER);
 
 		when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
+		when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+		when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("jwt-token");
 
 		var response = service.authenticate(request);

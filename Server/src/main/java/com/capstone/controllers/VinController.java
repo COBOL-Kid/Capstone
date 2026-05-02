@@ -1,7 +1,7 @@
 package com.capstone.controllers;
 
-import static com.capstone.domain.dto.VinValidation.VIN_MESSAGE;
-import static com.capstone.domain.dto.VinValidation.VIN_PATTERN;
+import static com.capstone.models.dto.VinValidation.VIN_MESSAGE;
+import static com.capstone.models.dto.VinValidation.VIN_PATTERN;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.domain.VinService;
 import com.capstone.domain.VehicleOnboardingService;
-import com.capstone.domain.dto.AddVinRequest;
-import com.capstone.domain.dto.AddVinResponse;
-import com.capstone.domain.dto.UpdateVehiclePhotoRequest;
+import com.capstone.models.dto.AddVinRequest;
+import com.capstone.models.dto.AddVinResponse;
+import com.capstone.models.dto.UpdateVehiclePhotoRequest;
 import com.capstone.models.User;
 import com.capstone.models.Vin;
 

@@ -18,7 +18,7 @@ import org.mockito.ArgumentCaptor;
 import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.RecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
-import com.capstone.domain.dto.CompleteRecallRequest;
+import com.capstone.models.dto.CompleteRecallRequest;
 import com.capstone.models.CompletedRecall;
 import com.capstone.models.Recall;
 import com.capstone.models.User;

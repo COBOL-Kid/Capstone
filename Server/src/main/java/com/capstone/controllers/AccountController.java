@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.capstone.domain.AccountService;
-import com.capstone.domain.dto.ChangePasswordRequest;
-import com.capstone.domain.dto.DeleteAccountRequest;
-import com.capstone.domain.dto.UpdateAccountRequest;
+import com.capstone.models.dto.ChangePasswordRequest;
+import com.capstone.models.dto.DeleteAccountRequest;
+import com.capstone.models.dto.UpdateAccountRequest;
 import com.capstone.models.User;
 
 import jakarta.validation.Valid;

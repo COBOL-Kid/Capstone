@@ -18,7 +18,7 @@ import org.mockito.ArgumentCaptor;
 import com.capstone.data.CompletedMaintenanceRepositoryJPA;
 import com.capstone.data.MaintMileageRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
-import com.capstone.domain.dto.CompleteMaintenanceRequest;
+import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.CompletedMaintenance;
 import com.capstone.models.MaintMileage;
 import com.capstone.models.User;

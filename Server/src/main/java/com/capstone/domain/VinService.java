@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
-import com.capstone.domain.dto.UserVehicleResponse;
+import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.Vin;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.capstone.domain.dto.AddVinRequest;
+import com.capstone.models.dto.AddVinRequest;
 import com.capstone.domain.DuplicateEmailException;
 import com.capstone.domain.InvalidAccountCredentialsException;
 

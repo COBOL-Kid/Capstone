@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import com.capstone.domain.AccountService;
-import com.capstone.domain.dto.AccountResponse;
-import com.capstone.domain.dto.ChangePasswordRequest;
-import com.capstone.domain.dto.DeleteAccountRequest;
-import com.capstone.domain.dto.UpdateAccountRequest;
+import com.capstone.models.dto.AccountResponse;
+import com.capstone.models.dto.ChangePasswordRequest;
+import com.capstone.models.dto.DeleteAccountRequest;
+import com.capstone.models.dto.UpdateAccountRequest;
 import com.capstone.models.User;
 
 class AccountControllerTest {

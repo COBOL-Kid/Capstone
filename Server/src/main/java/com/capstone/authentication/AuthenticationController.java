@@ -1,4 +1,4 @@
-package com.capstone.Authentication;
+package com.capstone.authentication;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;

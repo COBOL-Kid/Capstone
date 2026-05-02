@@ -10,8 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.capstone.Authentication.AuthenticationRequest;
-import com.capstone.Authentication.RegisterRequest;
+import com.capstone.authentication.AuthenticationRequest;
+import com.capstone.authentication.RegisterRequest;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

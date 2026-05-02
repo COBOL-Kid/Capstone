@@ -1,4 +1,4 @@
-package com.capstone.Authentication;
+package com.capstone.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

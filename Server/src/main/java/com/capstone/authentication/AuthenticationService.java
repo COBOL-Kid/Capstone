@@ -1,5 +1,6 @@
 package com.capstone.authentication;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -77,8 +78,7 @@ public class AuthenticationService {
 
 		log.info("Audit - User registered successfully: {}", email);
 
-		AuthenticationResponse newResponse = new AuthenticationResponse(jwtToken, refreshToken.getToken());
-		return newResponse;
+		return new AuthenticationResponse(jwtToken, refreshToken.getToken());
 	}
 
 	public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -116,13 +116,11 @@ public class AuthenticationService {
 		Map<String, Object> extraClaims = buildExtraClaims(user);
 
 		String jwtToken = jwtService.generateToken(extraClaims, user);
-		
-		// Remove existing refresh tokens for the user and create a new one
+
 		refreshTokenRepository.deleteByUser(user);
 		RefreshToken refreshToken = createRefreshToken(user);
 
-		AuthenticationResponse response = new AuthenticationResponse(jwtToken, refreshToken.getToken());
-		return response;
+		return new AuthenticationResponse(jwtToken, refreshToken.getToken());
 	}
 
 	private Map<String, Object> buildExtraClaims(User user) {
@@ -139,7 +137,7 @@ public class AuthenticationService {
 		RefreshToken refreshToken = new RefreshToken();
 		refreshToken.setUser(user);
 		refreshToken.setToken(UUID.randomUUID().toString());
-		refreshToken.setExpiryDate(Instant.now().plus(jwtProperties.getRefreshExpirationDays(), java.time.temporal.ChronoUnit.DAYS));
+		refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(jwtProperties.getRefreshExpirationDays())));
 		return refreshTokenRepository.save(refreshToken);
 	}
 	
@@ -156,10 +154,12 @@ public class AuthenticationService {
 	public AuthenticationResponse refreshToken(String token) {
 		return refreshTokenRepository.findByToken(token)
 				.map(this::verifyExpiration)
-				.map(RefreshToken::getUser)
-				.map(user -> {
+				.map(oldToken -> {
+					User user = oldToken.getUser();
+					refreshTokenRepository.delete(oldToken);
+					RefreshToken newRefreshToken = createRefreshToken(user);
 					String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
-					return new AuthenticationResponse(jwtToken, token);
+					return new AuthenticationResponse(jwtToken, newRefreshToken.getToken());
 				})
 				.orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
 	}

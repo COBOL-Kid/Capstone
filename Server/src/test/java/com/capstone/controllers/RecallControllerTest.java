@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import com.capstone.domain.RecallTrackingService;
 import com.capstone.models.dto.CompleteRecallRequest;
 import com.capstone.models.dto.CompletedRecallResponse;
+import com.capstone.models.dto.RecallResponse;
 import com.capstone.models.User;
 
 class RecallControllerTest {
@@ -23,6 +24,8 @@ class RecallControllerTest {
 
 		assertEquals(HttpStatus.UNAUTHORIZED,
 				controller.getCompletedRecalls(null, "JTENU5JR6M5962554").getStatusCode());
+		assertEquals(HttpStatus.UNAUTHORIZED,
+				controller.getUncompletedRecalls(null, "JTENU5JR6M5962554").getStatusCode());
 		assertEquals(HttpStatus.UNAUTHORIZED,
 				controller
 						.completeRecall(null,
@@ -39,6 +42,32 @@ class RecallControllerTest {
 		when(service.findCompletedRecalls(user, "JTENU5JR6M5962554")).thenReturn(List.of());
 
 		assertEquals(HttpStatus.NO_CONTENT, controller.getCompletedRecalls(user, "JTENU5JR6M5962554").getStatusCode());
+	}
+
+	@Test
+	void shouldReturnNoContentWhenNoUncompletedRecallsExist() {
+		RecallTrackingService service = mock(RecallTrackingService.class);
+		RecallController controller = new RecallController(service);
+		User user = user();
+
+		when(service.findUncompletedRecalls(user, "JTENU5JR6M5962554")).thenReturn(List.of());
+
+		assertEquals(HttpStatus.NO_CONTENT, controller.getUncompletedRecalls(user, "JTENU5JR6M5962554").getStatusCode());
+	}
+
+	@Test
+	void shouldReturnUncompletedRecalls() {
+		RecallTrackingService service = mock(RecallTrackingService.class);
+		RecallController controller = new RecallController(service);
+		User user = user();
+		RecallResponse uncompleted = recallResponse();
+
+		when(service.findUncompletedRecalls(user, "JTENU5JR6M5962554")).thenReturn(List.of(uncompleted));
+
+		var response = controller.getUncompletedRecalls(user, "JTENU5JR6M5962554");
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(List.of(uncompleted), response.getBody());
 	}
 
 	@Test
@@ -83,5 +112,10 @@ class RecallControllerTest {
 	private CompletedRecallResponse completedRecall() {
 		return new CompletedRecallResponse(55L, "JTENU5JR6M5962554", 22L, LocalDate.of(2025, 4, 6), "Toyota dealer",
 				0.0, "Airbag recall done");
+	}
+
+	private RecallResponse recallResponse() {
+		return new RecallResponse(22L, "JTENU5JR6M5962554", "22V480000", LocalDate.of(2022, 6, 7),
+				"EQUIPMENT:OTHER:LABELS", "Summary", "Consequence", "Remedy");
 	}
 }

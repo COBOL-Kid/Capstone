@@ -29,6 +29,30 @@ import com.capstone.models.Vin;
 class RecallTrackingServiceTest {
 
 	@Test
+	void shouldFindUncompletedRecallsForNormalizedVin() {
+		CompletedRecallRepositoryJPA completedRecallRepository = mock(CompletedRecallRepositoryJPA.class);
+		RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
+		UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+		RecallTrackingService service = new RecallTrackingService(completedRecallRepository, recallRepository,
+				userVinRepository);
+		Recall recall = recall();
+
+		when(recallRepository.findUncompletedRecalls(1L, "JTENU5JR6M5962554")).thenReturn(List.of(recall));
+
+		var responses = service.findUncompletedRecalls(user(), " jtenu5jr6m5962554 ");
+
+		assertEquals(1, responses.size());
+		assertEquals(22L, responses.get(0).recallId());
+		assertEquals("JTENU5JR6M5962554", responses.get(0).vin());
+		assertEquals("22V480000", responses.get(0).nhtsaCampaignNumber());
+		assertEquals(LocalDate.of(2022, 6, 7), responses.get(0).reportReceivedDate());
+		assertEquals("EQUIPMENT:OTHER:LABELS", responses.get(0).component());
+		assertEquals("Summary", responses.get(0).summary());
+		assertEquals("Consequence", responses.get(0).consequence());
+		assertEquals("Remedy", responses.get(0).remedy());
+	}
+
+	@Test
 	void shouldFindCompletedRecallsForNormalizedVin() {
 		CompletedRecallRepositoryJPA completedRecallRepository = mock(CompletedRecallRepositoryJPA.class);
 		RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);

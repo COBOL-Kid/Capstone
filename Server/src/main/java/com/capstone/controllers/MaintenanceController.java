@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.capstone.domain.MaintenanceTrackingService;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
+import com.capstone.models.dto.UpcomingMaintenanceResponse;
 import com.capstone.models.User;
 
 import jakarta.validation.Valid;
@@ -47,6 +48,20 @@ public class MaintenanceController {
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 		}
 		return new ResponseEntity<>(completedMaintenance, HttpStatus.OK);
+	}
+
+	@GetMapping("/{vin}/upcoming")
+	public ResponseEntity<?> getUpcomingMaintenance(@AuthenticationPrincipal User user,
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		List<UpcomingMaintenanceResponse> upcomingMaintenance = maintenanceTrackingService
+				.findUpcomingMaintenance(user, vin);
+		if (upcomingMaintenance.isEmpty()) {
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		return new ResponseEntity<>(upcomingMaintenance, HttpStatus.OK);
 	}
 
 	@PostMapping("/completed")

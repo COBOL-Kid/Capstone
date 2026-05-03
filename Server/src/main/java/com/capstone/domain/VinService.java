@@ -6,6 +6,7 @@ import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
 import com.capstone.models.Vin;
 import com.capstone.models.dto.UserVehicleResponse;
+import com.capstone.models.dto.VinPublicResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +28,19 @@ public class VinService {
         return userVinRepositoryJPA.findAllForUser(userId).stream().map(this::toUserVehicleResponse).toList();
     }
 
-    public Optional<Vin> findByVin(String vin) {
+    @Transactional(readOnly = true)
+    public Optional<VinPublicResponse> findByVin(String vin) {
         if (vin == null || vin.isBlank()) {
             return Optional.empty();
         }
-        return vinRepositoryJPA.findById(vin.trim().toUpperCase());
+        return vinRepositoryJPA.findById(vin.trim().toUpperCase()).map(this::toPublicResponse);
+    }
+
+    private VinPublicResponse toPublicResponse(Vin vin) {
+        VehicleType vehicleType = vin.getVehicleType();
+        return new VinPublicResponse(vin.getVin(), vehicleType.getVehicleTypeId(), vehicleType.getVehicleMake(),
+                vehicleType.getVehicleModel(), vehicleType.getVehicleTrim(), vehicleType.getVehicleYear(),
+                vehicleType.getVehicleStyle());
     }
 
     @Transactional
@@ -55,7 +64,7 @@ public class VinService {
 
     private UserVehicleResponse toUserVehicleResponse(UserVin userVin) {
         Vin vin = userVin.getVin();
-        VehicleType vehicleType = vin.getVehicleTypeId();
+        VehicleType vehicleType = vin.getVehicleType();
         return new UserVehicleResponse(vin.getVin(), userVin.getCurrentMileage(), vehicleType.getVehicleTypeId(),
                 vehicleType.getVehicleMake(), vehicleType.getVehicleModel(), vehicleType.getVehicleTrim(),
                 vehicleType.getVehicleYear(), userVin.getAvailableImageUrls(), userVin.getSelectedImageUrl());

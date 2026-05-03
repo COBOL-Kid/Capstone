@@ -1,5 +1,6 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -18,24 +19,25 @@ public class Vin {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_type_id", nullable = false)
-    private VehicleType vehicleTypeId;
+    private VehicleType vehicleType;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vin")
     private Set<UserVin> userVins = new HashSet<>();
 
     public Vin() {
     }
 
-    public Vin(String vin, int vinMileage, VehicleType vehicleTypeId) {
+    public Vin(String vin, int vinMileage, VehicleType vehicleType) {
         this.vin = vin;
         this.vinMileage = vinMileage;
-        this.vehicleTypeId = vehicleTypeId;
+        this.vehicleType = vehicleType;
     }
 
-    public Vin(String vin, int vinMileage, VehicleType vehicleTypeId, Set<UserVin> userVins) {
+    public Vin(String vin, int vinMileage, VehicleType vehicleType, Set<UserVin> userVins) {
         this.vin = vin;
         this.vinMileage = vinMileage;
-        this.vehicleTypeId = vehicleTypeId;
+        this.vehicleType = vehicleType;
         this.userVins = userVins != null ? userVins : new HashSet<>();
     }
 
@@ -55,12 +57,12 @@ public class Vin {
         this.vinMileage = vinMileage;
     }
 
-    public VehicleType getVehicleTypeId() {
-        return vehicleTypeId;
+    public VehicleType getVehicleType() {
+        return vehicleType;
     }
 
-    public void setVehicleTypeId(VehicleType vehicleTypeId) {
-        this.vehicleTypeId = vehicleTypeId;
+    public void setVehicleType(VehicleType vehicleType) {
+        this.vehicleType = vehicleType;
     }
 
     public Set<UserVin> getUserVins() {

@@ -39,7 +39,7 @@ class VehicleDataMapperTest {
     }
 
     @Test
-    void shouldDeserializeVinDecodeResponseFromProviderJson() throws Exception {
+    void shouldDeserializeVinDecodeResponseFromProviderJson() {
         String json = """
                 {
                     "vin": "3GCUDHEL3NG668790",
@@ -96,8 +96,8 @@ class VehicleDataMapperTest {
         var rows = mapper.toMaintMileages(vehicleType, maintenance);
 
         assertEquals(3, rows.size());
-        assertEquals(5000, rows.get(0).getMileageDue());
-        assertEquals("Check Driver's Floor Mat", rows.get(0).getMaintDesc());
+        assertEquals(5000, rows.getFirst().getMileageDue());
+        assertEquals("Check Driver's Floor Mat", rows.getFirst().getMaintDesc());
     }
 
     @Test
@@ -105,7 +105,7 @@ class VehicleDataMapperTest {
         VehicleType vehicleType = new VehicleType("Toyota", "4runner", "SRS Prem", "2021");
         RepairCostResponse repairCosts = repairCostResponse();
 
-        MaintCost firstCost = mapper.toMaintCosts(vehicleType, repairCosts).get(0);
+        MaintCost firstCost = mapper.toMaintCosts(vehicleType, repairCosts).getFirst();
 
         assertEquals("ABS Module Replacement", firstCost.getMaintTitle());
         assertNull(firstCost.getIndependentAvg());
@@ -117,9 +117,9 @@ class VehicleDataMapperTest {
     @Test
     void shouldMapRecallFromProviderResponse() {
         VehicleType vehicleType = new VehicleType("Toyota", "4runner", "SRS Prem", "2021");
-        RecallResponse recalls = recallResponse();
+        RecallProviderResponse recalls = recallResponse();
 
-        Recall recall = mapper.toRecalls(vehicleType, recalls).get(0);
+        Recall recall = mapper.toRecalls(vehicleType, recalls).getFirst();
 
         assertEquals("25V239000", recall.getNhtsaCampaignNumber());
         assertEquals("25V239000", recall.getCampaignId());
@@ -137,7 +137,7 @@ class VehicleDataMapperTest {
     }
 
     @Test
-    void shouldDeserializeRecallResponseFromProviderJson() throws Exception {
+    void shouldDeserializeRecallProviderResponseFromProviderJson() {
         String json = """
                 {
                   "data": [
@@ -161,13 +161,13 @@ class VehicleDataMapperTest {
                 }
                 """;
 
-        RecallResponse response = new ObjectMapper().readValue(json, RecallResponse.class);
+        RecallProviderResponse response = new ObjectMapper().readValue(json, RecallProviderResponse.class);
 
         assertEquals(1, response.data().size());
-        assertEquals("25V239000", response.data().get(0).nhtsaCampaignNumber());
-        assertEquals(Boolean.FALSE, response.data().get(0).parkOutside());
-        assertEquals("POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", response.data().get(0).component());
-        assertEquals("Ford Motor Company", response.data().get(0).manufacturer());
+        assertEquals("25V239000", response.data().getFirst().nhtsaCampaignNumber());
+        assertEquals(Boolean.FALSE, response.data().getFirst().parkOutside());
+        assertEquals("POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", response.data().getFirst().component());
+        assertEquals("Ford Motor Company", response.data().getFirst().manufacturer());
     }
 
     private VinDecodeResponse vinDecodeResponse() {
@@ -202,8 +202,8 @@ class VehicleDataMapperTest {
                                                 new RepairCostResponse.CostLine("total", 1396, 1470, 1322)))))));
     }
 
-    private RecallResponse recallResponse() {
-        return new RecallResponse(List.of(new RecallResponse.RecallItem("Ford Motor Company", "25V239000", false, false,
+    private RecallProviderResponse recallResponse() {
+        return new RecallProviderResponse(List.of(new RecallProviderResponse.RecallItem("Ford Motor Company", "25V239000", false, false,
                 false, "11/04/2025", "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", "Summary",
                 "Consequence", "Remedy", "Notes", "2025", "FORD", "EXPLORER")));
     }

@@ -1,7 +1,7 @@
 package com.capstone.authentication;
 
 import com.capstone.configuration.JwtProperties;
-import com.capstone.data.RefreshTokenRepository;
+import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
 import com.capstone.models.RefreshToken;
@@ -30,14 +30,14 @@ class AuthenticationServiceTest {
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         JwtService jwtService = mock(JwtService.class);
         AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-        RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
         JwtProperties jwtProperties = mock(JwtProperties.class);
-        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepositoryJPA, passwordEncoder, jwtService,
                 authenticationManager, jwtProperties);
         RegisterRequest request = new RegisterRequest(" Pat ", " Driver ", " DRIVER@Example.COM ", "secret");
 
         when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(refreshTokenRepositoryJPA.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
         when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("jwt-token");
 
@@ -59,7 +59,7 @@ class AuthenticationServiceTest {
     void shouldRejectDuplicateRegistrationEmail() {
         UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-        AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepository.class), passwordEncoder, mock(JwtService.class),
+        AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepositoryJPA.class), passwordEncoder, mock(JwtService.class),
                 mock(AuthenticationManager.class), mock(JwtProperties.class));
 
         when(repository.existsByUserEmail("driver@example.com")).thenReturn(true);
@@ -74,7 +74,7 @@ class AuthenticationServiceTest {
     void shouldTranslateDataIntegrityViolationOnConcurrentRegistrationToDuplicateEmail() {
         UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-        AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepository.class), passwordEncoder, mock(JwtService.class),
+        AuthenticationService service = new AuthenticationService(repository, mock(RefreshTokenRepositoryJPA.class), passwordEncoder, mock(JwtService.class),
                 mock(AuthenticationManager.class), mock(JwtProperties.class));
 
         when(repository.existsByUserEmail("driver@example.com")).thenReturn(false);
@@ -92,9 +92,9 @@ class AuthenticationServiceTest {
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         JwtService jwtService = mock(JwtService.class);
         AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-        RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
         JwtProperties jwtProperties = mock(JwtProperties.class);
-        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepositoryJPA, passwordEncoder, jwtService,
                 authenticationManager, jwtProperties);
         AuthenticationRequest request = new AuthenticationRequest(" DRIVER@Example.COM ", "secret");
         User user = new User();
@@ -107,7 +107,7 @@ class AuthenticationServiceTest {
 
         when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
         when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(refreshTokenRepositoryJPA.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("jwt-token");
 
         var response = service.authenticate(request);
@@ -127,9 +127,9 @@ class AuthenticationServiceTest {
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         JwtService jwtService = mock(JwtService.class);
         AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
-        RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
         JwtProperties jwtProperties = mock(JwtProperties.class);
-        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepository, passwordEncoder, jwtService,
+        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepositoryJPA, passwordEncoder, jwtService,
                 authenticationManager, jwtProperties);
 
         User user = new User();
@@ -137,22 +137,82 @@ class AuthenticationServiceTest {
         user.setUserEmail("driver@example.com");
 
         RefreshToken oldToken = new RefreshToken();
+        oldToken.setId(42L);
         oldToken.setToken("old-refresh-token");
         oldToken.setUser(user);
         oldToken.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
 
-        when(refreshTokenRepository.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+        when(refreshTokenRepositoryJPA.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+        when(refreshTokenRepositoryJPA.deleteByIdReturning(42L)).thenReturn(1);
         when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(refreshTokenRepositoryJPA.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("new-jwt-token");
 
         var response = service.refreshToken("old-refresh-token");
 
-        verify(refreshTokenRepository).delete(oldToken);
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(refreshTokenRepositoryJPA).deleteByIdReturning(42L);
+        verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
         assertEquals("new-jwt-token", response.getToken());
         assertFalse(response.getRefreshToken().isEmpty());
         assertNotEquals("old-refresh-token", response.getRefreshToken());
+    }
+
+    @Test
+    void shouldRejectRefreshWhenTokenAlreadyConsumed() {
+        UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepositoryJPA,
+                mock(PasswordEncoder.class), mock(JwtService.class), mock(AuthenticationManager.class),
+                mock(JwtProperties.class));
+
+        User user = new User();
+        user.setUserId(1L);
+        RefreshToken oldToken = new RefreshToken();
+        oldToken.setId(42L);
+        oldToken.setToken("old-refresh-token");
+        oldToken.setUser(user);
+        oldToken.setExpiryDate(java.time.Instant.now().plusSeconds(3600));
+
+        when(refreshTokenRepositoryJPA.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+        when(refreshTokenRepositoryJPA.deleteByIdReturning(42L)).thenReturn(0);
+
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refreshToken("old-refresh-token"));
+        verify(refreshTokenRepositoryJPA, never()).save(any(RefreshToken.class));
+    }
+
+    @Test
+    void shouldRejectRefreshWhenTokenIsExpired() {
+        UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+        AuthenticationService service = new AuthenticationService(repository, refreshTokenRepositoryJPA,
+                mock(PasswordEncoder.class), mock(JwtService.class), mock(AuthenticationManager.class),
+                mock(JwtProperties.class));
+
+        User user = new User();
+        user.setUserId(1L);
+        RefreshToken oldToken = new RefreshToken();
+        oldToken.setId(42L);
+        oldToken.setToken("old-refresh-token");
+        oldToken.setUser(user);
+        oldToken.setExpiryDate(java.time.Instant.now().minusSeconds(60));
+
+        when(refreshTokenRepositoryJPA.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refreshToken("old-refresh-token"));
+        verify(refreshTokenRepositoryJPA).delete(oldToken);
+        verify(refreshTokenRepositoryJPA, never()).deleteByIdReturning(any());
+    }
+
+    @Test
+    void shouldRejectRefreshWhenTokenIsUnknown() {
+        RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+        AuthenticationService service = new AuthenticationService(mock(UserRepositoryJPA.class), refreshTokenRepositoryJPA,
+                mock(PasswordEncoder.class), mock(JwtService.class), mock(AuthenticationManager.class),
+                mock(JwtProperties.class));
+
+        when(refreshTokenRepositoryJPA.findByToken("missing")).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refreshToken("missing"));
     }
 
     @Test

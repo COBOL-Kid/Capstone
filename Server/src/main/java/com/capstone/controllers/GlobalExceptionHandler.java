@@ -1,10 +1,14 @@
 package com.capstone.controllers;
 
-import com.capstone.domain.DuplicateEmailException;
-import com.capstone.domain.InvalidAccountCredentialsException;
+import com.capstone.authentication.InvalidRefreshTokenException;
+import com.capstone.domain.*;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.TypeMismatchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,6 +24,8 @@ import java.util.List;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValidException(
@@ -43,18 +49,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageConversionException.class)
     public ResponseEntity<String> handleHttpMessageConversionException(HttpMessageConversionException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        log.debug("Malformed request body: {}", ex.getMessage());
+        return new ResponseEntity<>("Malformed request body", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(TypeMismatchException.class)
     public ResponseEntity<String> handleTypeMismatchException(TypeMismatchException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        log.debug("Type mismatch: {}", ex.getMessage());
+        return new ResponseEntity<>("Malformed request body", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<String> handleHttpRequestMethodNotSupportedException(
             HttpRequestMethodNotSupportedException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        log.debug("Method not allowed: {}", ex.getMessage());
+        return new ResponseEntity<>("Method not allowed", HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
@@ -72,9 +81,39 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(VinNotAssociatedException.class)
+    public ResponseEntity<String> handleVinNotAssociatedException(VinNotAssociatedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(MaintenanceItemNotFoundException.class)
+    public ResponseEntity<String> handleMaintenanceItemNotFoundException(MaintenanceItemNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RecallNotFoundException.class)
+    public ResponseEntity<String> handleRecallNotFoundException(RecallNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler({InvalidAccountCredentialsException.class, BadCredentialsException.class})
     public ResponseEntity<String> handleInvalidAccountCredentialsException(Exception ex) {
         return new ResponseEntity<>("Invalid account credentials", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<String> handleInvalidRefreshTokenException(InvalidRefreshTokenException ex) {
+        log.debug("Rejecting refresh: {}", ex.getMessage());
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/auth")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, clearCookie.toString());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).headers(headers).build();
     }
 
     @ExceptionHandler(Exception.class)

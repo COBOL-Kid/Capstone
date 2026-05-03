@@ -94,12 +94,12 @@ public class VehicleDataMapper {
         return maintCosts;
     }
 
-    public List<Recall> toRecalls(VehicleType vehicleType, RecallResponse recallResponse) {
+    public List<Recall> toRecalls(VehicleType vehicleType, RecallProviderResponse recallResponse) {
         List<Recall> recalls = new ArrayList<>();
         if (recallResponse == null || recallResponse.data() == null) {
             return recalls;
         }
-        for (RecallResponse.RecallItem item : recallResponse.data()) {
+        for (RecallProviderResponse.RecallItem item : recallResponse.data()) {
             if (item == null) {
                 continue;
             }

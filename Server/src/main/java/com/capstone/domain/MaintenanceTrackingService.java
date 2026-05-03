@@ -40,10 +40,10 @@ public class MaintenanceTrackingService {
     public List<UpcomingMaintenanceResponse> findUpcomingMaintenance(User user, String vin) {
         String normalizedVin = normalizeVin(vin);
         UserVin userVin = userVinRepository.findForUserVin(user.getUserId(), normalizedVin)
-                .orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
+                .orElseThrow(VinNotAssociatedException::new);
 
         int threshold = userVin.getCurrentMileage() + 10000;
-        Long vehicleTypeId = userVin.getVin().getVehicleTypeId().getVehicleTypeId();
+        Long vehicleTypeId = userVin.getVin().getVehicleType().getVehicleTypeId();
 
         return maintMileageRepository.findUpcomingAndPastDue(vehicleTypeId, threshold, user.getUserId(), normalizedVin)
                 .stream()
@@ -67,9 +67,9 @@ public class MaintenanceTrackingService {
             throw new IllegalArgumentException("Mileage completed cannot be negative");
         }
         UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
-                .orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
+                .orElseThrow(VinNotAssociatedException::new);
         MaintMileage maintMileage = maintMileageRepository.findById(request.maintMileageId())
-                .orElseThrow(() -> new IllegalArgumentException("Maintenance item not found"));
+                .orElseThrow(MaintenanceItemNotFoundException::new);
         CompletedMaintenance completedMaintenance = completedMaintenanceRepository
                 .findByUserVinAndMaintMileage(userVin, maintMileage)
                 .orElseGet(() -> saveCompletedMaintenance(userVin, maintMileage, request));

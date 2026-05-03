@@ -6,13 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-public class WebClientConfig {
-
-    @Value("${API_AUTH:}")
-    private String authorization;
-
-    @Value("${API_TOKEN:}")
-    private String partnerToken;
+public class VehicleDataProviderConfig {
 
     @Value("${vehicle-data.base-url:https://api.auto.dev}")
     private String vehicleDataBaseUrl;
@@ -35,14 +29,6 @@ public class WebClientConfig {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
-    }
-
-    public String getAuthorization() {
-        return authorization;
-    }
-
-    public String getPartnerToken() {
-        return partnerToken;
     }
 
     public String getVehicleDataBaseUrl() {

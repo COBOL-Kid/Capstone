@@ -14,10 +14,10 @@ public interface UserVinRepositoryJPA extends JpaRepository<UserVin, UserVinId> 
 
     Optional<UserVin> findByUserUserIdAndVinVin(Long userId, String vin);
 
-    @Query("SELECT uv FROM UserVin uv JOIN FETCH uv.vin v JOIN FETCH v.vehicleTypeId WHERE uv.user.userId = :userId")
+    @Query("SELECT uv FROM UserVin uv JOIN FETCH uv.vin v JOIN FETCH v.vehicleType WHERE uv.user.userId = :userId")
     List<UserVin> findAllForUser(@Param("userId") Long userId);
 
-    @Query("SELECT uv FROM UserVin uv JOIN FETCH uv.vin v JOIN FETCH v.vehicleTypeId "
+    @Query("SELECT uv FROM UserVin uv JOIN FETCH uv.vin v JOIN FETCH v.vehicleType "
             + "WHERE uv.user.userId = :userId AND uv.vin.vin = :vin")
     Optional<UserVin> findForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 
@@ -26,5 +26,5 @@ public interface UserVinRepositoryJPA extends JpaRepository<UserVin, UserVinId> 
 
     @Modifying
     @Query("delete from UserVin uv where uv.id.userId = :userId")
-	void deleteAllForUserId(@Param("userId") Long userId);
+    void deleteAllForUserId(@Param("userId") Long userId);
 }

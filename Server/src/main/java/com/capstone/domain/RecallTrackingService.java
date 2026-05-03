@@ -58,9 +58,9 @@ public class RecallTrackingService {
             throw new IllegalArgumentException("Recall is required");
         }
         UserVin userVin = userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
-                .orElseThrow(() -> new IllegalArgumentException("VIN is not associated with this user"));
+                .orElseThrow(VinNotAssociatedException::new);
         Recall recall = recallRepository.findById(request.recallId())
-                .orElseThrow(() -> new IllegalArgumentException("Recall not found"));
+                .orElseThrow(RecallNotFoundException::new);
         CompletedRecall completedRecall = completedRecallRepository.findByUserVinAndRecall(userVin, recall)
                 .orElseGet(() -> saveCompletedRecall(userVin, recall, request));
         return toResponse(completedRecall);

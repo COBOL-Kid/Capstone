@@ -1,7 +1,7 @@
 package com.capstone.authentication;
 
 import com.capstone.configuration.JwtProperties;
-import com.capstone.data.RefreshTokenRepository;
+import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
 import com.capstone.models.RefreshToken;
@@ -34,17 +34,17 @@ public class AuthenticationService {
     private static final int LOCK_TIME_DURATION_MINUTES = 15;
 
     private final UserRepositoryJPA repository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRepositoryJPA refreshTokenRepositoryJPA;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final JwtProperties jwtProperties;
 
-    public AuthenticationService(UserRepositoryJPA repository, RefreshTokenRepository refreshTokenRepository,
+    public AuthenticationService(UserRepositoryJPA repository, RefreshTokenRepositoryJPA refreshTokenRepositoryJPA,
                                  PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager,
                                  JwtProperties jwtProperties) {
         this.repository = repository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshTokenRepositoryJPA = refreshTokenRepositoryJPA;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
@@ -80,6 +80,7 @@ public class AuthenticationService {
         return new AuthenticationResponse(jwtToken, refreshToken.getToken());
     }
 
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         String email = EmailNormalizer.normalize(request.getEmail());
         User user = repository.findByUserEmail(email)
@@ -116,7 +117,7 @@ public class AuthenticationService {
 
         String jwtToken = jwtService.generateToken(extraClaims, user);
 
-        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepositoryJPA.deleteByUser(user);
         RefreshToken refreshToken = createRefreshToken(user);
 
         return new AuthenticationResponse(jwtToken, refreshToken.getToken());
@@ -137,34 +138,34 @@ public class AuthenticationService {
         refreshToken.setUser(user);
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setExpiryDate(Instant.now().plus(Duration.ofDays(jwtProperties.getRefreshExpirationDays())));
-        return refreshTokenRepository.save(refreshToken);
+        return refreshTokenRepositoryJPA.save(refreshToken);
     }
 
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
-            refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+            refreshTokenRepositoryJPA.delete(token);
+            throw new InvalidRefreshTokenException("Refresh token was expired");
         }
         return token;
     }
 
     @Transactional
     public AuthenticationResponse refreshToken(String token) {
-        return refreshTokenRepository.findByToken(token)
-                .map(this::verifyExpiration)
-                .map(oldToken -> {
-                    User user = oldToken.getUser();
-                    refreshTokenRepository.delete(oldToken);
-                    RefreshToken newRefreshToken = createRefreshToken(user);
-                    String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
-                    return new AuthenticationResponse(jwtToken, newRefreshToken.getToken());
-                })
-                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+        RefreshToken oldToken = refreshTokenRepositoryJPA.findByToken(token)
+                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not recognized"));
+        verifyExpiration(oldToken);
+        if (refreshTokenRepositoryJPA.deleteByIdReturning(oldToken.getId()) != 1) {
+            throw new InvalidRefreshTokenException("Refresh token already consumed");
+        }
+        User user = oldToken.getUser();
+        RefreshToken newRefreshToken = createRefreshToken(user);
+        String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
+        return new AuthenticationResponse(jwtToken, newRefreshToken.getToken());
     }
 
     @Transactional
     public void logout(String token) {
-        refreshTokenRepository.deleteByToken(token);
+        refreshTokenRepositoryJPA.deleteByToken(token);
     }
 }

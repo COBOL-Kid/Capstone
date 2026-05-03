@@ -22,8 +22,8 @@ import static com.capstone.models.dto.VinValidation.VIN_PATTERN;
 @Validated
 public class VinController {
 
-    VinService vinService;
-    VehicleOnboardingService vehicleOnboardingService;
+    final VinService vinService;
+    final VehicleOnboardingService vehicleOnboardingService;
 
     public VinController(VinService vinService, VehicleOnboardingService vehicleOnboardingService) {
         this.vinService = vinService;

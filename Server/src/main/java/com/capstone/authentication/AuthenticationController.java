@@ -5,15 +5,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 
-@Controller
+@RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
@@ -40,14 +36,10 @@ public class AuthenticationController {
     @PostMapping("/refresh")
     public ResponseEntity<AuthenticationResponse> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
-            return ResponseEntity.status(401).build();
+            throw new InvalidRefreshTokenException("Missing refresh token cookie");
         }
-        try {
-            AuthenticationResponse response = service.refreshToken(refreshToken);
-            return ResponseEntity.ok().headers(createCookieHeader(response.getRefreshToken())).body(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(401).headers(createCleanCookieHeader()).build();
-        }
+        AuthenticationResponse response = service.refreshToken(refreshToken);
+        return ResponseEntity.ok().headers(createCookieHeader(response.getRefreshToken())).body(response);
     }
 
     @PostMapping("/logout")

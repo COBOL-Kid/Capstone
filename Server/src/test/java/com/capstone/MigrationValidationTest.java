@@ -25,10 +25,6 @@ class MigrationValidationTest {
     }
 
     @Test
-    void contextLoadsWithBaselineMigration() {
-    }
-
-    @Test
     void photoMigrationAddsUserVinPhotoColumns() {
         Integer columnCount = new JdbcTemplate(dataSource).queryForObject("""
                 SELECT COUNT(*)

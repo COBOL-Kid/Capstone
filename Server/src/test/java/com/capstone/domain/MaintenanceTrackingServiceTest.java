@@ -38,13 +38,13 @@ class MaintenanceTrackingServiceTest {
         var responses = service.findCompletedMaintenance(user(), " jtenu5jr6m5962554 ");
 
         assertEquals(1, responses.size());
-        assertEquals(99L, responses.get(0).completedMaintenanceId());
-        assertEquals("JTENU5JR6M5962554", responses.get(0).vin());
-        assertEquals(11L, responses.get(0).maintMileageId());
-        assertEquals(LocalDate.of(2025, 2, 3), responses.get(0).completedDate());
-        assertEquals(31000, responses.get(0).mileageCompleted());
-        assertEquals(89.99, responses.get(0).cost());
-        assertEquals("Changed oil", responses.get(0).notes());
+        assertEquals(99L, responses.getFirst().completedMaintenanceId());
+        assertEquals("JTENU5JR6M5962554", responses.getFirst().vin());
+        assertEquals(11L, responses.getFirst().maintMileageId());
+        assertEquals(LocalDate.of(2025, 2, 3), responses.getFirst().completedDate());
+        assertEquals(31000, responses.getFirst().mileageCompleted());
+        assertEquals(89.99, responses.getFirst().cost());
+        assertEquals("Changed oil", responses.getFirst().notes());
     }
 
     @Test
@@ -65,10 +65,10 @@ class MaintenanceTrackingServiceTest {
         var responses = service.findUpcomingMaintenance(user(), " jtenu5jr6m5962554 ");
 
         assertEquals(1, responses.size());
-        assertEquals(11L, responses.get(0).maintMileageId());
-        assertEquals("JTENU5JR6M5962554", responses.get(0).vin());
-        assertEquals(50000, responses.get(0).mileageDue());
-        assertEquals("Replace engine oil", responses.get(0).maintDesc());
+        assertEquals(11L, responses.getFirst().maintMileageId());
+        assertEquals("JTENU5JR6M5962554", responses.getFirst().vin());
+        assertEquals(50000, responses.getFirst().mileageDue());
+        assertEquals("Replace engine oil", responses.getFirst().maintDesc());
     }
 
     @Test

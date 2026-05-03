@@ -10,7 +10,7 @@ import java.util.List;
 public interface RecallRepositoryJPA extends JpaRepository<Recall, Long> {
 
     @Query("SELECT r FROM Recall r "
-            + "JOIN UserVin uv ON uv.vin.vehicleTypeId = r.vehicleTypeId "
+            + "JOIN UserVin uv ON uv.vin.vehicleType = r.vehicleTypeId "
             + "WHERE uv.user.userId = :userId AND uv.vin.vin = :vin "
             + "AND NOT EXISTS ("
             + "  SELECT 1 FROM CompletedRecall cr "

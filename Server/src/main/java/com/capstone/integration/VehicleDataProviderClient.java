@@ -1,6 +1,6 @@
 package com.capstone.integration;
 
-import com.capstone.configuration.WebClientConfig;
+import com.capstone.configuration.VehicleDataProviderConfig;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,11 +13,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class VehicleDataProviderClient {
 
     private final RestTemplate restTemplate;
-    private final WebClientConfig webClientConfig;
+    private final VehicleDataProviderConfig providerConfig;
 
-    public VehicleDataProviderClient(RestTemplate restTemplate, WebClientConfig webClientConfig) {
+    public VehicleDataProviderClient(RestTemplate restTemplate, VehicleDataProviderConfig providerConfig) {
         this.restTemplate = restTemplate;
-        this.webClientConfig = webClientConfig;
+        this.providerConfig = providerConfig;
     }
 
     public VinDecodeResponse decodeVin(String vin) {
@@ -32,9 +32,9 @@ public class VehicleDataProviderClient {
         return get("/vehicle-repairs/v2/{vin}", vin, RepairCostResponse.class);
     }
 
-    public RecallResponse getRecalls(String vin) {
-        return get(webClientConfig.getVehicleDataRecallBaseUrl(), "/openrecalls/{vin}", vin, RecallResponse.class,
-                webClientConfig.getVehicleDataRecallApiKey(), webClientConfig.getVehicleDataRecallApiKeyHeader());
+    public RecallProviderResponse getRecalls(String vin) {
+        return get(providerConfig.getVehicleDataRecallBaseUrl(), "/openrecalls/{vin}", vin, RecallProviderResponse.class,
+                providerConfig.getVehicleDataRecallApiKey(), providerConfig.getVehicleDataRecallApiKeyHeader());
     }
 
     public OwnerManualResponse getOwnerManual(String vin) {
@@ -46,8 +46,8 @@ public class VehicleDataProviderClient {
     }
 
     private <T> T get(String path, String vin, Class<T> responseType) {
-        return get(webClientConfig.getVehicleDataBaseUrl(), path, vin, responseType,
-                webClientConfig.getVehicleDataApiKey(), webClientConfig.getVehicleDataApiKeyHeader());
+        return get(providerConfig.getVehicleDataBaseUrl(), path, vin, responseType,
+                providerConfig.getVehicleDataApiKey(), providerConfig.getVehicleDataApiKeyHeader());
     }
 
     private <T> T get(String baseUrl, String path, String vin, Class<T> responseType, String apiKey,

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record RecallResponse(List<RecallItem> data) {
+public record RecallProviderResponse(List<RecallItem> data) {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record RecallItem(String manufacturer, @JsonProperty("nhtsaCampaignNumber") String nhtsaCampaignNumber,

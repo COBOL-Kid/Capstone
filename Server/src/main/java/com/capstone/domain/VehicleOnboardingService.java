@@ -113,7 +113,7 @@ public class VehicleOnboardingService {
 
     protected AddVinResponse saveFullVehicleData(User user, String vinNumber, int currentMileage,
                                                  VehicleType incomingVehicleType, MaintenanceScheduleResponse maintenanceScheduleResponse,
-                                                 RepairCostResponse repairCostResponse, RecallResponse recallResponse) {
+                                                 RepairCostResponse repairCostResponse, RecallProviderResponse recallResponse) {
         return transactionTemplate.execute(_ -> {
             VehicleType vehicleType = vehicleTypeRepository.findByIdentity(incomingVehicleType.getVehicleYear(),
                     incomingVehicleType.getVehicleMake(), incomingVehicleType.getVehicleModel(),
@@ -152,7 +152,7 @@ public class VehicleOnboardingService {
 
     private AddVinResponse response(Vin vin, UserVin userVin, boolean createdVin, boolean createdVehicleType,
                                     boolean createdAssociation) {
-        VehicleType vehicleType = vin.getVehicleTypeId();
+        VehicleType vehicleType = vin.getVehicleType();
         return new AddVinResponse(vin.getVin(), userVin.getCurrentMileage(), vehicleType.getVehicleTypeId(),
                 vehicleType.getVehicleMake(), vehicleType.getVehicleModel(), vehicleType.getVehicleTrim(),
                 vehicleType.getVehicleYear(), userVin.getAvailableImageUrls(), userVin.getSelectedImageUrl(),
@@ -172,7 +172,7 @@ public class VehicleOnboardingService {
                     .submit(() -> vehicleDataProviderClient.getMaintenanceSchedule(normalizedVin));
             Future<RepairCostResponse> repairCosts = executor
                     .submit(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin));
-            Future<RecallResponse> recalls = executor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
+            Future<RecallProviderResponse> recalls = executor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
 
             return new SupplementalVehicleData(await(ownerManual), await(maintenanceSchedule), await(repairCosts),
                     await(recalls));
@@ -210,6 +210,6 @@ public class VehicleOnboardingService {
 
     private record SupplementalVehicleData(OwnerManualResponse ownerManual,
                                            MaintenanceScheduleResponse maintenanceSchedule,
-                                           RepairCostResponse repairCosts, RecallResponse recalls) {
+                                           RepairCostResponse repairCosts, RecallProviderResponse recalls) {
     }
 }

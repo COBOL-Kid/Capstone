@@ -3,12 +3,7 @@ package com.capstone.controllers;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.models.User;
-import com.capstone.models.VehicleType;
-import com.capstone.models.Vin;
-import com.capstone.models.dto.AddVinRequest;
-import com.capstone.models.dto.AddVinResponse;
-import com.capstone.models.dto.UpdateVehiclePhotoRequest;
-import com.capstone.models.dto.UserVehicleResponse;
+import com.capstone.models.dto.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
@@ -59,7 +54,7 @@ class VinControllerTest {
     void shouldReturnVinLookupStatus() {
         VinService vinService = mock(VinService.class);
         VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        Vin vin = vin();
+        VinPublicResponse vin = vinPublicResponse();
 
         when(vinService.findByVin("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
         when(vinService.findByVin("missing")).thenReturn(Optional.empty());
@@ -125,10 +120,8 @@ class VinControllerTest {
         return user;
     }
 
-    private Vin vin() {
-        VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
-        vehicleType.setVehicleTypeId(7L);
-        return new Vin("JTENU5JR6M5962554", 45000, vehicleType);
+    private VinPublicResponse vinPublicResponse() {
+        return new VinPublicResponse("JTENU5JR6M5962554", 7L, "Toyota", "4RUNNER", "SRS Prem", "2021", "SUV");
     }
 
     private UserVehicleResponse userVehicleResponse() {

@@ -1,5 +1,6 @@
 package com.capstone.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,6 +36,7 @@ public class User implements UserDetails {
     @Column(name = "user_sms", columnDefinition = "varchar(20)")
     private String userSms;
 
+    @JsonIgnore
     @Column(name = "user_pw", nullable = false, columnDefinition = "varchar(100)")
     private String userPw;
 
@@ -48,6 +50,7 @@ public class User implements UserDetails {
     @Column(name = "lockout_end")
     private LocalDateTime lockoutEnd;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private Set<UserVin> userVins = new HashSet<>();
 
@@ -58,20 +61,6 @@ public class User implements UserDetails {
     private Instant updatedAt;
 
     public User() {
-    }
-
-    public User(String userEmail, String userSms, String userPw) {
-        this.userEmail = userEmail;
-        this.userSms = userSms;
-        this.userPw = userPw;
-    }
-
-    public User(Long userId, String userEmail, String userSms, String userPw, Set<UserVin> userVins) {
-        this.userId = userId;
-        this.userEmail = userEmail;
-        this.userSms = userSms;
-        this.userPw = userPw;
-        this.userVins = userVins != null ? userVins : new HashSet<>();
     }
 
     public Long getUserId() {
@@ -182,16 +171,19 @@ public class User implements UserDetails {
         updatedAt = Instant.now();
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
+    @JsonIgnore
     @Override
     public String getPassword() {
         return userPw;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String getUsername() {
         return userEmail;
@@ -199,22 +191,22 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return UserDetails.super.isAccountNonExpired();
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return lockoutEnd == null || lockoutEnd.isBefore(LocalDateTime.now());
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return UserDetails.super.isCredentialsNonExpired();
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return UserDetails.super.isEnabled();
     }
 
 }

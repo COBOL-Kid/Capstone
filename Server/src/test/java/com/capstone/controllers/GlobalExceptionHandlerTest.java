@@ -37,8 +37,8 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Validation failed", response.getBody().message());
-        assertEquals("vin", response.getBody().errors().get(0).field());
-        assertEquals("VIN must be 17 characters", response.getBody().errors().get(0).message());
+        assertEquals("vin", response.getBody().errors().getFirst().field());
+        assertEquals("VIN must be 17 characters", response.getBody().errors().getFirst().message());
     }
 
     @Test
@@ -48,7 +48,7 @@ class GlobalExceptionHandlerTest {
         var response = handler.handleHttpMessageConversionException(new HttpMessageConversionException("Bad JSON"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Bad JSON", response.getBody());
+        assertEquals("Malformed request body", response.getBody());
     }
 
     @Test

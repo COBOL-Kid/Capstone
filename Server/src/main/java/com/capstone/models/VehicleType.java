@@ -15,7 +15,7 @@ public class VehicleType {
     @Column(name = "vehicle_type_id")
     private Long vehicleTypeId;
 
-    @OneToMany(mappedBy = "vehicleTypeId")
+    @OneToMany(mappedBy = "vehicleType")
     private Set<Vin> vins = new HashSet<>();
 
     @OneToMany(mappedBy = "vehicleTypeId")

@@ -44,7 +44,15 @@ class VinServiceTest {
 
         when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
 
-        assertEquals(Optional.of(vin), service.findByVin(" jtenu5jr6m5962554 "));
+        var response = service.findByVin(" jtenu5jr6m5962554 ");
+
+        assertTrue(response.isPresent());
+        assertEquals("JTENU5JR6M5962554", response.get().vin());
+        assertEquals(7L, response.get().vehicleTypeId());
+        assertEquals("Toyota", response.get().vehicleMake());
+        assertEquals("4RUNNER", response.get().vehicleModel());
+        assertEquals("SRS Prem", response.get().vehicleTrim());
+        assertEquals("2021", response.get().vehicleYear());
         verify(vinRepository).findById("JTENU5JR6M5962554");
     }
 

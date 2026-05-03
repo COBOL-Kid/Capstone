@@ -1,14 +1,13 @@
 package com.capstone.data;
 
-import java.util.Optional;
-
+import com.capstone.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.capstone.models.User;
+import java.util.Optional;
 
 public interface UserRepositoryJPA extends JpaRepository<User, Long> {
 
-	Optional<User> findByUserEmail(String userEmail);
+    Optional<User> findByUserEmail(String userEmail);
 
-	boolean existsByUserEmail(String userEmail);
+    boolean existsByUserEmail(String userEmail);
 }

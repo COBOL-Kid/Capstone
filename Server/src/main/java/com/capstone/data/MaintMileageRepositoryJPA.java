@@ -1,8 +1,24 @@
 package com.capstone.data;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.capstone.models.MaintMileage;
 
 public interface MaintMileageRepositoryJPA extends JpaRepository<MaintMileage, Long> {
+
+	@Query("SELECT m FROM MAINT_MILEAGE m " +
+			"WHERE m.vehicleTypeId.vehicleTypeId = :vehicleTypeId " +
+			"AND m.mileageDue <= :threshold " +
+			"AND NOT EXISTS (" +
+			"  SELECT 1 FROM CompletedMaintenance cm " +
+			"  WHERE cm.maintMileage.maintMileageId = m.maintMileageId " +
+			"  AND cm.userVin.user.userId = :userId " +
+			"  AND cm.userVin.vin.vin = :vin" +
+			")")
+	List<MaintMileage> findUpcomingAndPastDue(@Param("vehicleTypeId") Long vehicleTypeId,
+			@Param("threshold") int threshold, @Param("userId") Long userId, @Param("vin") String vin);
 }

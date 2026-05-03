@@ -57,6 +57,30 @@ class MaintenanceTrackingServiceTest {
 	}
 
 	@Test
+	void shouldFindUpcomingMaintenance() {
+		CompletedMaintenanceRepositoryJPA completedMaintenanceRepository = mock(
+				CompletedMaintenanceRepositoryJPA.class);
+		MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
+		UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+		MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
+				maintMileageRepository, userVinRepository);
+		UserVin userVin = userVin(32000);
+		MaintMileage maintMileage = maintMileage();
+
+		when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
+		when(maintMileageRepository.findUpcomingAndPastDue(7L, 42000, 1L, "JTENU5JR6M5962554"))
+				.thenReturn(List.of(maintMileage));
+
+		var responses = service.findUpcomingMaintenance(user(), " jtenu5jr6m5962554 ");
+
+		assertEquals(1, responses.size());
+		assertEquals(11L, responses.get(0).maintMileageId());
+		assertEquals("JTENU5JR6M5962554", responses.get(0).vin());
+		assertEquals(50000, responses.get(0).mileageDue());
+		assertEquals("Replace engine oil", responses.get(0).maintDesc());
+	}
+
+	@Test
 	void shouldCreateCompletedMaintenanceWithRequestFields() {
 		CompletedMaintenanceRepositoryJPA completedMaintenanceRepository = mock(
 				CompletedMaintenanceRepositoryJPA.class);

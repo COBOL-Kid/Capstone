@@ -28,8 +28,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly(libs.postgresql)
+    runtimeOnly("org.flywaydb:flyway-mysql")
+    runtimeOnly("com.mysql:mysql-connector-j")
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)

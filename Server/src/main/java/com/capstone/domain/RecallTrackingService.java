@@ -11,6 +11,7 @@ import com.capstone.data.RecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.models.dto.CompleteRecallRequest;
 import com.capstone.models.dto.CompletedRecallResponse;
+import com.capstone.models.dto.RecallResponse;
 import com.capstone.models.CompletedRecall;
 import com.capstone.models.Recall;
 import com.capstone.models.User;
@@ -34,6 +35,22 @@ public class RecallTrackingService {
 	public List<CompletedRecallResponse> findCompletedRecalls(User user, String vin) {
 		return completedRecallRepository.findAllForUserVin(user.getUserId(), normalizeVin(vin)).stream()
 				.map(this::toResponse).toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<RecallResponse> findUncompletedRecalls(User user, String vin) {
+		String normalizedVin = normalizeVin(vin);
+		return recallRepository.findUncompletedRecalls(user.getUserId(), normalizedVin).stream()
+				.map(r -> new RecallResponse(
+						r.getRecallId(),
+						normalizedVin,
+						r.getNhtsaCampaignNumber(),
+						r.getReportReceivedDate(),
+						r.getComponent(),
+						r.getSummary(),
+						r.getConsequence(),
+						r.getRemedy()))
+				.toList();
 	}
 
 	@Transactional

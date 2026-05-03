@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.capstone.domain.RecallTrackingService;
 import com.capstone.models.dto.CompleteRecallRequest;
 import com.capstone.models.dto.CompletedRecallResponse;
+import com.capstone.models.dto.RecallResponse;
 import com.capstone.models.User;
 
 import jakarta.validation.Valid;
@@ -46,6 +47,19 @@ public class RecallController {
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 		}
 		return new ResponseEntity<>(completedRecalls, HttpStatus.OK);
+	}
+
+	@GetMapping("/{vin}/uncompleted")
+	public ResponseEntity<?> getUncompletedRecalls(@AuthenticationPrincipal User user,
+			@PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+		if (user == null) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		List<RecallResponse> uncompletedRecalls = recallTrackingService.findUncompletedRecalls(user, vin);
+		if (uncompletedRecalls.isEmpty()) {
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		return new ResponseEntity<>(uncompletedRecalls, HttpStatus.OK);
 	}
 
 	@PostMapping("/completed")

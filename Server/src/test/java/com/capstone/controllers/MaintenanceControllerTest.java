@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import com.capstone.domain.MaintenanceTrackingService;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
+import com.capstone.models.dto.UpcomingMaintenanceResponse;
 import com.capstone.models.User;
 
 class MaintenanceControllerTest {
@@ -23,6 +24,8 @@ class MaintenanceControllerTest {
 
 		assertEquals(HttpStatus.UNAUTHORIZED,
 				controller.getCompletedMaintenance(null, "JTENU5JR6M5962554").getStatusCode());
+		assertEquals(HttpStatus.UNAUTHORIZED,
+				controller.getUpcomingMaintenance(null, "JTENU5JR6M5962554").getStatusCode());
 		assertEquals(HttpStatus.UNAUTHORIZED,
 				controller
 						.completeMaintenance(null,
@@ -40,6 +43,18 @@ class MaintenanceControllerTest {
 
 		assertEquals(HttpStatus.NO_CONTENT,
 				controller.getCompletedMaintenance(user, "JTENU5JR6M5962554").getStatusCode());
+	}
+
+	@Test
+	void shouldReturnNoContentWhenNoUpcomingMaintenanceExists() {
+		MaintenanceTrackingService service = mock(MaintenanceTrackingService.class);
+		MaintenanceController controller = new MaintenanceController(service);
+		User user = user();
+
+		when(service.findUpcomingMaintenance(user, "JTENU5JR6M5962554")).thenReturn(List.of());
+
+		assertEquals(HttpStatus.NO_CONTENT,
+				controller.getUpcomingMaintenance(user, "JTENU5JR6M5962554").getStatusCode());
 	}
 
 	@Test
@@ -72,6 +87,21 @@ class MaintenanceControllerTest {
 
 		assertEquals(HttpStatus.CREATED, response.getStatusCode());
 		assertEquals(completed, response.getBody());
+	}
+
+	@Test
+	void shouldReturnUpcomingMaintenance() {
+		MaintenanceTrackingService service = mock(MaintenanceTrackingService.class);
+		MaintenanceController controller = new MaintenanceController(service);
+		User user = user();
+		UpcomingMaintenanceResponse upcoming = new UpcomingMaintenanceResponse(11L, "JTENU5JR6M5962554", 45000, "Dealer service");
+
+		when(service.findUpcomingMaintenance(user, "JTENU5JR6M5962554")).thenReturn(List.of(upcoming));
+
+		var response = controller.getUpcomingMaintenance(user, "JTENU5JR6M5962554");
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(List.of(upcoming), response.getBody());
 	}
 
 	private User user() {

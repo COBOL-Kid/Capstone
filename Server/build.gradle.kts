@@ -2,7 +2,6 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.diffplug.spotless") version "6.25.0"
     `maven-publish`
 }
 
@@ -62,14 +61,7 @@ tasks.jar {
     enabled = false
 }
 
-spotless {
-    java {
-        target("src/*/java/**/*.java")
-        eclipse()
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-}
+
 
 publishing {
     publications {

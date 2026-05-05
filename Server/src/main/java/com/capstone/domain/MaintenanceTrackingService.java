@@ -1,6 +1,7 @@
 package com.capstone.domain;
 
 import com.capstone.data.CompletedMaintenanceRepositoryJPA;
+import com.capstone.data.MaintCostRepositoryJPA;
 import com.capstone.data.MaintMileageRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.models.CompletedMaintenance;
@@ -9,6 +10,7 @@ import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
+import com.capstone.models.dto.MaintenanceCostResponse;
 import com.capstone.models.dto.UpcomingMaintenanceResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +24,15 @@ public class MaintenanceTrackingService {
     private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
     private final MaintMileageRepositoryJPA maintMileageRepository;
     private final UserVinRepositoryJPA userVinRepository;
+    private final MaintCostRepositoryJPA maintCostRepository;
 
     public MaintenanceTrackingService(CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
-                                      MaintMileageRepositoryJPA maintMileageRepository, UserVinRepositoryJPA userVinRepository) {
+                                      MaintMileageRepositoryJPA maintMileageRepository, UserVinRepositoryJPA userVinRepository,
+                                      MaintCostRepositoryJPA maintCostRepository) {
         this.completedMaintenanceRepository = completedMaintenanceRepository;
         this.maintMileageRepository = maintMileageRepository;
         this.userVinRepository = userVinRepository;
+        this.maintCostRepository = maintCostRepository;
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +57,32 @@ public class MaintenanceTrackingService {
                         normalizedVin,
                         m.getMileageDue(),
                         m.getMaintDesc()
+                )).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MaintenanceCostResponse> findMaintenanceCosts(User user, String vin) {
+        String normalizedVin = normalizeVin(vin);
+        UserVin userVin = userVinRepository.findForUserVin(user.getUserId(), normalizedVin)
+                .orElseThrow(VinNotAssociatedException::new);
+        
+        if (userVin.getVin() == null || userVin.getVin().getVehicleType() == null) {
+            return List.of();
+        }
+        
+        Long vehicleTypeId = userVin.getVin().getVehicleType().getVehicleTypeId();
+        
+        return maintCostRepository.findByVehicleTypeId_VehicleTypeId(vehicleTypeId).stream()
+                .map(cost -> new MaintenanceCostResponse(
+                        cost.getMaintCostId(),
+                        cost.getMaintTitle(),
+                        cost.getMaintDesc(),
+                        cost.getIndependentAvg(),
+                        cost.getIndependentHigh(),
+                        cost.getIndependentLow(),
+                        cost.getDealerAvg(),
+                        cost.getDealerHigh(),
+                        cost.getDealerLow()
                 )).toList();
     }
 

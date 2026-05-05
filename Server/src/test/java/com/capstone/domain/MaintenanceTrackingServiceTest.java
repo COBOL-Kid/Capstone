@@ -1,6 +1,7 @@
 package com.capstone.domain;
 
 import com.capstone.data.CompletedMaintenanceRepositoryJPA;
+import com.capstone.data.MaintCostRepositoryJPA;
 import com.capstone.data.MaintMileageRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.models.*;
@@ -25,8 +26,9 @@ class MaintenanceTrackingServiceTest {
                 CompletedMaintenanceRepositoryJPA.class);
         MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
-                maintMileageRepository, userVinRepository);
+                maintMileageRepository, userVinRepository, maintCostRepository);
         UserVin userVin = userVin(32000);
         MaintMileage maintMileage = maintMileage();
         CompletedMaintenance completedMaintenance = new CompletedMaintenance(99L, userVin, maintMileage,
@@ -53,8 +55,9 @@ class MaintenanceTrackingServiceTest {
                 CompletedMaintenanceRepositoryJPA.class);
         MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
-                maintMileageRepository, userVinRepository);
+                maintMileageRepository, userVinRepository, maintCostRepository);
         UserVin userVin = userVin(32000);
         MaintMileage maintMileage = maintMileage();
 
@@ -77,8 +80,9 @@ class MaintenanceTrackingServiceTest {
                 CompletedMaintenanceRepositoryJPA.class);
         MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
-                maintMileageRepository, userVinRepository);
+                maintMileageRepository, userVinRepository, maintCostRepository);
         UserVin userVin = userVin(45000);
         MaintMileage maintMileage = maintMileage();
         CompleteMaintenanceRequest request = new CompleteMaintenanceRequest(" jtenu5jr6m5962554 ", 11L,
@@ -112,8 +116,9 @@ class MaintenanceTrackingServiceTest {
                 CompletedMaintenanceRepositoryJPA.class);
         MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
-                maintMileageRepository, userVinRepository);
+                maintMileageRepository, userVinRepository, maintCostRepository);
         UserVin userVin = userVin(45000);
         MaintMileage maintMileage = maintMileage();
         CompletedMaintenance existing = new CompletedMaintenance(99L, userVin, maintMileage, LocalDate.of(2025, 1, 2),
@@ -139,7 +144,7 @@ class MaintenanceTrackingServiceTest {
     void shouldRejectMissingMaintenanceItem() {
         MaintenanceTrackingService service = new MaintenanceTrackingService(
                 mock(CompletedMaintenanceRepositoryJPA.class), mock(MaintMileageRepositoryJPA.class),
-                mock(UserVinRepositoryJPA.class));
+                mock(UserVinRepositoryJPA.class), mock(MaintCostRepositoryJPA.class));
 
         assertEquals("Maintenance item is required",
                 assertThrows(IllegalArgumentException.class, () -> service.completeMaintenance(user(), null))
@@ -149,6 +154,49 @@ class MaintenanceTrackingServiceTest {
                         () -> service.completeMaintenance(user(),
                                 new CompleteMaintenanceRequest("JTENU5JR6M5962554", null, null, 1, null, null)))
                         .getMessage());
+    }
+
+    @Test
+    void shouldFindMaintenanceCostsForNormalizedVin() {
+        CompletedMaintenanceRepositoryJPA completedMaintenanceRepository = mock(
+                CompletedMaintenanceRepositoryJPA.class);
+        MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
+        UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+        MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
+                maintMileageRepository, userVinRepository, maintCostRepository);
+        UserVin userVin = userVin(32000);
+        
+        MaintCost cost = new MaintCost(10L, vehicleType(), "Change Battery", "Replaces the battery", 
+                100, 150, 80, 200, 250, 150);
+
+        when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
+        when(maintCostRepository.findByVehicleTypeId_VehicleTypeId(7L)).thenReturn(List.of(cost));
+
+        var responses = service.findMaintenanceCosts(user(), " jtenu5jr6m5962554 ");
+
+        assertEquals(1, responses.size());
+        assertEquals(10L, responses.getFirst().maintCostId());
+        assertEquals("Change Battery", responses.getFirst().maintTitle());
+        assertEquals("Replaces the battery", responses.getFirst().maintDesc());
+        assertEquals(100, responses.getFirst().independentAvg());
+        assertEquals(200, responses.getFirst().dealerAvg());
+    }
+
+    @Test
+    void shouldThrowVinNotAssociatedExceptionWhenFindingMaintenanceCosts() {
+        CompletedMaintenanceRepositoryJPA completedMaintenanceRepository = mock(
+                CompletedMaintenanceRepositoryJPA.class);
+        MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
+        UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+        MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
+                maintMileageRepository, userVinRepository, maintCostRepository);
+        
+        when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
+
+        assertThrows(VinNotAssociatedException.class, 
+                () -> service.findMaintenanceCosts(user(), "JTENU5JR6M5962554"));
     }
 
     private User user() {

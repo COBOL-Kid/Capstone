@@ -4,6 +4,7 @@ import com.capstone.domain.MaintenanceTrackingService;
 import com.capstone.models.User;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
+import com.capstone.models.dto.MaintenanceCostResponse;
 import com.capstone.models.dto.UpcomingMaintenanceResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
@@ -55,6 +56,19 @@ public class MaintenanceController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(upcomingMaintenance, HttpStatus.OK);
+    }
+
+    @GetMapping("/{vin}/costs")
+    public ResponseEntity<?> getMaintenanceCosts(@AuthenticationPrincipal User user,
+                                                 @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        List<MaintenanceCostResponse> costs = maintenanceTrackingService.findMaintenanceCosts(user, vin);
+        if (costs.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(costs, HttpStatus.OK);
     }
 
     @PostMapping("/completed")

@@ -10,25 +10,20 @@ export const routes: Routes = [
   },
   {
     path: 'about',
-    loadComponent: () =>
-      import('./pages/about-page/about-page').then((m) => m.AboutPageComponent),
+    loadComponent: () => import('./pages/about-page/about-page').then((m) => m.AboutPageComponent),
     title: 'About Us · Honest Car',
   },
   {
     path: 'sign-in',
-    loadComponent: () =>
-      import('./pages/sign-in-page/sign-in-page').then(
-        (m) => m.SignInPageComponent,
-      ),
+    component: LandingPageComponent,
     title: 'Sign In · Honest Car',
+    data: { authMode: 'sign-in' },
   },
   {
     path: 'sign-up',
-    loadComponent: () =>
-      import('./pages/sign-up-page/sign-up-page').then(
-        (m) => m.SignUpPageComponent,
-      ),
+    component: LandingPageComponent,
     title: 'Sign Up · Honest Car',
+    data: { authMode: 'sign-up' },
   },
   {
     path: '**',

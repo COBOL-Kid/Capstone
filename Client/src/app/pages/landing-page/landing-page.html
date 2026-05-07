@@ -1,25 +1,29 @@
-<section class="landing" aria-labelledby="landing-title">
-  <img
-    class="landing__image"
-    ngSrc="landing-background.png"
-    fill
-    priority
-    alt=""
-  />
-  <div class="landing__overlay" aria-hidden="true"></div>
+<section aria-labelledby="landing-title" class="landing">
+    <img
+            alt=""
+            class="landing__image"
+            fill
+            ngSrc="landing-background.png"
+            priority
+    />
+    <div aria-hidden="true" class="landing__overlay"></div>
 
-  <div class="landing__content">
-    <h1 id="landing-title" class="landing__title">Honest Car</h1>
+    <div class="landing__content">
+        <h1 class="landing__title" id="landing-title">Honest Car</h1>
 
-    <div class="landing__actions" role="group" aria-label="Authentication actions">
-      <a
-        class="btn btn--primary"
-        routerLink="/sign-up"
-      >Sign Up</a>
-      <a
-        class="btn btn--ghost"
-        routerLink="/sign-in"
-      >Sign In</a>
+        <div aria-label="Authentication actions" class="landing__actions" role="group">
+            <a
+                    class="btn btn--primary"
+                    routerLink="/sign-up"
+            >Sign Up</a>
+            <a
+                    class="btn btn--ghost"
+                    routerLink="/sign-in"
+            >Sign In</a>
+        </div>
     </div>
-  </div>
+
+    @if (authModalMode(); as mode) {
+        <app-auth-modal (close)="closeAuthModal()" [mode]="mode"/>
+    }
 </section>

@@ -1,0 +1,82 @@
+<div (click)="close.emit()" aria-hidden="true" class="auth-modal__backdrop"></div>
+
+<section
+    #dialog
+    aria-labelledby="auth-modal-title"
+    aria-modal="true"
+    class="auth-modal"
+    role="dialog"
+    tabindex="-1"
+>
+    <button (click)="close.emit()" aria-label="Close authentication dialog" class="auth-modal__close" type="button">
+        ×
+    </button>
+
+    <header class="auth-modal__header">
+        <p class="auth-modal__eyebrow">Honest Car</p>
+        <h2 id="auth-modal-title">{{ title() }}</h2>
+    </header>
+
+    <form (ngSubmit)="submit()" [formGroup]="form" class="auth-modal__form" novalidate>
+        @if (serverError(); as error) {
+            <div class="auth-modal__server-error" role="alert">
+                <p>{{ error.message }}</p>
+                @if (error.fieldMessages.length > 0) {
+                    <ul>
+                        @for (fieldMessage of error.fieldMessages; track fieldMessage) {
+                            <li>{{ fieldMessage }}</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+        @if (isSignup()) {
+            <label class="auth-modal__field">
+                <span>First name</span>
+                <input autocomplete="given-name" formControlName="firstname" type="text"/>
+                @if (form.controls.firstname.touched && form.controls.firstname.hasError('required')) {
+                    <small>First name is required.</small>
+                }
+            </label>
+
+            <label class="auth-modal__field">
+                <span>Last name</span>
+                <input autocomplete="family-name" formControlName="lastname" type="text"/>
+                @if (form.controls.lastname.touched && form.controls.lastname.hasError('required')) {
+                    <small>Last name is required.</small>
+                }
+            </label>
+        }
+
+        <label class="auth-modal__field">
+            <span>Email</span>
+            <input autocomplete="email" formControlName="email" type="email"/>
+            @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+                <small>Email is required.</small>
+            } @else if (form.controls.email.touched && form.controls.email.invalid) {
+                <small>Enter a valid email address.</small>
+            }
+        </label>
+
+        <label class="auth-modal__field">
+            <span>Password</span>
+            <input
+                    [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
+                    formControlName="password"
+                    type="password"
+            />
+            @for (error of passwordErrors(); track error) {
+                <small>{{ error }}</small>
+            }
+        </label>
+
+        <button [disabled]="isSubmitting()" class="auth-modal__submit" type="submit">
+            {{ isSubmitting() ? 'Please wait...' : submitLabel() }}
+        </button>
+    </form>
+
+    <p class="auth-modal__switch">
+        {{ alternatePrompt() }}
+        <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
+    </p>
+</section>

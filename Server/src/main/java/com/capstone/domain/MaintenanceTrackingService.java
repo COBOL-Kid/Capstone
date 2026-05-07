@@ -65,13 +65,13 @@ public class MaintenanceTrackingService {
         String normalizedVin = normalizeVin(vin);
         UserVin userVin = userVinRepository.findForUserVin(user.getUserId(), normalizedVin)
                 .orElseThrow(VinNotAssociatedException::new);
-        
+
         if (userVin.getVin() == null || userVin.getVin().getVehicleType() == null) {
             return List.of();
         }
-        
+
         Long vehicleTypeId = userVin.getVin().getVehicleType().getVehicleTypeId();
-        
+
         return maintCostRepository.findByVehicleTypeId_VehicleTypeId(vehicleTypeId).stream()
                 .map(cost -> new MaintenanceCostResponse(
                         cost.getMaintCostId(),

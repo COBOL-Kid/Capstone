@@ -166,8 +166,8 @@ class MaintenanceTrackingServiceTest {
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
                 maintMileageRepository, userVinRepository, maintCostRepository);
         UserVin userVin = userVin(32000);
-        
-        MaintCost cost = new MaintCost(10L, vehicleType(), "Change Battery", "Replaces the battery", 
+
+        MaintCost cost = new MaintCost(10L, vehicleType(), "Change Battery", "Replaces the battery",
                 100, 150, 80, 200, 250, 150);
 
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
@@ -192,10 +192,10 @@ class MaintenanceTrackingServiceTest {
         MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
         MaintenanceTrackingService service = new MaintenanceTrackingService(completedMaintenanceRepository,
                 maintMileageRepository, userVinRepository, maintCostRepository);
-        
+
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
 
-        assertThrows(VinNotAssociatedException.class, 
+        assertThrows(VinNotAssociatedException.class,
                 () -> service.findMaintenanceCosts(user(), "JTENU5JR6M5962554"));
     }
 

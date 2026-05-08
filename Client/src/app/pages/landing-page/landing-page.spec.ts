@@ -54,7 +54,8 @@ describe('LandingPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Create your account');
   });
 
-  it('navigates home when the modal closes', () => {
+  it('plays the close transition before navigating home', () => {
+    vi.useFakeTimers();
     const router = configureRoute({ authMode: 'sign-in' });
 
     const fixture = TestBed.createComponent(LandingPageComponent);
@@ -64,7 +65,18 @@ describe('LandingPageComponent', () => {
       '.auth-modal__close',
     ) as HTMLButtonElement;
     closeButton.click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement
+        .querySelector('app-auth-modal')
+        .classList.contains('auth-modal-closing'),
+    ).toBe(true);
+    expect(router.navigate).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(240);
 
     expect(router.navigate).toHaveBeenCalledWith(['/']);
+    vi.useRealTimers();
   });
 });

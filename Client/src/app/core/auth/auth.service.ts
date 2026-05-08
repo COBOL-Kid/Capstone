@@ -1,8 +1,9 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 
 import {
+  AccountDetails,
   AuthenticationRequest,
   AuthenticationResponse,
   AuthErrorMessage,
@@ -15,8 +16,10 @@ const authTokenStorageKey = 'honest-car.access-token';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly token = signal<string | null>(this.readStoredToken());
+  readonly isSignedIn = computed(() => this.token() !== null);
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = 'http://localhost:8080/api/auth';
+  private readonly accountApiBaseUrl = 'http://localhost:8080/api/account';
 
   register(request: RegisterRequest): Observable<AuthenticationResponse> {
     return this.http
@@ -66,6 +69,18 @@ export class AuthService {
       }),
       catchError((error) => this.handleAuthError(error)),
     );
+  }
+
+  clearSession(): void {
+    this.clearToken();
+  }
+
+  getCurrentAccount(): Observable<AccountDetails> {
+    const token = this.token();
+
+    return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
   }
 
   private storeToken(token: string): void {

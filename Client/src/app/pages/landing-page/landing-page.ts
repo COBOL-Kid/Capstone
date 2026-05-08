@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -16,9 +16,11 @@ import { AuthModalMode } from '../../core/auth/auth.models';
 export class LandingPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly authModalCloseDelayMs = 240;
   private readonly routeData = toSignal(this.route.data, {
     initialValue: this.route.snapshot.data,
   });
+  protected readonly isAuthModalClosing = signal(false);
 
   protected readonly authModalMode = computed<AuthModalMode | null>(() => {
     const mode = this.routeData()['authMode'];
@@ -26,7 +28,22 @@ export class LandingPageComponent {
     return mode === 'sign-in' || mode === 'sign-up' ? mode : null;
   });
 
+  constructor() {
+    effect(() => {
+      if (this.authModalMode()) {
+        this.isAuthModalClosing.set(false);
+      }
+    });
+  }
+
   protected closeAuthModal(): void {
-    void this.router.navigate(['/']);
+    if (this.isAuthModalClosing()) {
+      return;
+    }
+
+    this.isAuthModalClosing.set(true);
+    window.setTimeout(() => {
+      void this.router.navigate(['/']);
+    }, this.authModalCloseDelayMs);
   }
 }

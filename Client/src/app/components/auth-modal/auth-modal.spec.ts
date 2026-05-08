@@ -77,6 +77,31 @@ describe('AuthModalComponent', () => {
     expect(authService.login).toHaveBeenCalledWith({ email: 'pat@example.com', password: 'wrong' });
     expect(fixture.nativeElement.textContent).toContain('Invalid account credentials');
   });
+
+  it('keeps route links for landing page mode switching by default', () => {
+    configure();
+    const fixture = TestBed.createComponent(AuthModalComponent);
+    fixture.componentRef.setInput('mode', 'sign-in');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.auth-modal__switch a')).not.toBeNull();
+  });
+
+  it('emits mode changes when routing links are disabled', () => {
+    configure();
+    const fixture = TestBed.createComponent(AuthModalComponent);
+    const modeChanges: string[] = [];
+    fixture.componentRef.setInput('mode', 'sign-in');
+    fixture.componentRef.setInput('useRoutingLinks', false);
+    fixture.componentInstance.modeChange.subscribe((mode) => modeChanges.push(mode));
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector('.auth-modal__switch-button') as HTMLButtonElement
+    ).click();
+
+    expect(modeChanges).toEqual(['sign-up']);
+  });
 });
 
 function setInputValue(host: HTMLElement, controlName: string, value: string): void {

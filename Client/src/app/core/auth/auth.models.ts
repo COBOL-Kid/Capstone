@@ -16,6 +16,16 @@ export interface AuthenticationResponse {
   token: string;
 }
 
+export interface AccountDetails {
+  userId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  userSms: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthErrorMessage {
   message: string;
   fieldMessages: string[];

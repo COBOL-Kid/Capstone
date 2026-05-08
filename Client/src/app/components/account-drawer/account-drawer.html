@@ -1,0 +1,88 @@
+@if (isOpen()) {
+    <div
+            (click)="close()"
+            [class.account-drawer__backdrop--closing]="isClosing()"
+            aria-hidden="true"
+            class="account-drawer__backdrop"
+    ></div>
+}
+
+<aside
+        [attr.aria-hidden]="!isOpen()"
+        [class.account-drawer--closing]="isClosing()"
+        [class.account-drawer--open]="isOpen()"
+        aria-labelledby="account-drawer-title"
+        class="account-drawer"
+        role="search"
+        tabindex="-1"
+>
+    <header class="account-drawer__header">
+        <div>
+            <p class="account-drawer__eyebrow">Honest Car</p>
+            <h2 id="account-drawer-title">Account</h2>
+        </div>
+        <button (click)="close()" aria-label="Close account panel" class="account-drawer__close" type="button">
+            ×
+        </button>
+    </header>
+
+    <section aria-live="polite" class="account-drawer__content">
+        @if (status() === 'loading') {
+            <p class="account-drawer__message" role="status">Loading account details…</p>
+        } @else if (status() === 'signed-in' && account(); as accountDetails) {
+            <div class="account-drawer__profile">
+                <p class="account-drawer__label">Signed in as</p>
+                <p class="account-drawer__name">{{ accountDetails.firstName }} {{ accountDetails.lastName }}</p>
+                <a [href]="'mailto:' + accountDetails.email"
+                   class="account-drawer__email">{{ accountDetails.email }}</a>
+            </div>
+
+            <dl class="account-drawer__details">
+                <div>
+                    <dt>SMS</dt>
+                    <dd>{{ accountDetails.userSms || 'Not provided' }}</dd>
+                </div>
+                <div>
+                    <dt>Member Since</dt>
+                    <dd>{{ accountDetails.createdAt }}</dd>
+                </div>
+                <div>
+                    <dt>Last Updated</dt>
+                    <dd>{{ accountDetails.updatedAt }}</dd>
+                </div>
+            </dl>
+        } @else if (status() === 'unauthorized') {
+            <p class="account-drawer__message" role="alert">Your session has expired. Sign in again to view your account
+                details.</p>
+            <div class="account-drawer__actions">
+                <button (click)="openAuthModal('sign-in')" class="account-drawer__primary-action" type="button">Sign
+                    In
+                </button>
+                <button (click)="openAuthModal('sign-up')" class="account-drawer__secondary-action" type="button">Sign
+                    Up
+                </button>
+            </div>
+        } @else if (status() === 'error') {
+            <p class="account-drawer__message" role="alert">Unable to load account details. Please try again.</p>
+        } @else {
+            <p class="account-drawer__message">Sign in to view your account details.</p>
+            <div class="account-drawer__actions">
+                <button (click)="openAuthModal('sign-in')" class="account-drawer__primary-action" type="button">Sign
+                    In
+                </button>
+                <button (click)="openAuthModal('sign-up')" class="account-drawer__secondary-action" type="button">Sign
+                    Up
+                </button>
+            </div>
+        }
+    </section>
+</aside>
+
+@if (authModalMode(); as mode) {
+    <app-auth-modal
+            (close)="closeAuthModal()"
+            (modeChange)="setAuthModalMode($event)"
+            [mode]="mode"
+            [useRoutingLinks]="false"
+    />
+}

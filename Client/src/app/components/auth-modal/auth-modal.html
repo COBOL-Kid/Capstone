@@ -77,6 +77,11 @@
 
     <p class="auth-modal__switch">
         {{ alternatePrompt() }}
-        <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
+        @if (useRoutingLinks()) {
+            <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
+        } @else {
+            <button (click)="switchMode()" class="auth-modal__switch-button" type="button">{{ alternateLabel() }}
+            </button>
+        }
     </p>
 </section>

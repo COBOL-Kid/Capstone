@@ -16,4 +16,10 @@
             >About Us</a>
         </li>
     </ul>
+
+    <button (click)="accountDrawer.open()" class="navbar__account-button" type="button">
+        Account
+    </button>
 </nav>
+
+<app-account-drawer #accountDrawer/>

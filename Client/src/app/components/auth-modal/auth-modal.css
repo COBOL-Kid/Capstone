@@ -1,30 +1,73 @@
 :host {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 2;
+    z-index: 50;
     display: grid;
     place-items: center;
     padding: clamp(1rem, 4vw, 2rem);
 }
 
 .auth-modal__backdrop {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(7, 20, 43, 0.58);
     backdrop-filter: blur(6px);
+    animation: auth-backdrop-enter 220ms ease-out;
+}
+
+:host(.auth-modal-closing) .auth-modal__backdrop {
+    animation: auth-backdrop-exit 220ms ease-in forwards;
 }
 
 .auth-modal {
     position: relative;
     width: min(100%, 28rem);
-    max-height: calc(100vh - var(--navbar-height) - 2rem);
+    max-height: calc(100vh - 2rem);
     overflow-y: auto;
     padding: clamp(1.5rem, 4vw, 2.25rem);
     border: 1px solid rgba(230, 240, 251, 0.28);
     border-radius: 1.5rem;
-    background: rgba(11, 37, 69, 0.78);
+    background: var(--color-surface);
     box-shadow: 0 24px 80px rgba(7, 20, 43, 0.65);
     color: var(--color-text-on-dark);
+    animation: auth-modal-enter 240ms ease-out;
+}
+
+:host(.auth-modal-closing) .auth-modal {
+    animation: auth-modal-exit 240ms ease-in forwards;
+}
+
+@keyframes auth-backdrop-enter {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0);
+    }
+}
+
+@keyframes auth-backdrop-exit {
+    to {
+        opacity: 0;
+        backdrop-filter: blur(0);
+    }
+}
+
+@keyframes auth-modal-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes auth-modal-exit {
+    to {
+        opacity: 0;
+        transform: translateY(0.75rem) scale(0.98);
+    }
 }
 
 .auth-modal__close {
@@ -130,13 +173,26 @@
     text-align: center;
 }
 
-.auth-modal__switch a {
+.auth-modal__switch a,
+.auth-modal__switch-button {
+    border: 0;
+    background: transparent;
     color: var(--color-blue-100);
+    cursor: pointer;
+    font: inherit;
     font-weight: 700;
+    padding: 0;
 }
 
 @media (max-width: 480px) {
     .auth-modal {
         border-radius: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-modal__backdrop,
+    .auth-modal {
+        animation: none;
     }
 }

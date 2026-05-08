@@ -24,6 +24,30 @@
     align-items: center;
 }
 
+.navbar__account-button {
+    margin-left: auto;
+    border: 1px solid var(--color-blue-600);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-on-dark);
+    padding: 0.65rem 1rem;
+    font-family: var(--font-heading), ui-monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 150ms ease,
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.navbar__account-button:hover {
+    border-color: var(--color-blue-300);
+    background-color: rgba(122, 162, 247, 0.12);
+    color: var(--color-blue-100);
+}
+
 .navbar__item {
     display: flex;
 }

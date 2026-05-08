@@ -62,6 +62,70 @@ describe('AuthService', () => {
     expect(service.token()).toBe('login-token');
   });
 
+  it('gets current account details with the stored bearer token', () => {
+    localStorage.setItem('honest-car.access-token', 'account-token');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(AuthService);
+    httpTesting = TestBed.inject(HttpTestingController);
+
+    service.getCurrentAccount().subscribe((account) => {
+      expect(account.email).toBe('pat@example.com');
+    });
+
+    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    expect(accountRequest.request.method).toBe('GET');
+    expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer account-token');
+
+    accountRequest.flush({
+      userId: 1,
+      email: 'pat@example.com',
+      firstName: 'Pat',
+      lastName: 'Driver',
+      userSms: null,
+      createdAt: '2026-05-07T17:47:00Z',
+      updatedAt: '2026-05-07T17:47:00Z',
+    });
+  });
+
+  it('does not attach an authorization header for account details when no token exists', () => {
+    service.getCurrentAccount().subscribe();
+
+    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    expect(accountRequest.request.method).toBe('GET');
+    expect(accountRequest.request.headers.has('Authorization')).toBe(false);
+
+    accountRequest.flush({
+      userId: 1,
+      email: 'pat@example.com',
+      firstName: 'Pat',
+      lastName: 'Driver',
+      userSms: null,
+      createdAt: '2026-05-07T17:47:00Z',
+      updatedAt: '2026-05-07T17:47:00Z',
+    });
+  });
+
+  it('surfaces current account lookup errors without clearing the token', () => {
+    service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting
+      .expectOne('http://localhost:8080/api/auth/authenticate')
+      .flush({ token: 'login-token' });
+
+    service.getCurrentAccount().subscribe({
+      error: (error) => {
+        expect(error.status).toBe(401);
+      },
+    });
+
+    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    accountRequest.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(service.token()).toBe('login-token');
+  });
+
   it('maps backend validation errors into user-facing field messages', () => {
     service.register({ firstname: '', lastname: '', email: 'bad', password: 'bad' }).subscribe({
       error: (error) => {

@@ -31,7 +31,9 @@ const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/
 })
 export class AuthModalComponent implements AfterViewInit {
   readonly mode = input.required<AuthModalMode>();
+  readonly useRoutingLinks = input(true);
   readonly close = output<void>();
+  readonly modeChange = output<AuthModalMode>();
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<AuthErrorMessage | null>(null);
   protected readonly title = computed(() =>
@@ -160,5 +162,11 @@ export class AuthModalComponent implements AfterViewInit {
     this.form.controls.firstname.updateValueAndValidity({ emitEvent: false });
     this.form.controls.lastname.updateValueAndValidity({ emitEvent: false });
     this.form.controls.password.updateValueAndValidity({ emitEvent: false });
+  }
+
+  protected switchMode(): void {
+    this.serverError.set(null);
+    this.form.reset();
+    this.modeChange.emit(this.alternateMode());
   }
 }

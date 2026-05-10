@@ -96,6 +96,33 @@ class VinServiceTest {
         assertEquals("Selected image URL must be one of the available vehicle images", ex.getMessage());
     }
 
+    @Test
+    void shouldDeleteVinWhenItExists() {
+        UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository);
+        UserVin userVin = userVin(vin());
+
+        when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
+
+        boolean result = service.deleteVin(1L, "JTENU5JR6M5962554");
+
+        assertTrue(result);
+        verify(userVinRepository).deleteForUserVin(1L, "JTENU5JR6M5962554");
+    }
+
+    @Test
+    void shouldReturnFalseWhenDeletingNonExistentVin() {
+        UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository);
+
+        when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
+
+        boolean result = service.deleteVin(1L, "JTENU5JR6M5962554");
+
+        assertFalse(result);
+        verify(userVinRepository, never()).deleteForUserVin(any(), any());
+    }
+
     private Vin vin() {
         VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
         vehicleType.setVehicleTypeId(7L);

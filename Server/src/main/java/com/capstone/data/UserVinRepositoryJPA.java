@@ -25,6 +25,10 @@ public interface UserVinRepositoryJPA extends JpaRepository<UserVin, UserVinId> 
     List<String> findVinNumbersForUser(@Param("userId") Long userId);
 
     @Modifying
+    @Query("delete from UserVin uv where uv.id.userId = :userId and uv.id.vin = :vin")
+    void deleteForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
+
+    @Modifying
     @Query("delete from UserVin uv where uv.id.userId = :userId")
     void deleteAllForUserId(@Param("userId") Long userId);
 }

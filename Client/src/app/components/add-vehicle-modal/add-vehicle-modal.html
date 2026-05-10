@@ -1,0 +1,50 @@
+<div (click)="close.emit()" aria-hidden="true" class="auth-modal__backdrop"></div>
+
+<section
+    #dialog
+    aria-labelledby="add-vehicle-modal-title"
+    aria-modal="true"
+    class="auth-modal"
+    role="dialog"
+    tabindex="-1"
+>
+    <button (click)="close.emit()" aria-label="Close add vehicle dialog" class="auth-modal__close" type="button">
+        ×
+    </button>
+
+    <header class="auth-modal__header">
+        <h2 id="add-vehicle-modal-title">Add a vehicle</h2>
+    </header>
+
+    <form (ngSubmit)="submit()" [formGroup]="form" class="auth-modal__form" novalidate>
+        @if (serverError(); as error) {
+            <div class="auth-modal__server-error" role="alert">
+                <p>{{ error }}</p>
+            </div>
+        }
+
+        <label class="auth-modal__field">
+            <span>VIN</span>
+            <input formControlName="vin" placeholder="17-character VIN" type="text"/>
+            @if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
+                <small>VIN is required.</small>
+            } @else if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
+                <small>Enter a valid 17-character VIN.</small>
+            }
+        </label>
+
+        <label class="auth-modal__field">
+            <span>Current Mileage</span>
+            <input formControlName="currentMileage" min="0" type="number"/>
+            @if (form.controls.currentMileage.touched && form.controls.currentMileage.hasError('required')) {
+                <small>Current mileage is required.</small>
+            } @else if (form.controls.currentMileage.touched && form.controls.currentMileage.hasError('min')) {
+                <small>Mileage cannot be negative.</small>
+            }
+        </label>
+
+        <button [disabled]="isSubmitting()" class="auth-modal__submit" type="submit">
+            {{ isSubmitting() ? 'Adding...' : 'Add Vehicle' }}
+        </button>
+    </form>
+</section>

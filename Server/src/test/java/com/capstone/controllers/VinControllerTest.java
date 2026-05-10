@@ -113,6 +113,23 @@ class VinControllerTest {
                 controller.updateSelectedPhoto(null, "JTENU5JR6M5962554", request).getStatusCode());
     }
 
+    @Test
+    void shouldDeleteVinForCurrentUser() {
+        VinService vinService = mock(VinService.class);
+        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+        User user = user();
+
+        when(vinService.deleteVin(1L, "JTENU5JR6M5962554")).thenReturn(true);
+        when(vinService.deleteVin(1L, "MISSINGVIN1234567")).thenReturn(false);
+
+        var deletedResponse = controller.deleteVin(user, "JTENU5JR6M5962554");
+        var missingResponse = controller.deleteVin(user, "MISSINGVIN1234567");
+
+        assertEquals(HttpStatus.NO_CONTENT, deletedResponse.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+        assertEquals(HttpStatus.UNAUTHORIZED, controller.deleteVin(null, "JTENU5JR6M5962554").getStatusCode());
+    }
+
     private User user() {
         User user = new User();
         user.setUserId(1L);

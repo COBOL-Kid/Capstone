@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal';
 import { AuthModalMode } from '../../core/auth/auth.models';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -14,14 +15,14 @@ import { AuthModalMode } from '../../core/auth/auth.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingPageComponent {
+  protected readonly isAuthModalClosing = signal(false);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly authModalCloseDelayMs = 240;
   private readonly routeData = toSignal(this.route.data, {
     initialValue: this.route.snapshot.data,
   });
-  protected readonly isAuthModalClosing = signal(false);
-
   protected readonly authModalMode = computed<AuthModalMode | null>(() => {
     const mode = this.routeData()['authMode'];
 
@@ -43,7 +44,11 @@ export class LandingPageComponent {
 
     this.isAuthModalClosing.set(true);
     window.setTimeout(() => {
-      void this.router.navigate(['/']);
+      if (this.authService.isSignedIn()) {
+        void this.router.navigate(['/home']);
+      } else {
+        void this.router.navigate(['/']);
+      }
     }, this.authModalCloseDelayMs);
   }
 }

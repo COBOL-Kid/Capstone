@@ -36,6 +36,15 @@ public class VinService {
         return vinRepositoryJPA.findById(vin.trim().toUpperCase()).map(this::toPublicResponse);
     }
 
+    @Transactional
+    public boolean deleteVin(Long userId, String vin) {
+        String normalizedVin = normalizeVin(vin);
+        return userVinRepositoryJPA.findForUserVin(userId, normalizedVin).map(userVin -> {
+            userVinRepositoryJPA.deleteForUserVin(userId, normalizedVin);
+            return true;
+        }).orElse(false);
+    }
+
     private VinPublicResponse toPublicResponse(Vin vin) {
         VehicleType vehicleType = vin.getVehicleType();
         return new VinPublicResponse(vin.getVin(), vehicleType.getVehicleTypeId(), vehicleType.getVehicleMake(),

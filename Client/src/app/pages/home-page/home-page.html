@@ -1,0 +1,61 @@
+<section aria-labelledby="home-title" class="home">
+    <div class="home__content">
+        <div class="home__header">
+            <h1 class="home__title" id="home-title">My Vehicles</h1>
+            <button (click)="openAddModal()" aria-label="Add new vehicle" class="home__add-button" type="button">
+                +
+            </button>
+        </div>
+
+        @if (isLoading()) {
+            <div class="home__loading">Loading vehicles...</div>
+        } @else if (error()) {
+            <div class="home__error">{{ error() }}</div>
+        } @else if (vehicles().length === 0) {
+            <div class="home__empty">
+                <p>You have no vehicles saved.</p>
+                <button (click)="openAddModal()" class="btn btn--primary">Add a Vehicle</button>
+            </div>
+        } @else {
+            <div class="home__grid">
+                @for (vehicle of vehicles(); track vehicle.vin) {
+                    <article class="vehicle-card">
+                        <button (click)="openDeleteModal(vehicle.vin)" aria-label="Delete vehicle"
+                                class="vehicle-card__delete">
+                            ×
+                        </button>
+                        <div class="vehicle-card__image-container">
+                            @if (vehicle.selectedImageUrl) {
+                                <img [src]="vehicle.selectedImageUrl"
+                                     alt="Photo of {{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}"
+                                     class="vehicle-card__image"/>
+                            } @else {
+                                <div class="vehicle-card__placeholder">No Image</div>
+                            }
+                        </div>
+                        <div class="vehicle-card__details">
+                            <h3 class="vehicle-card__title">{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</h3>
+                            <p class="vehicle-card__subtitle">{{ vehicle.trim }}</p>
+                            <p class="vehicle-card__mileage">{{ vehicle.currentMileage }} miles</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+
+    @if (isAddModalOpen()) {
+        <app-add-vehicle-modal
+                (added)="onVehicleAdded()"
+                (close)="closeAddModal()"
+        />
+    }
+
+    @if (vehicleToDelete(); as vin) {
+        <app-delete-vehicle-modal
+                (close)="closeDeleteModal()"
+                (deleted)="onVehicleDeleted($event)"
+                [vin]="vin"
+        />
+    }
+</section>

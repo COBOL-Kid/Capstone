@@ -6,6 +6,9 @@ Client/Thumbs.db
 # IDEs and editors
 .idea/
 
+# Environment Variables
+/.env
+
 ### Client ###
 
 # Node

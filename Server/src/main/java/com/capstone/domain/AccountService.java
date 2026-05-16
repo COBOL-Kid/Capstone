@@ -1,11 +1,13 @@
 package com.capstone.domain;
 
+import com.capstone.authentication.EmailNormalizer;
 import com.capstone.data.*;
 import com.capstone.models.User;
 import com.capstone.models.dto.AccountResponse;
 import com.capstone.models.dto.ChangePasswordRequest;
 import com.capstone.models.dto.DeleteAccountRequest;
 import com.capstone.models.dto.UpdateAccountRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +44,21 @@ public class AccountService {
     @Transactional
     public AccountResponse updateProfile(User principal, UpdateAccountRequest request) {
         User user = loadCurrentUser(principal);
+        String normalizedEmail = EmailNormalizer.normalize(request.email());
+        userRepository.findByUserEmail(normalizedEmail)
+                .filter(existingUser -> !existingUser.getUserId().equals(user.getUserId()))
+                .ifPresent(existingUser -> {
+                    throw new DuplicateEmailException();
+                });
         user.setFirstName(cleanRequired(request.firstName(), "First name is required"));
         user.setLastName(cleanRequired(request.lastName(), "Last name is required"));
+        user.setUserEmail(normalizedEmail);
         user.setUserSms(cleanOptional(request.userSms()));
-        return toResponse(userRepository.save(user));
+        try {
+            return toResponse(userRepository.save(user));
+        } catch (DataIntegrityViolationException ex) {
+            throw new DuplicateEmailException();
+        }
     }
 
     @Transactional

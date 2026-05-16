@@ -26,6 +26,18 @@ export interface AccountDetails {
   updatedAt: string;
 }
 
+export interface UpdateAccountRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  userSms: string | null;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface AuthErrorMessage {
   message: string;
   fieldMessages: string[];

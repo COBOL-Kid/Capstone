@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
 import { VinService } from '../../core/vin/vin.service';
 import { UserVehicleResponse } from '../../core/vin/vin.models';
 import { AddVehicleModalComponent } from '../../components/add-vehicle-modal/add-vehicle-modal';
@@ -60,8 +61,18 @@ export class HomePageComponent {
           this.vehicles.set(vehicles || []);
           this.isLoading.set(false);
         },
-        error: () => {
-          this.error.set('Failed to load vehicles.');
+        error: (err: HttpErrorResponse) => {
+          if (
+            err.status === 204 ||
+            err.status === 404 ||
+            err.error instanceof SyntaxError ||
+            err.message?.includes('parse')
+          ) {
+            this.vehicles.set([]);
+            this.error.set(null);
+          } else {
+            this.error.set('Failed to load vehicles.');
+          }
           this.isLoading.set(false);
         },
       });

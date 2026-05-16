@@ -7,6 +7,7 @@ import com.capstone.models.dto.DeleteAccountRequest;
 import com.capstone.models.dto.UpdateAccountRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
@@ -43,18 +44,70 @@ class AccountServiceTest {
         UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
         AccountService service = service(userRepository);
         User storedUser = storedUser();
-        UpdateAccountRequest request = new UpdateAccountRequest(" Patricia ", " Driver-Smith ", "   ");
+        UpdateAccountRequest request = new UpdateAccountRequest(" Patricia ", " Driver-Smith ", " DRIVER@Example.COM ", "   ");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+        when(userRepository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(storedUser));
         when(userRepository.save(storedUser)).thenReturn(storedUser);
 
         var response = service.updateProfile(principal(), request);
 
         assertEquals("Patricia", storedUser.getFirstName());
         assertEquals("Driver-Smith", storedUser.getLastName());
+        assertEquals("driver@example.com", storedUser.getUserEmail());
         assertNull(storedUser.getUserSms());
         assertEquals("Patricia", response.firstName());
+        assertEquals("driver@example.com", response.email());
         verify(userRepository).save(storedUser);
+    }
+
+    @Test
+    void shouldUpdateProfileWithNormalizedNewEmailAndTrimmedPhone() {
+        UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+        AccountService service = service(userRepository);
+        User storedUser = storedUser();
+        UpdateAccountRequest request = new UpdateAccountRequest("Pat", "Driver", " NEW.Driver@Example.COM ", " +1 555 222 3333 ");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+        when(userRepository.findByUserEmail("new.driver@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(storedUser)).thenReturn(storedUser);
+
+        var response = service.updateProfile(principal(), request);
+
+        assertEquals("new.driver@example.com", storedUser.getUserEmail());
+        assertEquals("+1 555 222 3333", storedUser.getUserSms());
+        assertEquals("new.driver@example.com", response.email());
+        assertEquals("+1 555 222 3333", response.userSms());
+    }
+
+    @Test
+    void shouldRejectProfileUpdateWhenEmailBelongsToDifferentUser() {
+        UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+        AccountService service = service(userRepository);
+        User storedUser = storedUser();
+        User otherUser = storedUser();
+        otherUser.setUserId(2L);
+        UpdateAccountRequest request = new UpdateAccountRequest("Pat", "Driver", "taken@example.com", null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+        when(userRepository.findByUserEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
+
+        assertThrows(DuplicateEmailException.class, () -> service.updateProfile(principal(), request));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectProfileUpdateWhenEmailBecomesDuplicateDuringSave() {
+        UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+        AccountService service = service(userRepository);
+        User storedUser = storedUser();
+        UpdateAccountRequest request = new UpdateAccountRequest("Pat", "Driver", "taken@example.com", null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+        when(userRepository.findByUserEmail("taken@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(storedUser)).thenThrow(new DataIntegrityViolationException("duplicate email"));
+
+        assertThrows(DuplicateEmailException.class, () -> service.updateProfile(principal(), request));
     }
 
     @Test

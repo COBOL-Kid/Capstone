@@ -7,7 +7,9 @@ import {
   AuthenticationRequest,
   AuthenticationResponse,
   AuthErrorMessage,
+  ChangePasswordRequest,
   RegisterRequest,
+  UpdateAccountRequest,
   ValidationErrorResponse,
 } from './auth.models';
 
@@ -76,11 +78,31 @@ export class AuthService {
   }
 
   getCurrentAccount(): Observable<AccountDetails> {
+    return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`, {
+      headers: this.accountAuthorizationHeaders(),
+    });
+  }
+
+  updateCurrentAccount(request: UpdateAccountRequest): Observable<AccountDetails> {
+    return this.http
+      .patch<AccountDetails>(`${this.accountApiBaseUrl}/me`, request, {
+        headers: this.accountAuthorizationHeaders(),
+      })
+      .pipe(catchError((error) => this.handleAuthError(error)));
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http
+      .post<void>(`${this.accountApiBaseUrl}/password`, request, {
+        headers: this.accountAuthorizationHeaders(),
+      })
+      .pipe(catchError((error) => this.handleAuthError(error)));
+  }
+
+  private accountAuthorizationHeaders(): { Authorization: string } | undefined {
     const token = this.token();
 
-    return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
   }
 
   private storeToken(token: string): void {

@@ -22,7 +22,7 @@ class AccountControllerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, controller.getAccount(null).getStatusCode());
         assertEquals(HttpStatus.UNAUTHORIZED,
-                controller.updateProfile(null, new UpdateAccountRequest("Pat", "Driver", null)).getStatusCode());
+                controller.updateProfile(null, new UpdateAccountRequest("Pat", "Driver", "driver@example.com", null)).getStatusCode());
         assertEquals(HttpStatus.UNAUTHORIZED,
                 controller.changePassword(null, new ChangePasswordRequest("old-secret", "new-secret")).getStatusCode());
         assertEquals(HttpStatus.UNAUTHORIZED,
@@ -49,7 +49,7 @@ class AccountControllerTest {
         AccountService accountService = mock(AccountService.class);
         AccountController controller = new AccountController(accountService);
         User user = user();
-        UpdateAccountRequest request = new UpdateAccountRequest("Patricia", "Driver", "+15551234567");
+        UpdateAccountRequest request = new UpdateAccountRequest("Patricia", "Driver", "driver@example.com", "+15551234567");
         AccountResponse account = account();
 
         when(accountService.updateProfile(user, request)).thenReturn(account);

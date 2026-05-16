@@ -59,19 +59,20 @@ class RequestValidationTest {
 
     @Test
     void shouldValidateAccountRequests() {
-        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", "+1 (555) 123-4567")).isEmpty());
-        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", "")).isEmpty());
-        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", null)).isEmpty());
+        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", "+1 (555) 123-4567")).isEmpty());
+        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", "")).isEmpty());
+        assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", null)).isEmpty());
         assertTrue(validator.validate(new ChangePasswordRequest("old-secret", "new-secret")).isEmpty());
         assertTrue(validator.validate(new DeleteAccountRequest("secret")).isEmpty());
 
-        Set<String> updateMessages = messages(new UpdateAccountRequest("", "", "abc<script>"));
-        Set<String> noDigitsMessages = messages(new UpdateAccountRequest("Pat", "Driver", "()-. "));
+        Set<String> updateMessages = messages(new UpdateAccountRequest("", "", "bad", "abc<script>"));
+        Set<String> noDigitsMessages = messages(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", "()-. "));
         Set<String> passwordMessages = messages(new ChangePasswordRequest("", "short"));
         Set<String> deleteMessages = messages(new DeleteAccountRequest(""));
 
         assertTrue(updateMessages.contains("First name is required"));
         assertTrue(updateMessages.contains("Last name is required"));
+        assertTrue(updateMessages.contains("Email must be valid"));
         assertTrue(updateMessages.contains("SMS number contains invalid characters"));
         assertTrue(noDigitsMessages.contains("SMS number contains invalid characters"));
         assertTrue(passwordMessages.contains("Current password is required"));

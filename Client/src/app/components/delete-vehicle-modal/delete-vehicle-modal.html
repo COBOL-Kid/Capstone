@@ -1,12 +1,12 @@
 <div (click)="close.emit()" aria-hidden="true" class="auth-modal__backdrop"></div>
 
 <section
-    #dialog
-    aria-labelledby="delete-vehicle-modal-title"
-    aria-modal="true"
-    class="auth-modal"
-    role="dialog"
-    tabindex="-1"
+        #dialog
+        aria-labelledby="delete-vehicle-modal-title"
+        aria-modal="true"
+        class="auth-modal"
+        role="dialog"
+        tabindex="-1"
 >
     <button (click)="close.emit()" aria-label="Close delete vehicle dialog" class="auth-modal__close" type="button">
         ×
@@ -22,9 +22,9 @@
         </p>
 
         @if (serverError(); as error) {
-            <div class="auth-modal__server-error" role="alert">
-                <p>{{ error }}</p>
-            </div>
+        <div class="auth-modal__server-error" role="alert">
+            <p>{{ error }}</p>
+        </div>
         }
 
         <button (click)="submit()" [disabled]="isSubmitting()" class="auth-modal__submit" style="background: #a92a2a;"

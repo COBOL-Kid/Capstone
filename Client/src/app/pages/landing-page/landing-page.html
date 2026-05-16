@@ -24,10 +24,10 @@
     </div>
 
     @if (authModalMode(); as mode) {
-        <app-auth-modal
-                (close)="closeAuthModal()"
-                [class.auth-modal-closing]="isAuthModalClosing()"
-                [mode]="mode"
-        />
+    <app-auth-modal
+            (close)="closeAuthModal()"
+            [class.auth-modal-closing]="isAuthModalClosing()"
+            [mode]="mode"
+    />
     }
 </section>

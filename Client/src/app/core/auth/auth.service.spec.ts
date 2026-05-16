@@ -126,6 +126,94 @@ describe('AuthService', () => {
     expect(service.token()).toBe('login-token');
   });
 
+  it('patches current account details with the stored bearer token', () => {
+    service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting
+      .expectOne('http://localhost:8080/api/auth/authenticate')
+      .flush({ token: 'profile-token' });
+    const request = {
+      firstName: 'Pat',
+      lastName: 'Driver',
+      email: 'new@example.com',
+      userSms: '+15551234567',
+    };
+
+    service.updateCurrentAccount(request).subscribe((account) => {
+      expect(account.email).toBe('new@example.com');
+    });
+
+    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    expect(accountRequest.request.method).toBe('PATCH');
+    expect(accountRequest.request.body).toEqual(request);
+    expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer profile-token');
+
+    accountRequest.flush({
+      userId: 1,
+      email: 'new@example.com',
+      firstName: 'Pat',
+      lastName: 'Driver',
+      userSms: '+15551234567',
+      createdAt: '2026-05-07T17:47:00Z',
+      updatedAt: '2026-05-08T17:47:00Z',
+    });
+  });
+
+  it('posts password changes with the stored bearer token', () => {
+    service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting
+      .expectOne('http://localhost:8080/api/auth/authenticate')
+      .flush({ token: 'password-token' });
+    const request = { currentPassword: 'old-secret', newPassword: 'new-secret' };
+
+    service.changePassword(request).subscribe((response) => {
+      expect(response).toBeNull();
+    });
+
+    const passwordRequest = httpTesting.expectOne('http://localhost:8080/api/account/password');
+    expect(passwordRequest.request.method).toBe('POST');
+    expect(passwordRequest.request.body).toEqual(request);
+    expect(passwordRequest.request.headers.get('Authorization')).toBe('Bearer password-token');
+
+    passwordRequest.flush(null);
+  });
+
+  it('maps account update conflicts into user-facing errors', () => {
+    service
+      .updateCurrentAccount({
+        firstName: 'Pat',
+        lastName: 'Driver',
+        email: 'taken@example.com',
+        userSms: null,
+      })
+      .subscribe({
+        error: (error) => {
+          expect(error.message).toBe('Email is already in use');
+          expect(error.fieldMessages).toEqual([]);
+        },
+      });
+
+    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    accountRequest.flush('Email is already in use', { status: 409, statusText: 'Conflict' });
+  });
+
+  it('maps password validation errors into user-facing field messages', () => {
+    service.changePassword({ currentPassword: '', newPassword: 'short' }).subscribe({
+      error: (error) => {
+        expect(error.message).toBe('Validation failed');
+        expect(error.fieldMessages).toEqual(['Current password is required']);
+      },
+    });
+
+    const passwordRequest = httpTesting.expectOne('http://localhost:8080/api/account/password');
+    passwordRequest.flush(
+      {
+        message: 'Validation failed',
+        errors: [{ field: 'currentPassword', message: 'Current password is required' }],
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+  });
+
   it('maps backend validation errors into user-facing field messages', () => {
     service.register({ firstname: '', lastname: '', email: 'bad', password: 'bad' }).subscribe({
       error: (error) => {

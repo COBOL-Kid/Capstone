@@ -10,7 +10,8 @@ CREATE TABLE user_detail
     failed_login_attempts INTEGER      NOT NULL,
     lockout_end           TIMESTAMP(6),
     created_at            DATETIME(6) NOT NULL,
-    updated_at            DATETIME(6) NOT NULL
+    updated_at            DATETIME(6) NOT NULL,
+    CONSTRAINT uk_user_detail_user_email UNIQUE (user_email)
 );
 
 CREATE TABLE refresh_token
@@ -138,3 +139,79 @@ CREATE TABLE completed_maintenance
     CONSTRAINT fk_completed_maintenance_user_vin FOREIGN KEY (user_id, vin_num) REFERENCES user_vin (user_id, vin_num),
     CONSTRAINT fk_completed_maintenance_maint_mileage FOREIGN KEY (maint_mileage_id) REFERENCES maint_mileage (maint_mileage_id)
 );
+
+-- Demo data for manual frontend testing
+-- Login: test.user@example.com / Password123!
+
+INSERT INTO user_detail (user_id, user_email, first_name, last_name, user_sms, user_pw, role,
+                         failed_login_attempts, lockout_end, created_at, updated_at)
+VALUES (1, 'test.user@example.com', 'Test', 'User', '+15551234567',
+        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL,
+        CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6));
+
+INSERT INTO vehicle_type (vehicle_type_id, vehicle_make, vehicle_model, vehicle_trim, vehicle_year, vehicle_style,
+                          source_vin, origin, body, engine_description, transmission_style, drive_type, owners_manual)
+VALUES (1, 'Toyota', 'Camry', 'SE', '2020', '4-Door Sedan', '4T1C11AK5LU123456', 'Japan', 'Sedan',
+        '2.5L 4-Cylinder', 'Automatic', 'FWD',
+        'https://www.toyota.com/owners/resources/warranty-owners-manuals/camry'),
+       (2, 'Honda', 'Civic', 'EX', '2018', '4-Door Sedan', '2HGFC2F59JH543210', 'USA', 'Sedan',
+        '2.0L 4-Cylinder', 'CVT', 'FWD',
+        'https://owners.honda.com/vehicles/information/2018/Civic');
+
+INSERT INTO vin (vin_num, vin_mileage, vehicle_type_id)
+VALUES ('4T1C11AK5LU123456', 45200, 1),
+       ('2HGFC2F59JH543210', 78500, 2);
+
+INSERT INTO user_vin (user_id, vin_num, current_mileage, available_image_urls, selected_image_url)
+VALUES (1, '4T1C11AK5LU123456', 45200,
+        '["https://images.unsplash.com/photo-1621007947382-b76b4c3e8a2a","https://images.unsplash.com/photo-1549399542-7e3f8b79c341"]',
+        'https://images.unsplash.com/photo-1621007947382-b76b4c3e8a2a'),
+       (1, '2HGFC2F59JH543210', 78500,
+        '["https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6","https://images.unsplash.com/photo-1494976388531-d1058494cdd8"]',
+        'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6');
+
+INSERT INTO maint_mileage (maint_mileage_id, vehicle_type_id, mileage_due, maint_desc)
+VALUES (1, 1, 5000, 'Engine oil and filter change'),
+       (2, 1, 15000, 'Tire rotation and inspection'),
+       (3, 1, 30000, 'Transmission fluid inspection'),
+       (4, 1, 45000, 'Spark plug replacement'),
+       (5, 2, 7500, 'Engine oil and filter change'),
+       (6, 2, 30000, 'Brake inspection'),
+       (7, 2, 80000, 'Timing belt replacement');
+
+INSERT INTO maint_cost (maint_cost_id, vehicle_type_id, maint_title, maint_desc, independent_avg, independent_high,
+                        independent_low, dealer_avg, dealer_high, dealer_low)
+VALUES (1, 1, 'Oil Change', 'Replace engine oil and filter', 65, 95, 45, 110, 145, 85),
+       (2, 1, 'Brake Pad Replacement', 'Replace front brake pads and resurface rotors', 275, 380, 210, 425, 550, 340),
+       (3, 2, 'Oil Change', 'Replace engine oil and filter', 60, 90, 40, 105, 135, 80),
+       (4, 2, 'Timing Belt', 'Replace timing belt and water pump', 650, 900, 520, 980, 1250, 780);
+
+INSERT INTO recall (recall_id, vehicle_type_id, nhtsa_campaign_number, recall_no, report_received_date, component,
+                    summary, consequence, remedy, notes, manufacturer, park_it, park_outside, over_the_air_update,
+                    model_year, make, model)
+VALUES (1, 1, '23V123000', '23TA01', '2023-03-15', 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+        'Fuel pump may fail prematurely.',
+        'Engine stall while driving increases crash risk.',
+        'Dealers will replace the fuel pump free of charge.',
+        'Contact your Toyota dealer for scheduling.', 'Toyota', FALSE, FALSE, FALSE, '2020', 'Toyota', 'Camry'),
+       (2, 1, '22V456000', '22TA04', '2022-08-01', 'ELECTRICAL SYSTEM:SOFTWARE',
+        'Infotainment system may freeze during navigation.',
+        'Loss of rear camera display while reversing.',
+        'Dealer will update infotainment software.',
+        NULL, 'Toyota', FALSE, FALSE, TRUE, '2020', 'Toyota', 'Camry'),
+       (3, 2, '21V789000', '21HA02', '2021-11-20', 'AIR BAGS:SENSOR:OCCUPANT CLASSIFICATION',
+        'Passenger air bag sensor may misclassify occupant weight.',
+        'Air bag may not deploy correctly in a crash.',
+        'Dealers will recalibrate the occupant classification system.',
+        NULL, 'Honda', FALSE, FALSE, FALSE, '2018', 'Honda', 'Civic');
+
+INSERT INTO completed_maintenance (completed_maintenance_id, user_id, vin_num, maint_mileage_id, completed_date,
+                                   mileage_completed, cost, notes)
+VALUES (1, 1, '4T1C11AK5LU123456', 1, '2020-06-10', 5100, 58.50, 'First oil change at local shop'),
+       (2, 1, '4T1C11AK5LU123456', 2, '2021-02-14', 15200, 35.00, 'Included with oil change'),
+       (3, 1, '2HGFC2F59JH543210', 5, '2019-04-22', 7800, 54.25, 'Dealer service visit');
+
+INSERT INTO completed_recall (completed_recall_id, user_id, vin_num, recall_id, completed_date, repair_shop, cost,
+                              notes)
+VALUES (1, 1, '4T1C11AK5LU123456', 2, '2022-09-18', 'City Toyota', 0.00,
+        'Software update completed during routine service');

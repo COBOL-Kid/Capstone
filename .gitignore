@@ -52,3 +52,5 @@ Server/bin/
 # Misc
 Server/samples/
 Server/out/
+/docker-compose.yaml
+/Dockerfile

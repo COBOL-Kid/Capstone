@@ -21,4 +21,8 @@ public interface CompletedRecallRepositoryJPA extends JpaRepository<CompletedRec
     @Modifying
     @Query("delete from CompletedRecall cr where cr.userVin.id.userId = :userId")
     void deleteAllForUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("delete from CompletedRecall cr where cr.userVin.id.userId = :userId and cr.userVin.id.vin = :vin")
+    void deleteAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 }

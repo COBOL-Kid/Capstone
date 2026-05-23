@@ -21,4 +21,8 @@ public interface CompletedMaintenanceRepositoryJPA extends JpaRepository<Complet
     @Modifying
     @Query("delete from CompletedMaintenance cm where cm.userVin.id.userId = :userId")
     int deleteAllForUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("delete from CompletedMaintenance cm where cm.userVin.id.userId = :userId and cm.userVin.id.vin = :vin")
+    int deleteAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 }

@@ -44,7 +44,7 @@ public class VinController {
 
     @GetMapping("/{vin}")
     public ResponseEntity<?> getVin(
-            @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+            @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         return vinService.findByVin(vin)
                 .<ResponseEntity<?>>map(foundVin -> new ResponseEntity<>(foundVin, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -61,7 +61,7 @@ public class VinController {
 
     @PatchMapping("/{vin}/photo")
     public ResponseEntity<?> updateSelectedPhoto(@AuthenticationPrincipal User user,
-                                                 @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin,
+                                                 @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin,
                                                  @Valid @RequestBody UpdateVehiclePhotoRequest request) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -73,7 +73,7 @@ public class VinController {
 
     @DeleteMapping("/{vin}")
     public ResponseEntity<?> deleteVin(@AuthenticationPrincipal User user,
-                                       @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                       @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

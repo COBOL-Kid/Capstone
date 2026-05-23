@@ -5,6 +5,7 @@ Client/Thumbs.db
 
 # IDEs and editors
 .idea/
+.vscode/
 
 # Environment Variables
 /.env

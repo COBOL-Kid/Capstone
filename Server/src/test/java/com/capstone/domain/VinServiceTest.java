@@ -1,5 +1,7 @@
 package com.capstone.domain;
 
+import com.capstone.data.CompletedMaintenanceRepositoryJPA;
+import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.User;
@@ -21,7 +23,8 @@ class VinServiceTest {
     void shouldDelegateFindVinsByUserId() {
         VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-        VinService service = new VinService(vinRepository, userVinRepository);
+        VinService service = new VinService(vinRepository, userVinRepository,
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
         Vin vin = vin();
         UserVin userVin = userVin(vin);
 
@@ -39,7 +42,8 @@ class VinServiceTest {
     @Test
     void shouldNormalizeVinBeforeLookup() {
         VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
-        VinService service = new VinService(vinRepository, mock(UserVinRepositoryJPA.class));
+        VinService service = new VinService(vinRepository, mock(UserVinRepositoryJPA.class),
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
         Vin vin = vin();
 
         when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
@@ -59,7 +63,8 @@ class VinServiceTest {
     @Test
     void shouldReturnEmptyForBlankVinWithoutRepositoryLookup() {
         VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
-        VinService service = new VinService(vinRepository, mock(UserVinRepositoryJPA.class));
+        VinService service = new VinService(vinRepository, mock(UserVinRepositoryJPA.class),
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
 
         assertTrue(service.findByVin("  ").isEmpty());
         verify(vinRepository, never()).findById(any());
@@ -69,7 +74,8 @@ class VinServiceTest {
     void shouldUpdateSelectedImageWhenUrlIsAvailable() {
         VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-        VinService service = new VinService(vinRepository, userVinRepository);
+        VinService service = new VinService(vinRepository, userVinRepository,
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
         UserVin userVin = userVin(vin());
 
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
@@ -86,7 +92,8 @@ class VinServiceTest {
     void shouldRejectSelectedImageOutsideAvailableImages() {
         UserVin userVin = userVin(vin());
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository);
+        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository,
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
 
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
 
@@ -98,8 +105,12 @@ class VinServiceTest {
 
     @Test
     void shouldDeleteVinWhenItExists() {
+        VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository);
+        CompletedMaintenanceRepositoryJPA completedMaintenanceRepository = mock(CompletedMaintenanceRepositoryJPA.class);
+        CompletedRecallRepositoryJPA completedRecallRepository = mock(CompletedRecallRepositoryJPA.class);
+        VinService service = new VinService(vinRepository, userVinRepository, completedMaintenanceRepository,
+                completedRecallRepository);
         UserVin userVin = userVin(vin());
 
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.of(userVin));
@@ -107,13 +118,17 @@ class VinServiceTest {
         boolean result = service.deleteVin(1L, "JTENU5JR6M5962554");
 
         assertTrue(result);
+        verify(completedMaintenanceRepository).deleteAllForUserVin(1L, "JTENU5JR6M5962554");
+        verify(completedRecallRepository).deleteAllForUserVin(1L, "JTENU5JR6M5962554");
         verify(userVinRepository).deleteForUserVin(1L, "JTENU5JR6M5962554");
+        verify(vinRepository).deleteOrphanedVins(List.of("JTENU5JR6M5962554"));
     }
 
     @Test
     void shouldReturnFalseWhenDeletingNonExistentVin() {
         UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository);
+        VinService service = new VinService(mock(VinRepositoryJPA.class), userVinRepository,
+                mock(CompletedMaintenanceRepositoryJPA.class), mock(CompletedRecallRepositoryJPA.class));
 
         when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
 

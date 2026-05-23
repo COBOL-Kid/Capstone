@@ -32,7 +32,7 @@ public class MaintenanceController {
 
     @GetMapping("/{vin}/completed")
     public ResponseEntity<?> getCompletedMaintenance(@AuthenticationPrincipal User user,
-                                                     @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                                     @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -46,7 +46,7 @@ public class MaintenanceController {
 
     @GetMapping("/{vin}/upcoming")
     public ResponseEntity<?> getUpcomingMaintenance(@AuthenticationPrincipal User user,
-                                                    @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                                    @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -60,7 +60,7 @@ public class MaintenanceController {
 
     @GetMapping("/{vin}/costs")
     public ResponseEntity<?> getMaintenanceCosts(@AuthenticationPrincipal User user,
-                                                 @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                                 @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

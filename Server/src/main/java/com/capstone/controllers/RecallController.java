@@ -31,7 +31,7 @@ public class RecallController {
 
     @GetMapping("/{vin}/completed")
     public ResponseEntity<?> getCompletedRecalls(@AuthenticationPrincipal User user,
-                                                 @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                                 @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -44,7 +44,7 @@ public class RecallController {
 
     @GetMapping("/{vin}/uncompleted")
     public ResponseEntity<?> getUncompletedRecalls(@AuthenticationPrincipal User user,
-                                                   @PathVariable @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
+                                                   @PathVariable("vin") @Pattern(regexp = VIN_PATTERN, flags = Pattern.Flag.CASE_INSENSITIVE, message = VIN_MESSAGE) String vin) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

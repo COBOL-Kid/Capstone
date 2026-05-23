@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
+import { apiConfig } from '../api/api.config';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -36,7 +37,7 @@ describe('AuthService', () => {
       expect(response.token).toBe('jwt-token');
     });
 
-    const authRequest = httpTesting.expectOne('http://localhost:8080/api/auth/register');
+    const authRequest = httpTesting.expectOne(`${apiConfig.authUrl}/register`);
     expect(authRequest.request.method).toBe('POST');
     expect(authRequest.request.body).toEqual(request);
     expect(authRequest.request.withCredentials).toBe(true);
@@ -52,7 +53,7 @@ describe('AuthService', () => {
 
     service.login(request).subscribe();
 
-    const authRequest = httpTesting.expectOne('http://localhost:8080/api/auth/authenticate');
+    const authRequest = httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`);
     expect(authRequest.request.method).toBe('POST');
     expect(authRequest.request.body).toEqual(request);
     expect(authRequest.request.withCredentials).toBe(true);
@@ -75,7 +76,7 @@ describe('AuthService', () => {
       expect(account.email).toBe('pat@example.com');
     });
 
-    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     expect(accountRequest.request.method).toBe('GET');
     expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer account-token');
 
@@ -93,7 +94,7 @@ describe('AuthService', () => {
   it('does not attach an authorization header for account details when no token exists', () => {
     service.getCurrentAccount().subscribe();
 
-    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     expect(accountRequest.request.method).toBe('GET');
     expect(accountRequest.request.headers.has('Authorization')).toBe(false);
 
@@ -110,9 +111,7 @@ describe('AuthService', () => {
 
   it('surfaces current account lookup errors without clearing the token', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
-    httpTesting
-      .expectOne('http://localhost:8080/api/auth/authenticate')
-      .flush({ token: 'login-token' });
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ token: 'login-token' });
 
     service.getCurrentAccount().subscribe({
       error: (error) => {
@@ -120,7 +119,7 @@ describe('AuthService', () => {
       },
     });
 
-    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     accountRequest.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     expect(service.token()).toBe('login-token');
@@ -128,9 +127,7 @@ describe('AuthService', () => {
 
   it('patches current account details with the stored bearer token', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
-    httpTesting
-      .expectOne('http://localhost:8080/api/auth/authenticate')
-      .flush({ token: 'profile-token' });
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ token: 'profile-token' });
     const request = {
       firstName: 'Pat',
       lastName: 'Driver',
@@ -142,7 +139,7 @@ describe('AuthService', () => {
       expect(account.email).toBe('new@example.com');
     });
 
-    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     expect(accountRequest.request.method).toBe('PATCH');
     expect(accountRequest.request.body).toEqual(request);
     expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer profile-token');
@@ -160,16 +157,14 @@ describe('AuthService', () => {
 
   it('posts password changes with the stored bearer token', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
-    httpTesting
-      .expectOne('http://localhost:8080/api/auth/authenticate')
-      .flush({ token: 'password-token' });
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ token: 'password-token' });
     const request = { currentPassword: 'old-secret', newPassword: 'new-secret' };
 
     service.changePassword(request).subscribe((response) => {
       expect(response).toBeNull();
     });
 
-    const passwordRequest = httpTesting.expectOne('http://localhost:8080/api/account/password');
+    const passwordRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/password`);
     expect(passwordRequest.request.method).toBe('POST');
     expect(passwordRequest.request.body).toEqual(request);
     expect(passwordRequest.request.headers.get('Authorization')).toBe('Bearer password-token');
@@ -192,7 +187,7 @@ describe('AuthService', () => {
         },
       });
 
-    const accountRequest = httpTesting.expectOne('http://localhost:8080/api/account/me');
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     accountRequest.flush('Email is already in use', { status: 409, statusText: 'Conflict' });
   });
 
@@ -204,7 +199,7 @@ describe('AuthService', () => {
       },
     });
 
-    const passwordRequest = httpTesting.expectOne('http://localhost:8080/api/account/password');
+    const passwordRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/password`);
     passwordRequest.flush(
       {
         message: 'Validation failed',
@@ -222,7 +217,7 @@ describe('AuthService', () => {
       },
     });
 
-    const authRequest = httpTesting.expectOne('http://localhost:8080/api/auth/register');
+    const authRequest = httpTesting.expectOne(`${apiConfig.authUrl}/register`);
     authRequest.flush(
       {
         message: 'Validation failed',
@@ -240,7 +235,7 @@ describe('AuthService', () => {
       },
     });
 
-    const authRequest = httpTesting.expectOne('http://localhost:8080/api/auth/authenticate');
+    const authRequest = httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`);
     authRequest.flush('Invalid account credentials', { status: 401, statusText: 'Unauthorized' });
   });
 });

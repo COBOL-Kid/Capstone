@@ -1,5 +1,7 @@
 package com.capstone.domain;
 
+import com.capstone.data.CompletedMaintenanceRepositoryJPA;
+import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
 import com.capstone.models.UserVin;
@@ -18,10 +20,16 @@ public class VinService {
 
     private final VinRepositoryJPA vinRepositoryJPA;
     private final UserVinRepositoryJPA userVinRepositoryJPA;
+    private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepositoryJPA;
+    private final CompletedRecallRepositoryJPA completedRecallRepositoryJPA;
 
-    public VinService(VinRepositoryJPA vinRepositoryJPA, UserVinRepositoryJPA userVinRepositoryJPA) {
+    public VinService(VinRepositoryJPA vinRepositoryJPA, UserVinRepositoryJPA userVinRepositoryJPA,
+                      CompletedMaintenanceRepositoryJPA completedMaintenanceRepositoryJPA,
+                      CompletedRecallRepositoryJPA completedRecallRepositoryJPA) {
         this.vinRepositoryJPA = vinRepositoryJPA;
         this.userVinRepositoryJPA = userVinRepositoryJPA;
+        this.completedMaintenanceRepositoryJPA = completedMaintenanceRepositoryJPA;
+        this.completedRecallRepositoryJPA = completedRecallRepositoryJPA;
     }
 
     public List<UserVehicleResponse> findVinsByUserId(Long userId) {
@@ -40,7 +48,10 @@ public class VinService {
     public boolean deleteVin(Long userId, String vin) {
         String normalizedVin = normalizeVin(vin);
         return userVinRepositoryJPA.findForUserVin(userId, normalizedVin).map(userVin -> {
+            completedMaintenanceRepositoryJPA.deleteAllForUserVin(userId, normalizedVin);
+            completedRecallRepositoryJPA.deleteAllForUserVin(userId, normalizedVin);
             userVinRepositoryJPA.deleteForUserVin(userId, normalizedVin);
+            vinRepositoryJPA.deleteOrphanedVins(List.of(normalizedVin));
             return true;
         }).orElse(false);
     }

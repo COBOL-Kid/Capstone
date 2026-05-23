@@ -12,6 +12,7 @@ import {
   UpdateAccountRequest,
   ValidationErrorResponse,
 } from './auth.models';
+import { apiConfig } from '../api/api.config';
 
 const authTokenStorageKey = 'honest-car.access-token';
 
@@ -20,8 +21,8 @@ export class AuthService {
   readonly token = signal<string | null>(this.readStoredToken());
   readonly isSignedIn = computed(() => this.token() !== null);
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = 'http://localhost:8080/api/auth';
-  private readonly accountApiBaseUrl = 'http://localhost:8080/api/account';
+  private readonly apiBaseUrl = apiConfig.authUrl;
+  private readonly accountApiBaseUrl = apiConfig.accountUrl;
 
   register(request: RegisterRequest): Observable<AuthenticationResponse> {
     return this.http

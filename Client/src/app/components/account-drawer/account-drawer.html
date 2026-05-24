@@ -1,9 +1,9 @@
 @if (isOpen()) {
 <div
         (click)="close()"
-        [class.account-drawer__backdrop--closing]="isClosing()"
+        [class.hc-overlay-backdrop--closing]="isClosing()"
         aria-hidden="true"
-        class="account-drawer__backdrop"
+        class="hc-overlay-backdrop hc-overlay-backdrop--light"
 ></div>
 }
 
@@ -18,7 +18,7 @@
 >
     <header class="account-drawer__header">
         <div>
-            <p class="account-drawer__eyebrow">Honest Car</p>
+            <p class="hc-eyebrow hc-eyebrow--drawer">Honest Car</p>
             <h2 id="account-drawer-title">Account</h2>
         </div>
         <button (click)="close()" aria-label="Close account panel" class="account-drawer__close" type="button">
@@ -31,18 +31,27 @@
         <p class="account-drawer__message" role="status">Loading account details…</p>
         } @else if (status() === 'signed-in' && account(); as accountDetails) {
         <div class="account-drawer__profile">
-            <p class="account-drawer__label">Signed in as</p>
+            <p class="hc-label">Signed in as</p>
             <p class="account-drawer__name">{{ accountDetails.firstName }} {{ accountDetails.lastName }}</p>
             <a [href]="'mailto:' + accountDetails.email"
                class="account-drawer__email">{{ accountDetails.email }}</a>
         </div>
 
+        <button
+                (click)="logout()"
+                [disabled]="isLoggingOut()"
+                class="hc-btn hc-btn--logout"
+                type="button"
+        >
+            {{ isLoggingOut() ? 'Logging out…' : 'Log out' }}
+        </button>
+
         <div aria-live="polite" class="account-drawer__status-region">
             @if (profileSuccessMessage(); as message) {
-            <p class="account-drawer__status account-drawer__status--success" role="status">{{ message }}</p>
+            <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
             }
             @if (profileServerError(); as error) {
-            <div class="account-drawer__status account-drawer__status--error" role="alert">
+            <div class="hc-alert hc-alert--error" role="alert">
                 <p>{{ error.message }}</p>
                 @if (error.fieldMessages.length > 0) {
                 <ul>
@@ -71,11 +80,11 @@
         </dl>
 
         @if (!isEditingProfile()) {
-        <button (click)="startProfileEdit()" class="account-drawer__secondary-action" type="button">Edit Contact Info
+        <button (click)="startProfileEdit()" class="hc-btn hc-btn--secondary" type="button">Edit Contact Info
         </button>
         } @else {
-        <form (ngSubmit)="submitProfile()" [formGroup]="profileForm" class="account-drawer__form">
-            <div class="account-drawer__field">
+        <form (ngSubmit)="submitProfile()" [formGroup]="profileForm" class="account-drawer__form hc-form">
+            <div class="hc-field hc-field--drawer">
                 <label for="account-email">Email address</label>
                 <input
                         autocomplete="email"
@@ -85,14 +94,14 @@
                         type="email"
                 />
                 @if (profileForm.controls.email.touched && profileForm.controls.email.hasError('required')) {
-                <p class="account-drawer__validation">Email is required.</p>
+                <p class="hc-alert--inline-error">Email is required.</p>
                 } @else if (profileForm.controls.email.touched && profileForm.controls.email.hasError('email')) {
-                <p class="account-drawer__validation">Enter a valid email address.</p>
+                <p class="hc-alert--inline-error">Enter a valid email address.</p>
                 } @else if (profileForm.controls.email.touched && profileForm.controls.email.hasError('maxlength')) {
-                <p class="account-drawer__validation">Email must be 254 characters or fewer.</p>
+                <p class="hc-alert--inline-error">Email must be 254 characters or fewer.</p>
                 }
             </div>
-            <div class="account-drawer__field">
+            <div class="hc-field hc-field--drawer">
                 <label for="account-sms">SMS phone number</label>
                 <input
                         autocomplete="tel"
@@ -102,91 +111,39 @@
                         type="tel"
                 />
                 @if (profileForm.controls.userSms.touched && profileForm.controls.userSms.hasError('maxlength')) {
-                <p class="account-drawer__validation">SMS number must be 20 characters or fewer.</p>
+                <p class="hc-alert--inline-error">SMS number must be 20 characters or fewer.</p>
                 } @else if (profileForm.controls.userSms.touched && profileForm.controls.userSms.hasError('pattern')) {
-                <p class="account-drawer__validation">Use a phone number with digits and common phone characters.</p>
+                <p class="hc-alert--inline-error">Use a phone number with digits and common phone characters.</p>
                 }
             </div>
             <div class="account-drawer__form-actions">
-                <button [disabled]="isSubmittingProfile()" class="account-drawer__primary-action" type="submit">
+                <button [disabled]="isSubmittingProfile()" class="hc-btn hc-btn--primary-inverse" type="submit">
                     {{ isSubmittingProfile() ? 'Saving…' : 'Save Changes' }}
                 </button>
                 <button (click)="cancelProfileEdit()" [disabled]="isSubmittingProfile()"
-                        class="account-drawer__secondary-action" type="button">Cancel
+                        class="hc-btn hc-btn--secondary" type="button">Cancel
                 </button>
             </div>
         </form>
         }
 
-        <form (ngSubmit)="submitPassword()" [formGroup]="passwordForm"
-              class="account-drawer__form account-drawer__form--password">
-            <h3>Change Password</h3>
-            <div aria-live="polite" class="account-drawer__status-region">
-                @if (passwordSuccessMessage(); as message) {
-                <p class="account-drawer__status account-drawer__status--success" role="status">{{ message }}</p>
-                }
-                @if (passwordServerError(); as error) {
-                <div class="account-drawer__status account-drawer__status--error" role="alert">
-                    <p>{{ error.message }}</p>
-                    @if (error.fieldMessages.length > 0) {
-                    <ul>
-                        @for (fieldMessage of error.fieldMessages; track fieldMessage) {
-                        <li>{{ fieldMessage }}</li>
-                        }
-                    </ul>
-                    }
-                </div>
-                }
-            </div>
-            <div class="account-drawer__field">
-                <label for="current-password">Current password</label>
-                <input autocomplete="current-password" formControlName="currentPassword" id="current-password"
-                       type="password"/>
-                @if (passwordForm.controls.currentPassword.touched &&
-                passwordForm.controls.currentPassword.hasError('required')) {
-                <p class="account-drawer__validation">Current password is required.</p>
-                }
-            </div>
-            <div class="account-drawer__field">
-                <label for="new-password">New password</label>
-                <input autocomplete="new-password" formControlName="newPassword" id="new-password" type="password"/>
-                @if (passwordForm.controls.newPassword.touched &&
-                passwordForm.controls.newPassword.hasError('required')) {
-                <p class="account-drawer__validation">New password is required.</p>
-                } @else if (passwordForm.controls.newPassword.touched &&
-                passwordForm.controls.newPassword.hasError('minlength')) {
-                <p class="account-drawer__validation">Password must be at least 8 characters.</p>
-                } @else if (passwordForm.controls.newPassword.touched &&
-                passwordForm.controls.newPassword.hasError('maxlength')) {
-                <p class="account-drawer__validation">Password must be 72 characters or fewer.</p>
-                } @else if (passwordForm.controls.newPassword.touched &&
-                passwordForm.controls.newPassword.hasError('pattern')) {
-                <p class="account-drawer__validation">Use uppercase, lowercase, number, and special characters.</p>
-                }
-            </div>
-            <div class="account-drawer__field">
-                <label for="confirm-password">Confirm new password</label>
-                <input autocomplete="new-password" formControlName="confirmPassword" id="confirm-password"
-                       type="password"/>
-                @if (passwordForm.controls.confirmPassword.touched &&
-                passwordForm.controls.confirmPassword.hasError('required')) {
-                <p class="account-drawer__validation">Confirm your new password.</p>
-                } @else if (passwordForm.controls.confirmPassword.touched && !passwordConfirmationMatches()) {
-                <p class="account-drawer__validation">Passwords must match.</p>
-                }
-            </div>
-            <button [disabled]="isSubmittingPassword()" class="account-drawer__primary-action" type="submit">
-                {{ isSubmittingPassword() ? 'Updating…' : 'Update Password' }}
-            </button>
-        </form>
+        <div aria-live="polite" class="account-drawer__status-region">
+            @if (passwordSuccessMessage(); as message) {
+            <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
+            }
+        </div>
+
+        <button (click)="openPasswordModal()" class="hc-btn hc-btn--secondary" type="button">
+            Change Password
+        </button>
         } @else if (status() === 'unauthorized') {
         <p class="account-drawer__message" role="alert">Your session has expired. Sign in again to view your account
             details.</p>
         <div class="account-drawer__actions">
-            <button (click)="openAuthModal('sign-in')" class="account-drawer__primary-action" type="button">Sign
+            <button (click)="openAuthModal('sign-in')" class="hc-btn hc-btn--primary-inverse" type="button">Sign
                 In
             </button>
-            <button (click)="openAuthModal('sign-up')" class="account-drawer__secondary-action" type="button">Sign
+            <button (click)="openAuthModal('sign-up')" class="hc-btn hc-btn--secondary" type="button">Sign
                 Up
             </button>
         </div>
@@ -195,10 +152,10 @@
         } @else {
         <p class="account-drawer__message">Sign in to view your account details.</p>
         <div class="account-drawer__actions">
-            <button (click)="openAuthModal('sign-in')" class="account-drawer__primary-action" type="button">Sign
+            <button (click)="openAuthModal('sign-in')" class="hc-btn hc-btn--primary-inverse" type="button">Sign
                 In
             </button>
-            <button (click)="openAuthModal('sign-up')" class="account-drawer__secondary-action" type="button">Sign
+            <button (click)="openAuthModal('sign-up')" class="hc-btn hc-btn--secondary" type="button">Sign
                 Up
             </button>
         </div>
@@ -212,5 +169,12 @@
         (modeChange)="setAuthModalMode($event)"
         [mode]="mode"
         [useRoutingLinks]="false"
+/>
+}
+
+@if (isPasswordModalOpen()) {
+<app-change-password-modal
+        (changed)="onPasswordChanged()"
+        (close)="closePasswordModal()"
 />
 }

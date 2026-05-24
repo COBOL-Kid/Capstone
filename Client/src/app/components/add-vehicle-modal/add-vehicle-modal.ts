@@ -15,27 +15,42 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { finalize } from 'rxjs';
 
 import { VinService } from '../../core/vin/vin.service';
-import { AddVinResponse } from '../../core/vin/vin.models';
+import { AddVinResponse, VinErrorMessage } from '../../core/vin/vin.models';
+
+const vinPattern = /^[A-HJ-NPR-Z0-9]{17}$/i;
+const vinValidationMessage = 'VIN must be 17 characters and cannot contain I, O, or Q';
 
 @Component({
   selector: 'app-add-vehicle-modal',
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './add-vehicle-modal.html',
-  styleUrl: '../auth-modal/auth-modal.css',
+  host: {
+    class: 'hc-modal-host',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddVehicleModalComponent implements AfterViewInit {
   readonly close = output<void>();
   readonly added = output<AddVinResponse>();
 
+  protected readonly vinValidationMessage = vinValidationMessage;
+
   protected readonly isSubmitting = signal(false);
-  protected readonly serverError = signal<string | null>(null);
+  protected readonly serverError = signal<VinErrorMessage | null>(null);
 
   private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly form = this.fb.group({
-    vin: ['', [Validators.required, Validators.pattern(/^[A-HJ-NPR-Z0-9]{17}$/i)]],
+    vin: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(17),
+        Validators.maxLength(17),
+        Validators.pattern(vinPattern),
+      ],
+    ],
     currentMileage: [0, [Validators.required, Validators.min(0)]],
   });
   private readonly vinService = inject(VinService);
@@ -79,9 +94,8 @@ export class AddVehicleModalComponent implements AfterViewInit {
           this.added.emit(response);
           this.close.emit();
         },
-        error: (error) => {
-          const msg = error?.error?.message || 'An error occurred adding the vehicle.';
-          this.serverError.set(msg);
+        error: (error: VinErrorMessage) => {
+          this.serverError.set(error);
         },
       });
   }

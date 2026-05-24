@@ -1,39 +1,46 @@
-<div (click)="close.emit()" aria-hidden="true" class="auth-modal__backdrop"></div>
+<div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
         #dialog
         aria-labelledby="add-vehicle-modal-title"
         aria-modal="true"
-        class="auth-modal"
+        class="hc-dialog"
         role="dialog"
         tabindex="-1"
 >
-    <button (click)="close.emit()" aria-label="Close add vehicle dialog" class="auth-modal__close" type="button">
+    <button (click)="close.emit()" aria-label="Close add vehicle dialog" class="hc-dialog__close" type="button">
         ×
     </button>
 
-    <header class="auth-modal__header">
+    <header class="hc-dialog__header">
         <h2 id="add-vehicle-modal-title">Add a vehicle</h2>
     </header>
 
-    <form (ngSubmit)="submit()" [formGroup]="form" class="auth-modal__form" novalidate>
+    <form (ngSubmit)="submit()" [formGroup]="form" class="hc-form" novalidate>
         @if (serverError(); as error) {
-        <div class="auth-modal__server-error" role="alert">
-            <p>{{ error }}</p>
+        <div class="hc-alert hc-alert--error" role="alert">
+            <p>{{ error.message }}</p>
+            @if (error.fieldMessages.length > 0) {
+            <ul>
+                @for (fieldMessage of error.fieldMessages; track fieldMessage) {
+                <li>{{ fieldMessage }}</li>
+                }
+            </ul>
+            }
         </div>
         }
 
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>VIN</span>
-            <input formControlName="vin" placeholder="17-character VIN" type="text"/>
+            <input formControlName="vin" maxlength="17" placeholder="17-character VIN" type="text"/>
             @if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
             <small>VIN is required.</small>
-            } @else if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
-            <small>Enter a valid 17-character VIN.</small>
+            } @else if (form.controls.vin.touched && (form.controls.vin.hasError('minlength') || form.controls.vin.hasError('maxlength') || form.controls.vin.hasError('pattern'))) {
+            <small>{{ vinValidationMessage }}</small>
             }
         </label>
 
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>Current Mileage</span>
             <input formControlName="currentMileage" min="0" type="number"/>
             @if (form.controls.currentMileage.touched && form.controls.currentMileage.hasError('required')) {
@@ -43,7 +50,7 @@
             }
         </label>
 
-        <button [disabled]="isSubmitting()" class="auth-modal__submit" type="submit">
+        <button [disabled]="isSubmitting()" class="hc-btn hc-btn--primary hc-btn--dialog-submit" type="submit">
             {{ isSubmitting() ? 'Adding...' : 'Add Vehicle' }}
         </button>
     </form>

@@ -84,7 +84,7 @@ describe('AuthModalComponent', () => {
     fixture.componentRef.setInput('mode', 'sign-in');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.auth-modal__switch a')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.hc-dialog-switch a')).not.toBeNull();
   });
 
   it('emits mode changes when routing links are disabled', () => {
@@ -96,9 +96,7 @@ describe('AuthModalComponent', () => {
     fixture.componentInstance.modeChange.subscribe((mode) => modeChanges.push(mode));
     fixture.detectChanges();
 
-    (
-      fixture.nativeElement.querySelector('.auth-modal__switch-button') as HTMLButtonElement
-    ).click();
+    (fixture.nativeElement.querySelector('.hc-dialog-switch-button') as HTMLButtonElement).click();
 
     expect(modeChanges).toEqual(['sign-up']);
   });

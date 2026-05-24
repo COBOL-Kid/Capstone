@@ -1,149 +1,228 @@
 package com.capstone.controllers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.models.User;
 import com.capstone.models.dto.*;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-
 class VinControllerTest {
 
-    @Test
-    void shouldRequireAuthenticationForCurrentUserVinsAndAddVin() {
-        VinController controller = new VinController(mock(VinService.class), mock(VehicleOnboardingService.class));
+  @Test
+  void shouldRequireAuthenticationForCurrentUserVinsAndAddVin() {
+    VinController controller =
+        new VinController(mock(VinService.class), mock(VehicleOnboardingService.class));
 
-        assertEquals(HttpStatus.UNAUTHORIZED, controller.getCurrentUserVins(null).getStatusCode());
-        assertEquals(HttpStatus.UNAUTHORIZED,
-                controller.addVin(null, new AddVinRequest("JTENU5JR6M5962554", 45000)).getStatusCode());
-    }
+    assertEquals(HttpStatus.UNAUTHORIZED, controller.getCurrentUserVins(null).getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.addVin(null, new AddVinRequest("JTENU5JR6M5962554", 45000)).getStatusCode());
+  }
 
-    @Test
-    void shouldReturnNoContentWhenCurrentUserHasNoVins() {
-        VinService vinService = mock(VinService.class);
-        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        User user = user();
+  @Test
+  void shouldReturnNoContentWhenCurrentUserHasNoVins() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
 
-        when(vinService.findVinsByUserId(1L)).thenReturn(List.of());
+    when(vinService.findVinsByUserId(1L)).thenReturn(List.of());
 
-        assertEquals(HttpStatus.NO_CONTENT, controller.getCurrentUserVins(user).getStatusCode());
-    }
+    assertEquals(HttpStatus.NO_CONTENT, controller.getCurrentUserVins(user).getStatusCode());
+  }
 
-    @Test
-    void shouldReturnCurrentUserVins() {
-        VinService vinService = mock(VinService.class);
-        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        User user = user();
-        UserVehicleResponse vehicle = userVehicleResponse();
+  @Test
+  void shouldReturnCurrentUserVins() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
+    UserVehicleResponse vehicle = userVehicleResponse();
 
-        when(vinService.findVinsByUserId(1L)).thenReturn(List.of(vehicle));
+    when(vinService.findVinsByUserId(1L)).thenReturn(List.of(vehicle));
 
-        var response = controller.getCurrentUserVins(user);
+    var response = controller.getCurrentUserVins(user);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(List.of(vehicle), response.getBody());
-    }
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(List.of(vehicle), response.getBody());
+  }
 
-    @Test
-    void shouldReturnVinLookupStatus() {
-        VinService vinService = mock(VinService.class);
-        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        VinPublicResponse vin = vinPublicResponse();
+  @Test
+  void shouldReturnVehicleDetailForCurrentUser() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
+    VehicleDetailResponse detail = vehicleDetailResponse();
 
-        when(vinService.findByVin("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
-        when(vinService.findByVin("missing")).thenReturn(Optional.empty());
+    when(vinService.findVehicleDetailForUser(1L, "JTENU5JR6M5962554"))
+        .thenReturn(Optional.of(detail));
+    when(vinService.findVehicleDetailForUser(1L, "MISSINGVIN1234567")).thenReturn(Optional.empty());
 
-        assertEquals(HttpStatus.OK, controller.getVin("JTENU5JR6M5962554").getStatusCode());
-        assertEquals(vin, controller.getVin("JTENU5JR6M5962554").getBody());
-        assertEquals(HttpStatus.NOT_FOUND, controller.getVin("missing").getStatusCode());
-    }
+    var foundResponse = controller.getVin(user, "JTENU5JR6M5962554");
+    var missingResponse = controller.getVin(user, "MISSINGVIN1234567");
 
-    @Test
-    void shouldReturnCreatedOnlyWhenAddVinCreatesAssociation() {
-        VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
-        VinController controller = new VinController(mock(VinService.class), onboardingService);
-        User user = user();
-        AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000);
-        AddVinResponse created = new AddVinResponse("JTENU5JR6M5962554", 45000, 7L, "Toyota", "4RUNNER", "SRS Prem",
-                "2021", List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
-                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg", false, false, true);
-        AddVinResponse existing = new AddVinResponse("JTENU5JR6M5962554", 32000, 7L, "Toyota", "4RUNNER", "SRS Prem",
-                "2021", List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
-                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg", false, false, false);
+    assertEquals(HttpStatus.OK, foundResponse.getStatusCode());
+    assertEquals(detail, foundResponse.getBody());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED, controller.getVin(null, "JTENU5JR6M5962554").getStatusCode());
+  }
 
-        when(onboardingService.addVinToUser(user, request)).thenReturn(created, existing);
+  @Test
+  void shouldUpdateMileageForCurrentUserVin() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
+    VehicleDetailResponse detail = vehicleDetailResponse();
+    UpdateMileageRequest request = new UpdateMileageRequest(52000);
 
-        var createdResponse = controller.addVin(user, request);
-        var existingResponse = controller.addVin(user, request);
+    when(vinService.updateMileage(1L, "JTENU5JR6M5962554", request))
+        .thenReturn(Optional.of(detail));
+    when(vinService.updateMileage(1L, "MISSINGVIN1234567", request)).thenReturn(Optional.empty());
 
-        assertEquals(HttpStatus.CREATED, createdResponse.getStatusCode());
-        assertEquals(created, createdResponse.getBody());
-        assertEquals(HttpStatus.OK, existingResponse.getStatusCode());
-        assertEquals(existing, existingResponse.getBody());
-        verify(onboardingService, times(2)).addVinToUser(user, request);
-    }
+    var updatedResponse = controller.updateMileage(user, "JTENU5JR6M5962554", request);
+    var missingResponse = controller.updateMileage(user, "MISSINGVIN1234567", request);
 
-    @Test
-    void shouldUpdateSelectedPhotoForCurrentUserVin() {
-        VinService vinService = mock(VinService.class);
-        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        User user = user();
-        UserVehicleResponse vehicle = userVehicleResponse();
-        UpdateVehiclePhotoRequest request = new UpdateVehiclePhotoRequest(
-                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
+    assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
+    assertEquals(detail, updatedResponse.getBody());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.updateMileage(null, "JTENU5JR6M5962554", request).getStatusCode());
+  }
 
-        when(vinService.updateSelectedImage(1L, "JTENU5JR6M5962554", request.selectedImageUrl()))
-                .thenReturn(Optional.of(vehicle));
-        when(vinService.updateSelectedImage(1L, "MISSINGVIN1234567", request.selectedImageUrl()))
-                .thenReturn(Optional.empty());
+  @Test
+  void shouldReturnCreatedOnlyWhenAddVinCreatesAssociation() {
+    VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
+    VinController controller = new VinController(mock(VinService.class), onboardingService);
+    User user = user();
+    AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000);
+    AddVinResponse created =
+        new AddVinResponse(
+            "JTENU5JR6M5962554",
+            45000,
+            7L,
+            "Toyota",
+            "4RUNNER",
+            "SRS Prem",
+            "2021",
+            List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+            "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg",
+            false,
+            false,
+            true);
+    AddVinResponse existing =
+        new AddVinResponse(
+            "JTENU5JR6M5962554",
+            32000,
+            7L,
+            "Toyota",
+            "4RUNNER",
+            "SRS Prem",
+            "2021",
+            List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+            "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg",
+            false,
+            false,
+            false);
 
-        var updatedResponse = controller.updateSelectedPhoto(user, "JTENU5JR6M5962554", request);
-        var missingResponse = controller.updateSelectedPhoto(user, "MISSINGVIN1234567", request);
+    when(onboardingService.addVinToUser(user, request)).thenReturn(created, existing);
 
-        assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
-        assertEquals(vehicle, updatedResponse.getBody());
-        assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
-        assertEquals(HttpStatus.UNAUTHORIZED,
-                controller.updateSelectedPhoto(null, "JTENU5JR6M5962554", request).getStatusCode());
-    }
+    var createdResponse = controller.addVin(user, request);
+    var existingResponse = controller.addVin(user, request);
 
-    @Test
-    void shouldDeleteVinForCurrentUser() {
-        VinService vinService = mock(VinService.class);
-        VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-        User user = user();
+    assertEquals(HttpStatus.CREATED, createdResponse.getStatusCode());
+    assertEquals(created, createdResponse.getBody());
+    assertEquals(HttpStatus.OK, existingResponse.getStatusCode());
+    assertEquals(existing, existingResponse.getBody());
+    verify(onboardingService, times(2)).addVinToUser(user, request);
+  }
 
-        when(vinService.deleteVin(1L, "JTENU5JR6M5962554")).thenReturn(true);
-        when(vinService.deleteVin(1L, "MISSINGVIN1234567")).thenReturn(false);
+  @Test
+  void shouldUpdateSelectedPhotoForCurrentUserVin() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
+    UserVehicleResponse vehicle = userVehicleResponse();
+    UpdateVehiclePhotoRequest request =
+        new UpdateVehiclePhotoRequest("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
 
-        var deletedResponse = controller.deleteVin(user, "JTENU5JR6M5962554");
-        var missingResponse = controller.deleteVin(user, "MISSINGVIN1234567");
+    when(vinService.updateSelectedImage(1L, "JTENU5JR6M5962554", request.selectedImageUrl()))
+        .thenReturn(Optional.of(vehicle));
+    when(vinService.updateSelectedImage(1L, "MISSINGVIN1234567", request.selectedImageUrl()))
+        .thenReturn(Optional.empty());
 
-        assertEquals(HttpStatus.NO_CONTENT, deletedResponse.getStatusCode());
-        assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
-        assertEquals(HttpStatus.UNAUTHORIZED, controller.deleteVin(null, "JTENU5JR6M5962554").getStatusCode());
-    }
+    var updatedResponse = controller.updateSelectedPhoto(user, "JTENU5JR6M5962554", request);
+    var missingResponse = controller.updateSelectedPhoto(user, "MISSINGVIN1234567", request);
 
-    private User user() {
-        User user = new User();
-        user.setUserId(1L);
-        user.setUserEmail("driver@example.com");
-        return user;
-    }
+    assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
+    assertEquals(vehicle, updatedResponse.getBody());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.updateSelectedPhoto(null, "JTENU5JR6M5962554", request).getStatusCode());
+  }
 
-    private VinPublicResponse vinPublicResponse() {
-        return new VinPublicResponse("JTENU5JR6M5962554", 7L, "Toyota", "4RUNNER", "SRS Prem", "2021", "SUV");
-    }
+  @Test
+  void shouldDeleteVinForCurrentUser() {
+    VinService vinService = mock(VinService.class);
+    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
+    User user = user();
 
-    private UserVehicleResponse userVehicleResponse() {
-        return new UserVehicleResponse("JTENU5JR6M5962554", 45000, 7L, "Toyota", "4RUNNER", "SRS Prem", "2021",
-                List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
-                "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
-    }
+    when(vinService.deleteVin(1L, "JTENU5JR6M5962554")).thenReturn(true);
+    when(vinService.deleteVin(1L, "MISSINGVIN1234567")).thenReturn(false);
+
+    var deletedResponse = controller.deleteVin(user, "JTENU5JR6M5962554");
+    var missingResponse = controller.deleteVin(user, "MISSINGVIN1234567");
+
+    assertEquals(HttpStatus.NO_CONTENT, deletedResponse.getStatusCode());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED, controller.deleteVin(null, "JTENU5JR6M5962554").getStatusCode());
+  }
+
+  private User user() {
+    User user = new User();
+    user.setUserId(1L);
+    user.setUserEmail("driver@example.com");
+    return user;
+  }
+
+  private VehicleDetailResponse vehicleDetailResponse() {
+    return new VehicleDetailResponse(
+        "JTENU5JR6M5962554",
+        7L,
+        "Toyota",
+        "4RUNNER",
+        "SRS Prem",
+        "2021",
+        "SUV",
+        "JTENU5JR6M5962554",
+        "Japan",
+        "SUV",
+        "V6",
+        "Automatic",
+        "4WD",
+        "https://example.com/manual",
+        45000,
+        List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+        "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
+  }
+
+  private UserVehicleResponse userVehicleResponse() {
+    return new UserVehicleResponse(
+        "JTENU5JR6M5962554",
+        45000,
+        7L,
+        "Toyota",
+        "4RUNNER",
+        "SRS Prem",
+        "2021",
+        List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+        "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
+  }
 }

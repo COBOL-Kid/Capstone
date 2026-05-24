@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -26,6 +28,7 @@ export class LandingPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authModalCloseDelayMs = 240;
   private readonly routeData = toSignal(this.route.data, {
     initialValue: this.route.snapshot.data,
@@ -51,11 +54,12 @@ export class LandingPageComponent {
 
     this.isAuthModalClosing.set(true);
     window.setTimeout(() => {
-      if (this.authService.isSignedIn()) {
-        void this.router.navigate(['/home']);
-      } else {
-        void this.router.navigate(['/']);
-      }
+      this.authService
+        .validateSession()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((valid) => {
+          void this.router.navigate([valid ? '/home' : '/']);
+        });
     }, this.authModalCloseDelayMs);
   }
 }

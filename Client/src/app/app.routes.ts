@@ -16,6 +16,15 @@ export const routes: Routes = [
     title: 'Home · Honest Car',
   },
   {
+    path: 'vehicles/:vin',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/vehicle-detail-page/vehicle-detail-page').then(
+        (m) => m.VehicleDetailPageComponent,
+      ),
+    title: 'Vehicle · Honest Car',
+  },
+  {
     path: 'about',
     loadComponent: () => import('./pages/about-page/about-page').then((m) => m.AboutPageComponent),
     title: 'About Us · Honest Car',

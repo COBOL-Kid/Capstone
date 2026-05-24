@@ -9,18 +9,19 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { catchError, finalize, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AccountDetails, AuthErrorMessage, AuthModalMode } from '../../core/auth/auth.models';
 import { AuthModalComponent } from '../auth-modal/auth-modal';
+import { ChangePasswordModalComponent } from '../change-password-modal/change-password-modal';
 
 type AccountDrawerStatus = 'signed-out' | 'loading' | 'signed-in' | 'unauthorized' | 'error';
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/;
 
 @Component({
   selector: 'app-account-drawer',
-  imports: [AuthModalComponent, ReactiveFormsModule],
+  imports: [AuthModalComponent, ChangePasswordModalComponent, ReactiveFormsModule],
   templateUrl: './account-drawer.html',
   styleUrl: './account-drawer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,33 +32,21 @@ export class AccountDrawerComponent {
   readonly status = signal<AccountDrawerStatus>('signed-out');
   readonly account = signal<AccountDetails | null>(null);
   readonly authModalMode = signal<AuthModalMode | null>(null);
+  readonly isPasswordModalOpen = signal(false);
   readonly isEditingProfile = signal(false);
   readonly isSubmittingProfile = signal(false);
-  readonly isSubmittingPassword = signal(false);
+  readonly isLoggingOut = signal(false);
   readonly profileSuccessMessage = signal<string | null>(null);
   readonly passwordSuccessMessage = signal<string | null>(null);
   readonly profileServerError = signal<AuthErrorMessage | null>(null);
-  readonly passwordServerError = signal<AuthErrorMessage | null>(null);
   private readonly closeDelayMs = 240;
   private readonly fb = inject(NonNullableFormBuilder);
   readonly profileForm = this.fb.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     userSms: ['', [Validators.maxLength(20), Validators.pattern(/^$|^(?=.*\d)[+0-9() .-]+$/)]],
   });
-  readonly passwordForm = this.fb.group({
-    currentPassword: ['', [Validators.required]],
-    newPassword: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(8),
-        Validators.maxLength(72),
-        Validators.pattern(passwordPattern),
-      ],
-    ],
-    confirmPassword: ['', [Validators.required]],
-  });
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private closeTimer: ReturnType<typeof window.setTimeout> | null = null;
 
@@ -73,13 +62,49 @@ export class AccountDrawerComponent {
       return;
     }
 
-    this.resetPasswordForm();
+    this.isPasswordModalOpen.set(false);
     this.isClosing.set(true);
     this.closeTimer = window.setTimeout(() => {
       this.isOpen.set(false);
       this.isClosing.set(false);
       this.closeTimer = null;
     }, this.closeDelayMs);
+  }
+
+  openPasswordModal(): void {
+    this.passwordSuccessMessage.set(null);
+    this.isPasswordModalOpen.set(true);
+  }
+
+  closePasswordModal(): void {
+    this.isPasswordModalOpen.set(false);
+  }
+
+  onPasswordChanged(): void {
+    this.passwordSuccessMessage.set('Password updated.');
+  }
+
+  logout(): void {
+    if (this.isLoggingOut()) {
+      return;
+    }
+
+    this.isLoggingOut.set(true);
+
+    this.authService
+      .logout()
+      .pipe(
+        catchError(() => of(undefined)),
+        finalize(() => this.isLoggingOut.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.authService.clearSession();
+        this.resetSignedInState();
+        this.status.set('signed-out');
+        void this.router.navigate(['/']);
+        this.close();
+      });
   }
 
   startProfileEdit(): void {
@@ -161,43 +186,6 @@ export class AccountDrawerComponent {
       });
   }
 
-  submitPassword(): void {
-    if (this.isSubmittingPassword()) {
-      return;
-    }
-
-    this.passwordServerError.set(null);
-    this.passwordSuccessMessage.set(null);
-
-    if (this.passwordForm.invalid || !this.passwordConfirmationMatches()) {
-      this.passwordForm.markAllAsTouched();
-
-      return;
-    }
-    const value = this.passwordForm.getRawValue();
-    this.isSubmittingPassword.set(true);
-
-    this.authService
-      .changePassword({ currentPassword: value.currentPassword, newPassword: value.newPassword })
-      .pipe(
-        finalize(() => this.isSubmittingPassword.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: () => {
-          this.passwordForm.reset();
-          this.passwordSuccessMessage.set('Password updated.');
-        },
-        error: (error: AuthErrorMessage) => this.passwordServerError.set(error),
-      });
-  }
-
-  passwordConfirmationMatches(): boolean {
-    const value = this.passwordForm.getRawValue();
-
-    return value.newPassword === value.confirmPassword;
-  }
-
   openAuthModal(mode: AuthModalMode): void {
     this.authModalMode.set(mode);
   }
@@ -216,16 +204,18 @@ export class AccountDrawerComponent {
 
   @HostListener('document:keydown.escape')
   closeOnEscape(): void {
-    if (this.isOpen()) {
-      this.close();
+    if (!this.isOpen() || this.isPasswordModalOpen() || this.authModalMode()) {
+      return;
     }
+
+    this.close();
   }
 
   private loadAccountDetails(): void {
     this.account.set(null);
 
     if (!this.authService.isSignedIn()) {
-      this.resetPasswordForm();
+      this.resetSignedInState();
       this.status.set('signed-out');
       return;
     }
@@ -236,21 +226,25 @@ export class AccountDrawerComponent {
       next: (account) => {
         this.account.set(account);
         this.resetProfileForm(account);
-        this.passwordForm.reset();
         this.isEditingProfile.set(false);
         this.profileServerError.set(null);
-        this.passwordServerError.set(null);
         this.profileSuccessMessage.set(null);
         this.passwordSuccessMessage.set(null);
         this.status.set('signed-in');
       },
       error: (error: unknown) => {
         this.account.set(null);
-        this.resetPasswordForm();
+        this.resetSignedInState();
 
         if (error instanceof HttpErrorResponse && error.status === 401) {
           this.authService.clearSession();
           this.status.set('unauthorized');
+          return;
+        }
+
+        if (error instanceof HttpErrorResponse && error.status === 0) {
+          this.authService.clearSession();
+          this.status.set('signed-out');
           return;
         }
 
@@ -275,9 +269,12 @@ export class AccountDrawerComponent {
     });
   }
 
-  private resetPasswordForm(): void {
-    this.passwordForm.reset();
-    this.passwordServerError.set(null);
+  private resetSignedInState(): void {
+    this.isPasswordModalOpen.set(false);
+    this.isEditingProfile.set(false);
+    this.profileServerError.set(null);
     this.passwordSuccessMessage.set(null);
+    this.profileSuccessMessage.set(null);
+    this.account.set(null);
   }
 }

@@ -16,40 +16,42 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class ApplicationConfig {
 
-    private final UserRepositoryJPA repository;
+  private final UserRepositoryJPA repository;
 
-    public ApplicationConfig(UserRepositoryJPA repository) {
-        this.repository = repository;
-    }
+  public ApplicationConfig(UserRepositoryJPA repository) {
+    this.repository = repository;
+  }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> {
-            String normalized;
-            try {
-                normalized = EmailNormalizer.normalize(username);
-            } catch (IllegalArgumentException ex) {
-                throw new UsernameNotFoundException("User not found");
-            }
-            return repository.findByUserEmail(normalized)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        };
-    }
+  @Bean
+  public UserDetailsService userDetailsService() {
+    return username -> {
+      String normalized;
+      try {
+        normalized = EmailNormalizer.normalize(username);
+      } catch (IllegalArgumentException ex) {
+        throw new UsernameNotFoundException("User not found");
+      }
+      return repository
+          .findByUserEmail(normalized)
+          .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    };
+  }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService());
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        return authenticationProvider;
-    }
+  @Bean
+  public AuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authenticationProvider =
+        new DaoAuthenticationProvider(userDetailsService());
+    authenticationProvider.setPasswordEncoder(passwordEncoder());
+    return authenticationProvider;
+  }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
-        return config.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+    return config.getAuthenticationManager();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 }

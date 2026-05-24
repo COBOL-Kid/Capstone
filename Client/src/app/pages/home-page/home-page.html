@@ -1,5 +1,5 @@
-<section aria-labelledby="home-title" class="home">
-    <div class="home__content">
+<section aria-labelledby="home-title" class="home hc-page-shell">
+    <div class="home__content hc-page-shell__inner">
         <div class="home__header">
             <h1 class="home__title" id="home-title">My Vehicles</h1>
             @if (vehicles().length > 0) {
@@ -10,19 +10,22 @@
         </div>
 
         @if (isLoading()) {
-        <div class="home__loading">Loading vehicles...</div>
+        <div class="home__loading hc-state-message">Loading vehicles...</div>
         } @else if (error()) {
-        <div class="home__error">{{ error() }}</div>
+        <div class="home__error hc-state-message">{{ error() }}</div>
         } @else if (vehicles().length === 0) {
-        <div class="home__empty">
-            <button (click)="openAddModal()" class="btn btn--primary">add a vehicle</button>
+        <div class="home__empty hc-state-message">
+            <button (click)="openAddModal()" class="hc-btn hc-btn--primary">add a vehicle</button>
         </div>
         } @else {
         <div class="home__grid">
             @for (vehicle of vehicles(); track vehicle.vin) {
-            <article class="vehicle-card">
-                <button (click)="openDeleteModal(vehicle.vin)" aria-label="Delete vehicle"
-                        class="vehicle-card__delete">
+            <article class="vehicle-card hc-surface">
+                <a [routerLink]="['/vehicles', vehicle.vin]" class="vehicle-card__link">
+                <button (click)="$event.preventDefault(); $event.stopPropagation(); openDeleteModal(vehicle.vin)"
+                        aria-label="Delete vehicle"
+                        class="vehicle-card__delete"
+                        type="button">
                     ×
                 </button>
                 <div class="vehicle-card__image-container">
@@ -39,6 +42,7 @@
                     <p class="vehicle-card__subtitle">{{ vehicle.trim }}</p>
                     <p class="vehicle-card__mileage">{{ vehicle.currentMileage }} miles</p>
                 </div>
+                </a>
             </article>
             }
         </div>

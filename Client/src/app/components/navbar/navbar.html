@@ -2,9 +2,9 @@
     <ul class="navbar__list">
         <li class="navbar__item">
             <a
-                    [routerLinkActiveOptions]="{ exact: true }"
+                    [routerLink]="homeLink()"
+                    [routerLinkActiveOptions]="{ exact: homeLink() === '/' }"
                     class="navbar__link"
-                    routerLink="/"
                     routerLinkActive="navbar__link--active"
             >Home</a>
         </li>

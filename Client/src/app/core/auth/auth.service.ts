@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 
 import {
   AccountDetails,
@@ -76,6 +76,20 @@ export class AuthService {
 
   clearSession(): void {
     this.clearToken();
+  }
+
+  validateSession(): Observable<boolean> {
+    if (!this.isSignedIn()) {
+      return of(false);
+    }
+
+    return this.getCurrentAccount().pipe(
+      map(() => true),
+      catchError(() => {
+        this.clearSession();
+        return of(false);
+      }),
+    );
   }
 
   getCurrentAccount(): Observable<AccountDetails> {

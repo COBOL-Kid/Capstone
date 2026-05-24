@@ -1,4 +1,4 @@
-<section aria-labelledby="landing-title" class="landing">
+<section aria-labelledby="landing-title" class="landing hc-min-h-below-navbar">
     <img
             alt=""
             class="landing__image"
@@ -8,16 +8,16 @@
     />
     <div aria-hidden="true" class="landing__overlay"></div>
 
-    <div class="landing__content">
+    <div class="landing__content hc-min-h-below-navbar">
         <h1 class="landing__title" id="landing-title">Honest Car</h1>
 
         <div aria-label="Authentication actions" class="landing__actions" role="group">
             <a
-                    class="btn btn--primary"
+                    class="hc-btn hc-btn--primary"
                     routerLink="/sign-up"
             >Sign Up</a>
             <a
-                    class="btn btn--ghost"
+                    class="hc-btn hc-btn--ghost"
                     routerLink="/sign-in"
             >Sign In</a>
         </div>
@@ -26,7 +26,7 @@
     @if (authModalMode(); as mode) {
     <app-auth-modal
             (close)="closeAuthModal()"
-            [class.auth-modal-closing]="isAuthModalClosing()"
+            [class.hc-modal-host--closing]="isAuthModalClosing()"
             [mode]="mode"
     />
     }

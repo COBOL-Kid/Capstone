@@ -20,7 +20,9 @@ import { VinService } from '../../core/vin/vin.service';
   selector: 'app-delete-vehicle-modal',
   standalone: true,
   templateUrl: './delete-vehicle-modal.html',
-  styleUrl: '../auth-modal/auth-modal.css',
+  host: {
+    class: 'hc-modal-host',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeleteVehicleModalComponent implements AfterViewInit {

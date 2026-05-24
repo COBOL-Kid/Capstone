@@ -1,25 +1,25 @@
-<div (click)="close.emit()" aria-hidden="true" class="auth-modal__backdrop"></div>
+<div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
         #dialog
         aria-labelledby="auth-modal-title"
         aria-modal="true"
-        class="auth-modal"
+        class="hc-dialog"
         role="dialog"
         tabindex="-1"
 >
-    <button (click)="close.emit()" aria-label="Close authentication dialog" class="auth-modal__close" type="button">
+    <button (click)="close.emit()" aria-label="Close authentication dialog" class="hc-dialog__close" type="button">
         ×
     </button>
 
-    <header class="auth-modal__header">
-        <p class="auth-modal__eyebrow">Honest Car</p>
+    <header class="hc-dialog__header">
+        <p class="hc-eyebrow">Honest Car</p>
         <h2 id="auth-modal-title">{{ title() }}</h2>
     </header>
 
-    <form (ngSubmit)="submit()" [formGroup]="form" class="auth-modal__form" novalidate>
+    <form (ngSubmit)="submit()" [formGroup]="form" class="hc-form" novalidate>
         @if (serverError(); as error) {
-        <div class="auth-modal__server-error" role="alert">
+        <div class="hc-alert hc-alert--error" role="alert">
             <p>{{ error.message }}</p>
             @if (error.fieldMessages.length > 0) {
             <ul>
@@ -31,7 +31,7 @@
         </div>
         }
         @if (isSignup()) {
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>First name</span>
             <input autocomplete="given-name" formControlName="firstname" type="text"/>
             @if (form.controls.firstname.touched && form.controls.firstname.hasError('required')) {
@@ -39,7 +39,7 @@
             }
         </label>
 
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>Last name</span>
             <input autocomplete="family-name" formControlName="lastname" type="text"/>
             @if (form.controls.lastname.touched && form.controls.lastname.hasError('required')) {
@@ -48,7 +48,7 @@
         </label>
         }
 
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>Email</span>
             <input autocomplete="email" formControlName="email" type="email"/>
             @if (form.controls.email.touched && form.controls.email.hasError('required')) {
@@ -58,7 +58,7 @@
             }
         </label>
 
-        <label class="auth-modal__field">
+        <label class="hc-field">
             <span>Password</span>
             <input
                     [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
@@ -70,17 +70,17 @@
             }
         </label>
 
-        <button [disabled]="isSubmitting()" class="auth-modal__submit" type="submit">
+        <button [disabled]="isSubmitting()" class="hc-btn hc-btn--primary hc-btn--dialog-submit" type="submit">
             {{ isSubmitting() ? 'Please wait...' : submitLabel() }}
         </button>
     </form>
 
-    <p class="auth-modal__switch">
+    <p class="hc-dialog-switch">
         {{ alternatePrompt() }}
         @if (useRoutingLinks()) {
         <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
         } @else {
-        <button (click)="switchMode()" class="auth-modal__switch-button" type="button">{{ alternateLabel() }}
+        <button (click)="switchMode()" class="hc-dialog-switch-button" type="button">{{ alternateLabel() }}
         </button>
         }
     </p>

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { VinService } from '../../core/vin/vin.service';
@@ -9,7 +10,7 @@ import { DeleteVehicleModalComponent } from '../../components/delete-vehicle-mod
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent],
+  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent, RouterLink],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

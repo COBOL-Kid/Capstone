@@ -26,7 +26,9 @@ const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/
   selector: 'app-auth-modal',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './auth-modal.html',
-  styleUrl: './auth-modal.css',
+  host: {
+    class: 'hc-modal-host',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthModalComponent implements AfterViewInit {

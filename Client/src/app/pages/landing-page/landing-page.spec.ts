@@ -62,7 +62,7 @@ describe('LandingPageComponent', () => {
     fixture.detectChanges();
 
     const closeButton = fixture.nativeElement.querySelector(
-      '.auth-modal__close',
+      '.hc-dialog__close',
     ) as HTMLButtonElement;
     closeButton.click();
     fixture.detectChanges();
@@ -70,7 +70,7 @@ describe('LandingPageComponent', () => {
     expect(
       fixture.nativeElement
         .querySelector('app-auth-modal')
-        .classList.contains('auth-modal-closing'),
+        .classList.contains('hc-modal-host--closing'),
     ).toBe(true);
     expect(router.navigate).not.toHaveBeenCalled();
 

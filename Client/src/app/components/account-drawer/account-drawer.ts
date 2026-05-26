@@ -197,9 +197,20 @@ export class AccountDrawerComponent {
   closeAuthModal(): void {
     this.authModalMode.set(null);
 
-    if (this.isOpen()) {
-      this.loadAccountDetails();
+    if (!this.isOpen()) {
+      return;
     }
+
+    this.authService
+      .validateSession()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((valid) => {
+        if (valid) {
+          void this.router.navigate(['/home']);
+        }
+
+        this.loadAccountDetails();
+      });
   }
 
   @HostListener('document:keydown.escape')
@@ -222,35 +233,38 @@ export class AccountDrawerComponent {
 
     this.status.set('loading');
 
-    this.authService.getCurrentAccount().subscribe({
-      next: (account) => {
-        this.account.set(account);
-        this.resetProfileForm(account);
-        this.isEditingProfile.set(false);
-        this.profileServerError.set(null);
-        this.profileSuccessMessage.set(null);
-        this.passwordSuccessMessage.set(null);
-        this.status.set('signed-in');
-      },
-      error: (error: unknown) => {
-        this.account.set(null);
-        this.resetSignedInState();
+    this.authService
+      .getCurrentAccount()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (account) => {
+          this.account.set(account);
+          this.resetProfileForm(account);
+          this.isEditingProfile.set(false);
+          this.profileServerError.set(null);
+          this.profileSuccessMessage.set(null);
+          this.passwordSuccessMessage.set(null);
+          this.status.set('signed-in');
+        },
+        error: (error: unknown) => {
+          this.account.set(null);
+          this.resetSignedInState();
 
-        if (error instanceof HttpErrorResponse && error.status === 401) {
-          this.authService.clearSession();
-          this.status.set('unauthorized');
-          return;
-        }
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.authService.clearSession();
+            this.status.set('unauthorized');
+            return;
+          }
 
-        if (error instanceof HttpErrorResponse && error.status === 0) {
-          this.authService.clearSession();
-          this.status.set('signed-out');
-          return;
-        }
+          if (error instanceof HttpErrorResponse && error.status === 0) {
+            this.authService.clearSession();
+            this.status.set('signed-out');
+            return;
+          }
 
-        this.status.set('error');
-      },
-    });
+          this.status.set('error');
+        },
+      });
   }
 
   private clearCloseTimer(): void {

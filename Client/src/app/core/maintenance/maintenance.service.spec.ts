@@ -35,6 +35,12 @@ describe('MaintenanceService', () => {
       status: 204,
       statusText: 'No Content',
     });
+
+    service.getMaintenanceCosts(vin).subscribe((items) => expect(items).toEqual([]));
+    httpTesting.expectOne(`${apiConfig.maintenanceUrl}/${vin}/costs`).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
   });
 
   it('posts completed maintenance and deletes completion records', () => {

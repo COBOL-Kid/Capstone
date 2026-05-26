@@ -25,3 +25,15 @@ export interface CompleteMaintenanceRequest {
   cost?: number | null;
   notes?: string | null;
 }
+
+export interface MaintenanceCostResponse {
+  maintCostId: number;
+  maintTitle: string;
+  maintDesc: string | null;
+  independentAvg: number | null;
+  independentHigh: number | null;
+  independentLow: number | null;
+  dealerAvg: number | null;
+  dealerHigh: number | null;
+  dealerLow: number | null;
+}

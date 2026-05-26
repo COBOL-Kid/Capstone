@@ -23,6 +23,7 @@ function createAuthServiceStub(isSignedIn = false) {
   return {
     isSignedIn: vi.fn().mockReturnValue(isSignedIn),
     getCurrentAccount: vi.fn().mockReturnValue(of(accountDetails)),
+    validateSession: vi.fn().mockReturnValue(of(isSignedIn)),
     updateCurrentAccount: vi.fn().mockReturnValue(of(accountDetails)),
     changePassword: vi.fn().mockReturnValue(of(null)),
     logout: vi.fn().mockReturnValue(of(undefined)),
@@ -469,6 +470,7 @@ describe('AccountDrawerComponent', () => {
 
   it('refreshes account details after the auth modal closes', () => {
     authService.isSignedIn.mockReturnValueOnce(false).mockReturnValue(true);
+    authService.validateSession.mockReturnValue(of(false));
 
     component.open();
     component.openAuthModal('sign-in');
@@ -477,6 +479,24 @@ describe('AccountDrawerComponent', () => {
     component.closeAuthModal();
     fixture.detectChanges();
 
+    expect(authService.validateSession).toHaveBeenCalled();
+    expect(authService.getCurrentAccount).toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to home after the auth modal closes with a valid session', () => {
+    authService.isSignedIn.mockReturnValue(true);
+    authService.validateSession.mockReturnValue(of(true));
+
+    component.open();
+    component.openAuthModal('sign-in');
+    fixture.detectChanges();
+
+    component.closeAuthModal();
+    fixture.detectChanges();
+
+    expect(authService.validateSession).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
     expect(authService.getCurrentAccount).toHaveBeenCalled();
   });
 });

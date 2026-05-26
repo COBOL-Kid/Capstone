@@ -6,6 +6,7 @@ import { apiConfig } from '../api/api.config';
 import {
   CompleteMaintenanceRequest,
   CompletedMaintenanceResponse,
+  MaintenanceCostResponse,
   UpcomingMaintenanceResponse,
 } from './maintenance.models';
 
@@ -25,6 +26,12 @@ export class MaintenanceService {
   getCompleted(vin: string): Observable<CompletedMaintenanceResponse[]> {
     return this.http
       .get<CompletedMaintenanceResponse[]>(`${this.baseUrl}/${vin}/completed`)
+      .pipe(map((items) => items ?? []));
+  }
+
+  getMaintenanceCosts(vin: string): Observable<MaintenanceCostResponse[]> {
+    return this.http
+      .get<MaintenanceCostResponse[]>(`${this.baseUrl}/${vin}/costs`)
       .pipe(map((items) => items ?? []));
   }
 

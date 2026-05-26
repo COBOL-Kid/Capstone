@@ -23,74 +23,79 @@
                 <div class="vehicle-detail__image-placeholder">No Image</div>
                 }
             </div>
-            <div class="vehicle-detail__specs hc-surface">
-                <p class="vehicle-detail__mileage">
-                    <span class="vehicle-detail__mileage-value">{{ v.currentMileage | number }} mi</span>
-                    <button (click)="openMileageModal()" class="vehicle-detail__mileage-btn" type="button">
-                        Update
-                    </button>
-                </p>
-                <dl class="vehicle-detail__dl">
-                    <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
-                        <dt>VIN</dt>
-                        <dd>{{ v.vin }}</dd>
-                    </div>
-                    <div><dt>Trim</dt><dd>{{ v.vehicleTrim }}</dd></div>
-                    @if (v.vehicleStyle) {
-                    <div><dt>Style</dt><dd>{{ v.vehicleStyle }}</dd></div>
-                    }
-                    @if (v.body) {
-                    <div><dt>Body</dt><dd>{{ v.body }}</dd></div>
-                    }
-                    @if (v.engineDescription) {
-                    <div><dt>Engine</dt><dd>{{ v.engineDescription }}</dd></div>
-                    }
-                    @if (v.transmissionStyle) {
-                    <div><dt>Trans.</dt><dd>{{ v.transmissionStyle }}</dd></div>
-                    }
-                    @if (v.driveType) {
-                    <div><dt>Drive</dt><dd>{{ v.driveType }}</dd></div>
-                    }
-                </dl>
-                @if (v.origin || v.sourceVin || v.ownersManual) {
-                <details class="vehicle-detail__more-specs">
-                    <summary>More details</summary>
+            <div class="vehicle-detail__details-column">
+                <div class="vehicle-detail__specs hc-surface">
+                    <p class="vehicle-detail__mileage">
+                        <span class="vehicle-detail__mileage-value">{{ v.currentMileage | number }} mi</span>
+                        <button (click)="openMileageModal()" class="vehicle-detail__mileage-btn" type="button">
+                            Update
+                        </button>
+                    </p>
                     <dl class="vehicle-detail__dl">
-                        @if (v.origin) {
-                        <div><dt>Origin</dt><dd>{{ v.origin }}</dd></div>
-                        }
-                        @if (v.sourceVin) {
-                        <div><dt>Source VIN</dt><dd>{{ v.sourceVin }}</dd></div>
-                        }
-                        @if (v.ownersManual) {
                         <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
-                            <dt>Manual</dt>
-                            <dd>{{ v.ownersManual }}</dd>
+                            <dt>VIN</dt>
+                            <dd>{{ v.vin }}</dd>
                         </div>
+                        <div><dt>Trim</dt><dd>{{ v.vehicleTrim }}</dd></div>
+                        @if (v.vehicleStyle) {
+                        <div><dt>Style</dt><dd>{{ v.vehicleStyle }}</dd></div>
+                        }
+                        @if (v.body) {
+                        <div><dt>Body</dt><dd>{{ v.body }}</dd></div>
+                        }
+                        @if (v.engineDescription) {
+                        <div><dt>Engine</dt><dd>{{ v.engineDescription }}</dd></div>
+                        }
+                        @if (v.transmissionStyle) {
+                        <div><dt>Trans.</dt><dd>{{ v.transmissionStyle }}</dd></div>
+                        }
+                        @if (v.driveType) {
+                        <div><dt>Drive</dt><dd>{{ v.driveType }}</dd></div>
                         }
                     </dl>
-                </details>
-                }
-            </div>
-        </div>
+                    @if (v.origin || v.sourceVin) {
+                    <details class="vehicle-detail__more-specs">
+                        <summary>More details</summary>
+                        <dl class="vehicle-detail__dl">
+                            @if (v.origin) {
+                            <div><dt>Origin</dt><dd>{{ v.origin }}</dd></div>
+                            }
+                            @if (v.sourceVin) {
+                            <div><dt>Source VIN</dt><dd>{{ v.sourceVin }}</dd></div>
+                            }
+                        </dl>
+                    </details>
+                    }
+                    @if (v.ownersManual) {
+                    <button (click)="openOwnersManual(v.ownersManual)" class="vehicle-detail__manual-btn" type="button">
+                        Owner's manual
+                    </button>
+                    }
+                </div>
 
-        <div class="vehicle-detail__toggle" role="tablist">
-            <button
-                    (click)="setActiveSection('maintenance')"
-                    [class.vehicle-detail__toggle-btn--active]="activeSection() === 'maintenance'"
-                    class="vehicle-detail__toggle-btn"
-                    type="button"
-            >
-                Maintenance
-            </button>
-            <button
-                    (click)="setActiveSection('recalls')"
-                    [class.vehicle-detail__toggle-btn--active]="activeSection() === 'recalls'"
-                    class="vehicle-detail__toggle-btn"
-                    type="button"
-            >
-                Recalls
-            </button>
+                <button (click)="openMaintenanceCostsModal()" class="vehicle-detail__costs-btn" type="button">
+                    Maintenance costs
+                </button>
+
+                <div class="vehicle-detail__toggle" role="tablist">
+                    <button
+                            (click)="setActiveSection('maintenance')"
+                            [class.vehicle-detail__toggle-btn--active]="activeSection() === 'maintenance'"
+                            class="vehicle-detail__toggle-btn"
+                            type="button"
+                    >
+                        Maintenance
+                    </button>
+                    <button
+                            (click)="setActiveSection('recalls')"
+                            [class.vehicle-detail__toggle-btn--active]="activeSection() === 'recalls'"
+                            class="vehicle-detail__toggle-btn"
+                            type="button"
+                    >
+                        Recalls
+                    </button>
+                </div>
+            </div>
         </div>
 
         @if (activeSection() === 'maintenance') {
@@ -184,6 +189,10 @@
     />
     }
 
+    @if (isMaintenanceCostsModalOpen() && vehicle(); as v) {
+    <app-maintenance-costs-modal (close)="closeMaintenanceCostsModal()" [vin]="v.vin"/>
+    }
+
     @if (selectedUpcomingMaintenance(); as item) {
     <app-maintenance-detail-modal
             (changed)="onMaintenanceChanged()"
@@ -225,4 +234,5 @@
             [vin]="vehicle()!.vin"
     />
     }
+
 </section>

@@ -16,6 +16,7 @@ import { RecallService } from '../../core/recall/recall.service';
 import { CompletedRecallResponse, RecallResponse } from '../../core/recall/recall.models';
 import { UpdateMileageModalComponent } from '../../components/update-mileage-modal/update-mileage-modal';
 import { MaintenanceDetailModalComponent } from '../../components/maintenance-detail-modal/maintenance-detail-modal';
+import { MaintenanceCostsModalComponent } from '../../components/maintenance-costs-modal/maintenance-costs-modal';
 import { RecallDetailModalComponent } from '../../components/recall-detail-modal/recall-detail-modal';
 
 type ActiveSection = 'maintenance' | 'recalls';
@@ -28,6 +29,7 @@ type ActiveSection = 'maintenance' | 'recalls';
     RouterLink,
     UpdateMileageModalComponent,
     MaintenanceDetailModalComponent,
+    MaintenanceCostsModalComponent,
     RecallDetailModalComponent,
   ],
   templateUrl: './vehicle-detail-page.html',
@@ -44,6 +46,7 @@ export class VehicleDetailPageComponent {
   protected readonly isLoading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly isMileageModalOpen = signal(false);
+  protected readonly isMaintenanceCostsModalOpen = signal(false);
   protected readonly selectedUpcomingMaintenance = signal<UpcomingMaintenanceResponse | null>(null);
   protected readonly selectedCompletedMaintenance = signal<CompletedMaintenanceResponse | null>(
     null,
@@ -76,6 +79,21 @@ export class VehicleDetailPageComponent {
 
   protected closeMileageModal(): void {
     this.isMileageModalOpen.set(false);
+  }
+
+  protected openMaintenanceCostsModal(): void {
+    this.isMaintenanceCostsModalOpen.set(true);
+  }
+
+  protected closeMaintenanceCostsModal(): void {
+    this.isMaintenanceCostsModalOpen.set(false);
+  }
+
+  protected openOwnersManual(url: string): void {
+    const tab = window.open(url, '_blank');
+    if (tab) {
+      tab.opener = null;
+    }
   }
 
   protected onMileageUpdated(detail: VehicleDetailResponse): void {
@@ -131,6 +149,7 @@ export class VehicleDetailPageComponent {
     this.error.set(null);
     this.closeMaintenanceModal();
     this.closeRecallModal();
+    this.closeMaintenanceCostsModal();
 
     this.vinService
       .getVehicleDetail(vin)

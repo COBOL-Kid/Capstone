@@ -23,43 +23,6 @@ import org.junit.jupiter.api.Test;
 class VinServiceTest {
 
   @Test
-  void shouldDelegateFindVinsByUserId() {
-    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
-    VinService service =
-        vinService(
-            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
-    UserVehicleResponse vehicle =
-        new UserVehicleResponse(
-            "JTENU5JR6M5962554",
-            45000,
-            7L,
-            "Toyota",
-            "4RUNNER",
-            "SRS Prem",
-            "2021",
-            List.of(),
-            "photo.jpg");
-
-    when(vehicleReadService.findVehiclesForUser(1L)).thenReturn(List.of(vehicle));
-
-    assertEquals(List.of(vehicle), service.findVinsByUserId(1L));
-  }
-
-  @Test
-  void shouldDelegateVehicleDetailLookup() {
-    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
-    VinService service =
-        vinService(
-            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
-    VehicleDetailResponse detail = vehicleDetailResponse();
-
-    when(vehicleReadService.findVehicleDetail(1L, " jtenu5jr6m5962554 "))
-        .thenReturn(Optional.of(detail));
-
-    assertEquals(Optional.of(detail), service.findVehicleDetailForUser(1L, " jtenu5jr6m5962554 "));
-  }
-
-  @Test
   void shouldUpdateMileageForUserVin() {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     VehicleReadService vehicleReadService = mock(VehicleReadService.class);

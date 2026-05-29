@@ -1,5 +1,13 @@
 package com.capstone.data.read;
 
+import com.capstone.data.read.VehicleReadDao.CompletedMaintenanceRow;
+import com.capstone.data.read.VehicleReadDao.CompletedRecallRow;
+import com.capstone.data.read.VehicleReadDao.MaintLaborLineRow;
+import com.capstone.data.read.VehicleReadDao.MaintPartLineRow;
+import com.capstone.data.read.VehicleReadDao.MaintSummaryRow;
+import com.capstone.data.read.VehicleReadDao.MiscMaintCostRow;
+import com.capstone.data.read.VehicleReadDao.UncompletedRecallRow;
+import com.capstone.data.read.VehicleReadDao.UpcomingMaintRootRow;
 import com.capstone.domain.VinNormalizer;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
 import com.capstone.models.dto.CompletedRecallResponse;
@@ -13,14 +21,6 @@ import com.capstone.models.dto.UpcomingMaintenanceItemResponse;
 import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.dto.VehicleDashboardResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
-import com.capstone.data.read.VehicleReadDao.CompletedMaintenanceRow;
-import com.capstone.data.read.VehicleReadDao.CompletedRecallRow;
-import com.capstone.data.read.VehicleReadDao.MaintLaborLineRow;
-import com.capstone.data.read.VehicleReadDao.MaintPartLineRow;
-import com.capstone.data.read.VehicleReadDao.MaintSummaryRow;
-import com.capstone.data.read.VehicleReadDao.MiscMaintCostRow;
-import com.capstone.data.read.VehicleReadDao.UncompletedRecallRow;
-import com.capstone.data.read.VehicleReadDao.UpcomingMaintRootRow;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

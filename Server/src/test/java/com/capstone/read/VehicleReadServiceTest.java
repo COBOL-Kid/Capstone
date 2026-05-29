@@ -1,6 +1,7 @@
 package com.capstone.read;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -9,16 +10,20 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.capstone.data.read.UserVinDetailRow;
+import com.capstone.data.read.UserVinListRow;
+import com.capstone.data.read.VehicleReadDao;
+import com.capstone.data.read.VehicleReadDao.CompletedMaintenanceRow;
+import com.capstone.data.read.VehicleReadDao.CompletedRecallRow;
+import com.capstone.data.read.VehicleReadDao.MaintLaborLineRow;
+import com.capstone.data.read.VehicleReadDao.MaintPartLineRow;
+import com.capstone.data.read.VehicleReadDao.MaintSummaryRow;
+import com.capstone.data.read.VehicleReadDao.MiscMaintCostRow;
+import com.capstone.data.read.VehicleReadDao.UncompletedRecallRow;
+import com.capstone.data.read.VehicleReadDao.UpcomingMaintRootRow;
+import com.capstone.data.read.VehicleReadService;
 import com.capstone.models.dto.VehicleDashboardResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
-import com.capstone.read.VehicleReadDao.CompletedMaintenanceRow;
-import com.capstone.read.VehicleReadDao.CompletedRecallRow;
-import com.capstone.read.VehicleReadDao.MaintLaborLineRow;
-import com.capstone.read.VehicleReadDao.MaintPartLineRow;
-import com.capstone.read.VehicleReadDao.MaintSummaryRow;
-import com.capstone.read.VehicleReadDao.MiscMaintCostRow;
-import com.capstone.read.VehicleReadDao.UncompletedRecallRow;
-import com.capstone.read.VehicleReadDao.UpcomingMaintRootRow;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -61,7 +66,7 @@ class VehicleReadServiceTest {
   }
 
   @Test
-  void findDashboard_assemblesUpcomingMaintenanceByMileageInterval() {
+  void findDashboard_normalizesVinAndAssemblesUpcomingMaintenance() {
     UserVinDetailRow detailRow = userVinDetailRow();
     when(vehicleReadDao.findUserVinDetail(USER_ID, NORMALIZED_VIN))
         .thenReturn(Optional.of(detailRow));
@@ -106,18 +111,24 @@ class VehicleReadServiceTest {
     when(vehicleReadDao.findMiscCosts(7L)).thenReturn(List.of());
 
     VehicleDashboardResponse dashboard =
-        vehicleReadService.findDashboard(USER_ID, NORMALIZED_VIN).orElseThrow();
+        vehicleReadService.findDashboard(USER_ID, RAW_VIN).orElseThrow();
 
+    verify(vehicleReadDao).findUserVinDetail(USER_ID, NORMALIZED_VIN);
     assertEquals(2, dashboard.upcomingMaintenance().size());
     assertEquals(30_000, dashboard.upcomingMaintenance().getFirst().mileageDue());
     assertEquals(45_000, dashboard.upcomingMaintenance().get(1).mileageDue());
     assertEquals(1, dashboard.upcomingMaintenance().get(1).items().size());
     assertEquals(
         new BigDecimal("150.00"), dashboard.upcomingMaintenance().get(1).summary().totalCost());
+
+    var inspectItem = dashboard.upcomingMaintenance().getFirst().items().getFirst();
+    assertTrue(inspectItem.isInspect());
+    assertEquals(new BigDecimal("34.00"), inspectItem.labor().totalCost());
+    assertTrue(inspectItem.parts().isEmpty());
   }
 
   @Test
-  void findDashboard_mapsInspectFlagLaborAndPartsOnUpcomingItems() {
+  void findDashboard_returnsNullSummaryWhenMaintSummaryMissing() {
     UserVinDetailRow detailRow = userVinDetailRow();
     when(vehicleReadDao.findUserVinDetail(USER_ID, NORMALIZED_VIN))
         .thenReturn(Optional.of(detailRow));
@@ -126,33 +137,50 @@ class VehicleReadServiceTest {
             eq(7L), eq(55_000), eq(USER_ID), eq(NORMALIZED_VIN)))
         .thenReturn(
             List.of(new UpcomingMaintRootRow(10L, 30_000, "Inspect - Transmission fluid", true)));
-    when(vehicleReadDao.findLaborLines(List.of(10L)))
-        .thenReturn(
-            List.of(
-                new MaintLaborLineRow(
-                    10L,
-                    new BigDecimal("0.40"),
-                    new BigDecimal("85.00"),
-                    new BigDecimal("34.00"),
-                    "USD")));
+    when(vehicleReadDao.findLaborLines(List.of(10L))).thenReturn(List.of());
     when(vehicleReadDao.findPartLines(List.of(10L))).thenReturn(List.of());
     when(vehicleReadDao.findMaintSummaries(eq(7L), eq(List.of(30_000)))).thenReturn(List.of());
     when(vehicleReadDao.findUncompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findCompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findMiscCosts(7L)).thenReturn(List.of());
 
-    var item =
+    var interval =
         vehicleReadService
             .findDashboard(USER_ID, NORMALIZED_VIN)
             .orElseThrow()
             .upcomingMaintenance()
-            .getFirst()
-            .items()
             .getFirst();
 
-    assertTrue(item.isInspect());
-    assertEquals(new BigDecimal("34.00"), item.labor().totalCost());
-    assertTrue(item.parts().isEmpty());
+    assertEquals(null, interval.summary());
+  }
+
+  @Test
+  void findVehicleDetail_throwsWhenImageUrlsJsonIsInvalid() {
+    UserVinDetailRow detailRow =
+        new UserVinDetailRow(
+            NORMALIZED_VIN,
+            7L,
+            "Toyota",
+            "4RUNNER",
+            "SRS Prem",
+            "2021",
+            "SUV",
+            NORMALIZED_VIN,
+            "Japan",
+            "SUV",
+            "V6",
+            "Automatic",
+            "4WD",
+            "https://example.com/manual",
+            45_000,
+            "not-json",
+            "https://example.com/a.jpg");
+    when(vehicleReadDao.findUserVinDetail(USER_ID, NORMALIZED_VIN))
+        .thenReturn(Optional.of(detailRow));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> vehicleReadService.findVehicleDetail(USER_ID, NORMALIZED_VIN));
   }
 
   @Test

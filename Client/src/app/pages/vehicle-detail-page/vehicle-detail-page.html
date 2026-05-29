@@ -138,88 +138,61 @@
 
       @if (activeSection() === 'maintenance') {
         <div class="vehicle-detail__panel">
-          <details class="vehicle-detail__collapsible hc-surface" open>
-            <summary>Upcoming maintenance</summary>
-            @if (upcomingIntervals().length === 0) {
-              <p class="vehicle-detail__empty">No upcoming maintenance.</p>
-            } @else {
-              <label class="vehicle-detail__inspect-filter">
-                <input
-                  type="checkbox"
-                  [checked]="showInspectItems()"
-                  (change)="onShowInspectItemsChange($event)"
-                />
-                Show inspections
-              </label>
-              <div class="vehicle-detail__mileage-groups">
-                @for (interval of upcomingIntervals(); track interval.mileageDue) {
-                  <section class="vehicle-detail__mileage-group">
-                    <h3 class="vehicle-detail__mileage-heading">
-                      {{ interval.mileageDue | number }} mi service
-                    </h3>
-                    <ul class="vehicle-detail__list">
-                      @for (item of interval.items; track item.maintMileageId) {
-                        @if (!item.isInspect || showInspectItems()) {
-                          <li class="vehicle-detail__maint-item">
-                            @if (item.parts.length > 0) {
-                              <details class="vehicle-detail__maint-details">
-                                <summary class="vehicle-detail__maint-summary">
-                                  <span class="vehicle-detail__maint-summary-main">
-                                    <span class="vehicle-detail__maint-desc">{{
-                                      item.maintDesc
-                                    }}</span>
+          <details class="vehicle-detail__section hc-surface" open>
+            <summary class="vehicle-detail__section-summary">
+              <span class="vehicle-detail__section-title">Upcoming maintenance</span>
+              @if (upcomingItemCount() > 0) {
+                <span class="vehicle-detail__section-count">{{ upcomingItemCount() }}</span>
+              }
+              <span aria-hidden="true" class="vehicle-detail__chevron"></span>
+            </summary>
+            <div class="vehicle-detail__section-body">
+              @if (upcomingIntervals().length === 0) {
+                <p class="vehicle-detail__empty">You're all caught up — no upcoming maintenance.</p>
+              } @else {
+                <label class="vehicle-detail__inspect-filter">
+                  <input
+                    type="checkbox"
+                    [checked]="showInspectItems()"
+                    (change)="onShowInspectItemsChange($event)"
+                  />
+                  <span class="vehicle-detail__inspect-track" aria-hidden="true"></span>
+                  Show inspections
+                </label>
+                <div class="vehicle-detail__mileage-groups">
+                  @for (interval of upcomingIntervals(); track interval.mileageDue) {
+                    <section class="vehicle-detail__mileage-group">
+                      <h3 class="vehicle-detail__mileage-heading">
+                        {{ interval.mileageDue | number }} mi service
+                      </h3>
+                      <ul class="vehicle-detail__list">
+                        @for (item of interval.items; track item.maintMileageId) {
+                          @if (!item.isInspect || showInspectItems()) {
+                            <li class="vehicle-detail__maint-item">
+                              <div class="vehicle-detail__item-head">
+                                <span class="vehicle-detail__maint-summary-main">
+                                  <span class="vehicle-detail__maint-desc">{{
+                                    item.maintDesc
+                                  }}</span>
+                                  <span class="vehicle-detail__maint-meta">
                                     @if (item.isInspect) {
                                       <span class="vehicle-detail__maint-badge">Inspection</span>
+                                    }
+                                    @if (item.parts.length > 0) {
+                                      <span class="vehicle-detail__maint-labor">{{
+                                        formatPartsCost(item.parts)
+                                      }}</span>
                                     }
                                     @if (item.labor) {
                                       <span class="vehicle-detail__maint-labor">{{
                                         formatLaborCost(item.labor)
                                       }}</span>
+                                    } @else if (item.parts.length === 0) {
+                                      <span class="vehicle-detail__maint-labor"
+                                        >No cost breakdown available</span
+                                      >
                                     }
                                   </span>
-                                  <button
-                                    (click)="
-                                      openUpcomingMaintenanceFromItem(
-                                        interval.mileageDue,
-                                        item,
-                                        $event
-                                      )
-                                    "
-                                    class="vehicle-detail__maint-action"
-                                    type="button"
-                                  >
-                                    Mark complete
-                                  </button>
-                                </summary>
-                                <div class="vehicle-detail__maint-costs">
-                                  @for (part of item.parts; track part.partDesc) {
-                                    <p class="vehicle-detail__cost-line">
-                                      <span>{{ part.partDesc }}</span>
-                                      <span>{{
-                                        formatCurrency(part.totalCost, part.currency)
-                                      }}</span>
-                                    </p>
-                                  }
-                                </div>
-                              </details>
-                            } @else {
-                              <div class="vehicle-detail__maint-row">
-                                <span class="vehicle-detail__maint-summary-main">
-                                  <span class="vehicle-detail__maint-desc">{{
-                                    item.maintDesc
-                                  }}</span>
-                                  @if (item.isInspect) {
-                                    <span class="vehicle-detail__maint-badge">Inspection</span>
-                                  }
-                                  @if (item.labor) {
-                                    <span class="vehicle-detail__maint-labor">{{
-                                      formatLaborCost(item.labor)
-                                    }}</span>
-                                  } @else {
-                                    <span class="vehicle-detail__empty"
-                                      >No cost breakdown available.</span
-                                    >
-                                  }
                                 </span>
                                 <button
                                   (click)="
@@ -235,101 +208,140 @@
                                   Mark complete
                                 </button>
                               </div>
-                            }
-                          </li>
+                            </li>
+                          }
                         }
+                      </ul>
+                      @if (interval.summary; as summary) {
+                        <dl class="vehicle-detail__mileage-summary">
+                          <div>
+                            <dt>Parts</dt>
+                            <dd>{{ formatCurrency(summary.totalPartsCost, summary.currency) }}</dd>
+                          </div>
+                          <div>
+                            <dt>Labor</dt>
+                            <dd>{{ formatCurrency(summary.totalLaborCost, summary.currency) }}</dd>
+                          </div>
+                          <div class="vehicle-detail__mileage-summary-total">
+                            <dt>Total</dt>
+                            <dd>{{ formatCurrency(summary.totalCost, summary.currency) }}</dd>
+                          </div>
+                        </dl>
                       }
-                    </ul>
-                    @if (interval.summary; as summary) {
-                      <dl class="vehicle-detail__mileage-summary">
-                        <div>
-                          <dt>Total parts</dt>
-                          <dd>{{ formatCurrency(summary.totalPartsCost, summary.currency) }}</dd>
-                        </div>
-                        <div>
-                          <dt>Total labor</dt>
-                          <dd>{{ formatCurrency(summary.totalLaborCost, summary.currency) }}</dd>
-                        </div>
-                        <div class="vehicle-detail__mileage-summary-total">
-                          <dt>Total cost</dt>
-                          <dd>{{ formatCurrency(summary.totalCost, summary.currency) }}</dd>
-                        </div>
-                      </dl>
-                    }
-                  </section>
-                }
-              </div>
-            }
+                    </section>
+                  }
+                </div>
+              }
+            </div>
           </details>
 
-          <details class="vehicle-detail__collapsible hc-surface">
-            <summary>Complete maintenance</summary>
-            @if (completedMaintenance().length === 0) {
-              <p class="vehicle-detail__empty">No completed maintenance.</p>
-            } @else {
-              <ul class="vehicle-detail__list">
-                @for (item of completedMaintenance(); track item.completedMaintenanceId) {
-                  <li>
-                    <button
-                      (click)="openCompletedMaintenance(item)"
-                      class="vehicle-detail__list-btn"
-                      type="button"
-                    >
-                      <span>{{ item.maintDesc }}</span>
-                      <span class="vehicle-detail__list-meta">
-                        {{ item.completedDate }} · {{ item.mileageCompleted }} mi
-                      </span>
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
+          <details class="vehicle-detail__section hc-surface">
+            <summary class="vehicle-detail__section-summary">
+              <span class="vehicle-detail__section-title">Completed maintenance</span>
+              @if (completedMaintenance().length > 0) {
+                <span class="vehicle-detail__section-count">{{
+                  completedMaintenance().length
+                }}</span>
+              }
+              <span aria-hidden="true" class="vehicle-detail__chevron"></span>
+            </summary>
+            <div class="vehicle-detail__section-body">
+              @if (completedMaintenance().length === 0) {
+                <p class="vehicle-detail__empty">No completed maintenance yet.</p>
+              } @else {
+                <ul class="vehicle-detail__rows">
+                  @for (item of completedMaintenance(); track item.completedMaintenanceId) {
+                    <li>
+                      <button
+                        (click)="openCompletedMaintenance(item)"
+                        class="vehicle-detail__row-btn"
+                        type="button"
+                      >
+                        <span class="vehicle-detail__row-main">
+                          <span class="vehicle-detail__row-title">{{ item.maintDesc }}</span>
+                          <span class="vehicle-detail__row-meta">
+                            {{ item.completedDate }} · {{ item.mileageCompleted }} mi
+                          </span>
+                        </span>
+                        <span aria-hidden="true" class="vehicle-detail__row-arrow"></span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           </details>
         </div>
       } @else {
         <div class="vehicle-detail__panel">
-          <details class="vehicle-detail__collapsible hc-surface" open>
-            <summary>Not complete</summary>
-            @if (uncompletedRecalls().length === 0) {
-              <p class="vehicle-detail__empty">No open recalls.</p>
-            } @else {
-              <ul class="vehicle-detail__list">
-                @for (item of uncompletedRecalls(); track item.recallId) {
-                  <li>
-                    <button
-                      (click)="openUncompletedRecall(item)"
-                      class="vehicle-detail__list-btn"
-                      type="button"
-                    >
-                      <span>{{ item.component }}</span>
-                      <span class="vehicle-detail__list-meta">{{ item.nhtsaCampaignNumber }}</span>
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
+          <details class="vehicle-detail__section hc-surface" open>
+            <summary class="vehicle-detail__section-summary">
+              <span class="vehicle-detail__section-title">Open recalls</span>
+              @if (uncompletedRecalls().length > 0) {
+                <span class="vehicle-detail__section-count vehicle-detail__section-count--alert">{{
+                  uncompletedRecalls().length
+                }}</span>
+              }
+              <span aria-hidden="true" class="vehicle-detail__chevron"></span>
+            </summary>
+            <div class="vehicle-detail__section-body">
+              @if (uncompletedRecalls().length === 0) {
+                <p class="vehicle-detail__empty">No open recalls — this vehicle is in the clear.</p>
+              } @else {
+                <ul class="vehicle-detail__rows">
+                  @for (item of uncompletedRecalls(); track item.recallId) {
+                    <li>
+                      <button
+                        (click)="openUncompletedRecall(item)"
+                        class="vehicle-detail__row-btn"
+                        type="button"
+                      >
+                        <span class="vehicle-detail__row-main">
+                          <span class="vehicle-detail__row-title">{{ item.component }}</span>
+                          <span class="vehicle-detail__row-meta">{{
+                            item.nhtsaCampaignNumber
+                          }}</span>
+                        </span>
+                        <span aria-hidden="true" class="vehicle-detail__row-arrow"></span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           </details>
 
-          <details class="vehicle-detail__collapsible hc-surface">
-            <summary>Complete</summary>
-            @if (completedRecalls().length === 0) {
-              <p class="vehicle-detail__empty">No completed recalls.</p>
-            } @else {
-              <ul class="vehicle-detail__list">
-                @for (item of completedRecalls(); track item.completedRecallId) {
-                  <li>
-                    <button
-                      (click)="openCompletedRecall(item)"
-                      class="vehicle-detail__list-btn"
-                      type="button"
-                    >
-                      <span>{{ item.component }}</span>
-                      <span class="vehicle-detail__list-meta">{{ item.completedDate }}</span>
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
+          <details class="vehicle-detail__section hc-surface">
+            <summary class="vehicle-detail__section-summary">
+              <span class="vehicle-detail__section-title">Completed recalls</span>
+              @if (completedRecalls().length > 0) {
+                <span class="vehicle-detail__section-count">{{ completedRecalls().length }}</span>
+              }
+              <span aria-hidden="true" class="vehicle-detail__chevron"></span>
+            </summary>
+            <div class="vehicle-detail__section-body">
+              @if (completedRecalls().length === 0) {
+                <p class="vehicle-detail__empty">No completed recalls.</p>
+              } @else {
+                <ul class="vehicle-detail__rows">
+                  @for (item of completedRecalls(); track item.completedRecallId) {
+                    <li>
+                      <button
+                        (click)="openCompletedRecall(item)"
+                        class="vehicle-detail__row-btn"
+                        type="button"
+                      >
+                        <span class="vehicle-detail__row-main">
+                          <span class="vehicle-detail__row-title">{{ item.component }}</span>
+                          <span class="vehicle-detail__row-meta">{{ item.completedDate }}</span>
+                        </span>
+                        <span aria-hidden="true" class="vehicle-detail__row-arrow"></span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           </details>
         </div>
       }

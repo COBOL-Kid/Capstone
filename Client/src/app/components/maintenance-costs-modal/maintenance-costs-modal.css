@@ -1,66 +1,66 @@
 .maintenance-costs-modal__dialog {
-    width: min(100%, 40rem);
+  width: min(100%, 34rem);
 }
 
 .maintenance-costs-modal__search {
-    margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .maintenance-costs-modal__status {
-    margin: 0;
-    color: var(--color-text-muted);
-    font-size: 0.9375rem;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }
 
 .maintenance-costs-modal__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: min(60vh, 28rem);
-    overflow-y: auto;
-    display: grid;
-    gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(55vh, 24rem);
+  overflow-y: auto;
+  display: grid;
+  gap: 0.6rem;
 }
 
 .maintenance-costs-modal__item {
-    border: 1px solid rgba(230, 240, 251, 0.15);
-    border-radius: 0.75rem;
-    padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(230, 240, 251, 0.15);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .maintenance-costs-modal__item-title {
-    margin: 0 0 0.25rem;
-    font-size: 1rem;
-    font-weight: 600;
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .maintenance-costs-modal__item-desc {
-    margin: 0 0 0.625rem;
-    color: var(--color-text-muted);
-    font-size: 0.8125rem;
-    line-height: 1.4;
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .maintenance-costs-modal__prices {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem 1rem;
-    margin: 0;
-    font-size: 0.8125rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.85rem;
+  margin: 0;
+  font-size: 0.75rem;
 }
 
 .maintenance-costs-modal__prices > div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
 
 .maintenance-costs-modal__prices dt {
-    color: var(--color-text-muted);
-    font-weight: 500;
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .maintenance-costs-modal__prices dd {
-    margin: 0;
-    font-weight: 600;
+  margin: 0;
+  font-weight: 600;
 }

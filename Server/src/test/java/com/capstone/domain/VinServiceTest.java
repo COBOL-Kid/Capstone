@@ -8,6 +8,7 @@ import com.capstone.data.CompletedMaintenanceRepositoryJPA;
 import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
+import com.capstone.data.read.VehicleReadService;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
@@ -15,7 +16,6 @@ import com.capstone.models.Vin;
 import com.capstone.models.dto.UpdateMileageRequest;
 import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
-import com.capstone.data.read.VehicleReadService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -78,6 +78,7 @@ class VinServiceTest {
     assertEquals(
         "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg",
         response.get().selectedImageUrl());
+    verify(userVinRepository).save(userVin);
   }
 
   @Test

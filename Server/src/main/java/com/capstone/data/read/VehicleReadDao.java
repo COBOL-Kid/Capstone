@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class VehicleReadDao {
 
-  private static final String USER_VIN_DETAIL_SELECT =
+  static final String USER_VIN_DETAIL_SELECT =
       """
       SELECT
         v.vin_num AS vin,
@@ -46,6 +46,113 @@ public class VehicleReadDao {
       WHERE uv.user_id = :userId AND uv.vin_num = :vin
       """;
 
+  static final String USER_VIN_LIST_SELECT =
+      """
+      SELECT
+        v.vin_num AS vin,
+        uv.current_mileage AS current_mileage,
+        vt.vehicle_type_id AS vehicle_type_id,
+        vt.vehicle_make AS make,
+        vt.vehicle_model AS model,
+        vt.vehicle_trim AS `trim`,
+        vt.vehicle_year AS `year`,
+        uv.selected_image_url AS selected_image_url
+      """;
+
+  static final String COMPLETED_MAINTENANCE_SELECT =
+      """
+      SELECT
+        cm.completed_maintenance_id AS completed_maintenance_id,
+        cm.completed_date AS completed_date,
+        cm.mileage_completed AS mileage_completed,
+        cm.cost AS cost,
+        cm.notes AS notes,
+        mm.maint_mileage_id AS maint_mileage_id,
+        mm.maint_desc AS maint_desc,
+        mm.mileage_due AS mileage_due
+      """;
+
+  static final String UPCOMING_MAINT_ROOT_SELECT =
+      """
+      SELECT
+        m.maint_mileage_id AS maint_mileage_id,
+        m.mileage_due AS mileage_due,
+        m.maint_desc AS maint_desc,
+        m.is_inspect AS inspect
+      """;
+
+  static final String MAINT_PART_LINE_SELECT =
+      """
+      SELECT
+        maint_mileage_id AS maint_mileage_id,
+        part_desc AS part_desc,
+        total_cost AS total_cost,
+        currency AS currency
+      """;
+
+  static final String MAINT_LABOR_LINE_SELECT =
+      """
+      SELECT
+        maint_mileage_id AS maint_mileage_id,
+        time_required_hours AS time_required_hours,
+        hourly_rate AS hourly_rate,
+        total_cost AS total_cost,
+        currency AS currency
+      """;
+
+  static final String MAINT_SUMMARY_SELECT =
+      """
+      SELECT
+        mileage_due AS mileage_due,
+        total_parts_cost AS total_parts_cost,
+        total_labor_cost AS total_labor_cost,
+        total_cost AS total_cost,
+        currency AS currency
+      """;
+
+  static final String UNCOMPLETED_RECALL_SELECT =
+      """
+      SELECT
+        r.recall_id AS recall_id,
+        r.nhtsa_campaign_number AS nhtsa_campaign_number,
+        r.report_received_date AS report_received_date,
+        r.component AS component,
+        r.summary AS summary,
+        r.consequence AS consequence,
+        r.remedy AS remedy
+      """;
+
+  static final String COMPLETED_RECALL_SELECT =
+      """
+      SELECT
+        cr.completed_recall_id AS completed_recall_id,
+        cr.completed_date AS completed_date,
+        cr.repair_shop AS repair_shop,
+        cr.cost AS cost,
+        cr.notes AS notes,
+        r.recall_id AS recall_id,
+        r.nhtsa_campaign_number AS nhtsa_campaign_number,
+        r.report_received_date AS report_received_date,
+        r.component AS component,
+        r.summary AS summary,
+        r.consequence AS consequence,
+        r.remedy AS remedy
+      """;
+
+  static final String MISC_MAINT_COST_SELECT =
+      """
+      SELECT
+        misc_maint_cost_id AS misc_maint_cost_id,
+        maint_title AS maint_title,
+        maint_desc AS maint_desc,
+        independent_avg AS independent_avg,
+        independent_high AS independent_high,
+        independent_low AS independent_low,
+        dealer_avg AS dealer_avg,
+        dealer_high AS dealer_high,
+        dealer_low AS dealer_low
+      """;
+
   private final JdbcClient jdbcClient;
 
   public VehicleReadDao(JdbcClient jdbcClient) {
@@ -64,16 +171,8 @@ public class VehicleReadDao {
   public List<UserVinListRow> findUserVehicles(long userId) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              v.vin_num AS vin,
-              uv.current_mileage AS current_mileage,
-              vt.vehicle_type_id AS vehicle_type_id,
-              vt.vehicle_make AS make,
-              vt.vehicle_model AS model,
-              vt.vehicle_trim AS `trim`,
-              vt.vehicle_year AS `year`,
-              uv.selected_image_url AS selected_image_url
+            USER_VIN_LIST_SELECT
+                + """
             FROM user_vin uv
             JOIN vin v ON v.vin_num = uv.vin_num
             JOIN vehicle_type vt ON vt.vehicle_type_id = v.vehicle_type_id
@@ -88,16 +187,8 @@ public class VehicleReadDao {
   public List<CompletedMaintenanceRow> findCompletedMaintenance(long userId, String vin) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              cm.completed_maintenance_id AS completed_maintenance_id,
-              cm.completed_date AS completed_date,
-              cm.mileage_completed AS mileage_completed,
-              cm.cost AS cost,
-              cm.notes AS notes,
-              mm.maint_mileage_id AS maint_mileage_id,
-              mm.maint_desc AS maint_desc,
-              mm.mileage_due AS mileage_due
+            COMPLETED_MAINTENANCE_SELECT
+                + """
             FROM completed_maintenance cm
             JOIN maint_mileage mm ON mm.maint_mileage_id = cm.maint_mileage_id
             WHERE cm.user_id = :userId AND cm.vin_num = :vin
@@ -113,12 +204,8 @@ public class VehicleReadDao {
       long vehicleTypeId, int threshold, long userId, String vin) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              m.maint_mileage_id AS maint_mileage_id,
-              m.mileage_due AS mileage_due,
-              m.maint_desc AS maint_desc,
-              m.is_inspect AS inspect
+            UPCOMING_MAINT_ROOT_SELECT
+                + """
             FROM maint_mileage m
             WHERE m.vehicle_type_id = :vehicleTypeId
               AND m.mileage_due <= :threshold
@@ -144,12 +231,8 @@ public class VehicleReadDao {
     }
     return jdbcClient
         .sql(
-            """
-            SELECT
-              maint_mileage_id AS maint_mileage_id,
-              part_desc AS part_desc,
-              total_cost AS total_cost,
-              currency AS currency
+            MAINT_PART_LINE_SELECT
+                + """
             FROM maint_part_line
             WHERE maint_mileage_id IN (:ids)
             ORDER BY maint_mileage_id, maint_part_line_id
@@ -165,13 +248,8 @@ public class VehicleReadDao {
     }
     return jdbcClient
         .sql(
-            """
-            SELECT
-              maint_mileage_id AS maint_mileage_id,
-              time_required_hours AS time_required_hours,
-              hourly_rate AS hourly_rate,
-              total_cost AS total_cost,
-              currency AS currency
+            MAINT_LABOR_LINE_SELECT
+                + """
             FROM maint_labor_line
             WHERE maint_mileage_id IN (:ids)
             """)
@@ -187,13 +265,8 @@ public class VehicleReadDao {
     }
     return jdbcClient
         .sql(
-            """
-            SELECT
-              mileage_due AS mileage_due,
-              total_parts_cost AS total_parts_cost,
-              total_labor_cost AS total_labor_cost,
-              total_cost AS total_cost,
-              currency AS currency
+            MAINT_SUMMARY_SELECT
+                + """
             FROM maint_mileage_summary
             WHERE vehicle_type_id = :vehicleTypeId
               AND mileage_due IN (:mileageDues)
@@ -207,15 +280,8 @@ public class VehicleReadDao {
   public List<UncompletedRecallRow> findUncompletedRecalls(long userId, String vin) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              r.recall_id AS recall_id,
-              r.nhtsa_campaign_number AS nhtsa_campaign_number,
-              r.report_received_date AS report_received_date,
-              r.component AS component,
-              r.summary AS summary,
-              r.consequence AS consequence,
-              r.remedy AS remedy
+            UNCOMPLETED_RECALL_SELECT
+                + """
             FROM recall r
             JOIN vin v ON v.vehicle_type_id = r.vehicle_type_id
             JOIN user_vin uv ON uv.vin_num = v.vin_num
@@ -238,20 +304,8 @@ public class VehicleReadDao {
   public List<CompletedRecallRow> findCompletedRecalls(long userId, String vin) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              cr.completed_recall_id AS completed_recall_id,
-              cr.completed_date AS completed_date,
-              cr.repair_shop AS repair_shop,
-              cr.cost AS cost,
-              cr.notes AS notes,
-              r.recall_id AS recall_id,
-              r.nhtsa_campaign_number AS nhtsa_campaign_number,
-              r.report_received_date AS report_received_date,
-              r.component AS component,
-              r.summary AS summary,
-              r.consequence AS consequence,
-              r.remedy AS remedy
+            COMPLETED_RECALL_SELECT
+                + """
             FROM completed_recall cr
             JOIN recall r ON r.recall_id = cr.recall_id
             WHERE cr.user_id = :userId AND cr.vin_num = :vin
@@ -266,17 +320,8 @@ public class VehicleReadDao {
   public List<MiscMaintCostRow> findMiscCosts(long vehicleTypeId) {
     return jdbcClient
         .sql(
-            """
-            SELECT
-              misc_maint_cost_id AS misc_maint_cost_id,
-              maint_title AS maint_title,
-              maint_desc AS maint_desc,
-              independent_avg AS independent_avg,
-              independent_high AS independent_high,
-              independent_low AS independent_low,
-              dealer_avg AS dealer_avg,
-              dealer_high AS dealer_high,
-              dealer_low AS dealer_low
+            MISC_MAINT_COST_SELECT
+                + """
             FROM misc_maint_cost
             WHERE vehicle_type_id = :vehicleTypeId
             ORDER BY maint_title ASC

@@ -110,8 +110,11 @@ class VehicleDataProviderClientTest {
 
     VehicleRecallsResponse response = client.getRecalls("JTENU5JR6M5962554");
 
-    assertSame(providerResponse, response);
-    verifyVehicleDatabasesAuth(restTemplate, VehicleRecallsResponse.class);
+    assertEquals("success", response.status());
+    verifyVehicleDatabasesAuth(
+        restTemplate,
+        "https://api.vehicledatabases.com/vehicle-recalls/JTENU5JR6M5962554",
+        VehicleRecallsResponse.class);
   }
 
   @Test
@@ -131,8 +134,11 @@ class VehicleDataProviderClientTest {
 
     RepairEstimatesResponse response = client.getRepairEstimates("JTENU5JR6M5962554");
 
-    assertSame(providerResponse, response);
-    verifyVehicleDatabasesAuth(restTemplate, RepairEstimatesResponse.class);
+    assertEquals("success", response.status());
+    verifyVehicleDatabasesAuth(
+        restTemplate,
+        "https://api.vehicledatabases.com/repair-estimates/JTENU5JR6M5962554",
+        RepairEstimatesResponse.class);
   }
 
   @Test
@@ -152,8 +158,11 @@ class VehicleDataProviderClientTest {
 
     RepairCostResponse response = client.getRepairCosts("JTENU5JR6M5962554");
 
-    assertSame(providerResponse, response);
-    verifyVehicleDatabasesAuth(restTemplate, RepairCostResponse.class);
+    assertEquals("success", response.status());
+    verifyVehicleDatabasesAuth(
+        restTemplate,
+        "https://api.vehicledatabases.com/vehicle-repairs/v2/JTENU5JR6M5962554",
+        RepairCostResponse.class);
   }
 
   @Test
@@ -178,8 +187,77 @@ class VehicleDataProviderClientTest {
 
     OwnerManualResponse response = client.getOwnerManual("JTENU5JR6M5962554");
 
-    assertSame(providerResponse, response);
-    verifyVehicleDatabasesAuth(restTemplate, OwnerManualResponse.class);
+    assertEquals("success", response.status());
+    verifyVehicleDatabasesAuth(
+        restTemplate,
+        "https://api.vehicledatabases.com/owner-manual/JTENU5JR6M5962554",
+        OwnerManualResponse.class);
+  }
+
+  @Test
+  void shouldThrowWhenProviderReturnsEmptyBody() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    VehicleDataProviderConfig providerConfig = mock(VehicleDataProviderConfig.class);
+
+    when(providerConfig.getAutoDevBaseUrl()).thenReturn(AUTO_DEV_BASE);
+    when(providerConfig.getAutoDevApiKey()).thenReturn("auto-dev-key");
+    when(providerConfig.getAutoDevApiKeyHeader()).thenReturn("x-api-key");
+    when(restTemplate.exchange(
+            eq("https://api.auto.dev/vin/3GCUDHEL3NG668790"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(VinDecodeResponse.class)))
+        .thenReturn(ResponseEntity.ok(null));
+
+    VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, providerConfig);
+
+    assertThrows(IllegalStateException.class, () -> client.decodeVin("3GCUDHEL3NG668790"));
+  }
+
+  @Test
+  void shouldRethrowNonNotFoundHttpErrors() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    VehicleDataProviderConfig providerConfig = mock(VehicleDataProviderConfig.class);
+
+    when(providerConfig.getVehicleDatabasesBaseUrl()).thenReturn(VDB_BASE);
+    when(providerConfig.getVehicleDatabasesApiKey()).thenReturn("vdb-key");
+    when(providerConfig.getVehicleDatabasesApiKeyHeader()).thenReturn("x-authkey");
+    when(restTemplate.exchange(
+            eq("https://api.vehicledatabases.com/repair-estimates/JTENU5JR6M5962554"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(RepairEstimatesResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Server error", null, null, null));
+
+    VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, providerConfig);
+
+    HttpClientErrorException ex =
+        assertThrows(
+            HttpClientErrorException.class, () -> client.getRepairEstimates("JTENU5JR6M5962554"));
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldReturnNullWhenRecallsEndpointReturns404() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    VehicleDataProviderConfig providerConfig = mock(VehicleDataProviderConfig.class);
+
+    when(providerConfig.getVehicleDatabasesBaseUrl()).thenReturn(VDB_BASE);
+    when(providerConfig.getVehicleDatabasesApiKey()).thenReturn("vdb-key");
+    when(providerConfig.getVehicleDatabasesApiKeyHeader()).thenReturn("x-authkey");
+    when(restTemplate.exchange(
+            eq("https://api.vehicledatabases.com/vehicle-recalls/JTENU5JR6M5962554"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(VehicleRecallsResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null));
+
+    VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, providerConfig);
+
+    assertNull(client.getRecalls("JTENU5JR6M5962554"));
   }
 
   @Test
@@ -239,14 +317,10 @@ class VehicleDataProviderClientTest {
   }
 
   private static <T> void verifyVehicleDatabasesAuth(
-      RestTemplate restTemplate, Class<T> responseType) {
+      RestTemplate restTemplate, String url, Class<T> responseType) {
     ArgumentCaptor<HttpEntity<?>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
     verify(restTemplate)
-        .exchange(
-            org.mockito.ArgumentMatchers.anyString(),
-            eq(HttpMethod.GET),
-            entityCaptor.capture(),
-            eq(responseType));
+        .exchange(eq(url), eq(HttpMethod.GET), entityCaptor.capture(), eq(responseType));
     assertEquals("vdb-key", entityCaptor.getValue().getHeaders().getFirst("x-authkey"));
   }
 

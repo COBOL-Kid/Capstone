@@ -1,4 +1,4 @@
-package com.capstone.read;
+package com.capstone.data.read;
 
 import java.math.BigDecimal;
 import java.sql.Date;

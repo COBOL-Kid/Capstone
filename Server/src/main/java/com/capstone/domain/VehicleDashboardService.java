@@ -1,7 +1,7 @@
 package com.capstone.domain;
 
 import com.capstone.models.dto.VehicleDashboardResponse;
-import com.capstone.read.VehicleReadService;
+import com.capstone.data.read.VehicleReadService;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 

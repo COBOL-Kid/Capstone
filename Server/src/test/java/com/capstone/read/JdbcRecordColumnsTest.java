@@ -2,6 +2,7 @@ package com.capstone.read;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.capstone.data.read.JdbcRecordColumns;
 import org.junit.jupiter.api.Test;
 
 class JdbcRecordColumnsTest {

@@ -15,7 +15,7 @@ import com.capstone.models.Vin;
 import com.capstone.models.dto.UpdateMileageRequest;
 import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
-import com.capstone.read.VehicleReadService;
+import com.capstone.data.read.VehicleReadService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

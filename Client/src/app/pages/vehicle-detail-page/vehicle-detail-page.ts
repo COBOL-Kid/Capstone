@@ -19,6 +19,7 @@ import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
 import {
   CompletedMaintenanceResponse,
   LaborCostResponse,
+  PartCostResponse,
   SelectedUpcomingMaintenance,
 } from '../../core/maintenance/maintenance.models';
 import { CompletedRecallResponse, RecallResponse } from '../../core/recall/recall.models';
@@ -85,6 +86,9 @@ export class VehicleDetailPageComponent {
   );
   protected readonly uncompletedRecalls = computed(() => this.pageData()?.uncompletedRecalls ?? []);
   protected readonly completedRecalls = computed(() => this.pageData()?.completedRecalls ?? []);
+  protected readonly upcomingItemCount = computed(() =>
+    this.upcomingIntervals().reduce((total, interval) => total + interval.items.length, 0),
+  );
   protected readonly miscMaintenanceCosts = computed(
     () => this.pageData()?.miscMaintenanceCosts ?? [],
   );
@@ -188,6 +192,12 @@ export class VehicleDetailPageComponent {
       return '';
     }
     return `${this.formatCurrency(labor.totalCost, labor.currency)} (${labor.timeRequiredHours}h @ ${this.formatCurrency(labor.hourlyRate, labor.currency)}/hr)`;
+  }
+
+  protected formatPartsCost(parts: PartCostResponse[]): string {
+    const total = parts.reduce((sum, part) => sum + part.totalCost, 0);
+    const currency = parts[0]?.currency ?? 'USD';
+    return `Parts ${this.formatCurrency(total, currency)}`;
   }
 
   protected openCompletedMaintenance(item: CompletedMaintenanceResponse): void {

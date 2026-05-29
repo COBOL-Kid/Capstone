@@ -3,7 +3,6 @@ package com.capstone.data;
 import com.capstone.models.CompletedRecall;
 import com.capstone.models.Recall;
 import com.capstone.models.UserVin;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,16 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CompletedRecallRepositoryJPA extends JpaRepository<CompletedRecall, Long> {
-
-  @Query(
-      """
-      select cr from CompletedRecall cr
-      join fetch cr.recall
-      join fetch cr.userVin uv
-      join fetch uv.vin
-      where uv.user.userId = :userId and uv.vin.vin = :vin
-      """)
-  List<CompletedRecall> findAllForUserVin(@Param("userId") Long userId, @Param("vin") String vin);
 
   Optional<CompletedRecall> findByUserVinAndRecall(UserVin userVin, Recall recall);
 

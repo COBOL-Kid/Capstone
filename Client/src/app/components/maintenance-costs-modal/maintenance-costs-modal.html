@@ -1,61 +1,66 @@
 <div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
-        #dialog
-        aria-labelledby="maintenance-costs-modal-title"
-        aria-modal="true"
-        class="hc-dialog maintenance-costs-modal__dialog"
-        role="dialog"
-        tabindex="-1"
+  #dialog
+  aria-labelledby="maintenance-costs-modal-title"
+  aria-modal="true"
+  class="hc-dialog maintenance-costs-modal__dialog"
+  role="dialog"
+  tabindex="-1"
 >
-    <button (click)="close.emit()" aria-label="Close maintenance costs dialog" class="hc-dialog__close" type="button">
-        ×
-    </button>
+  <button
+    (click)="close.emit()"
+    aria-label="Close maintenance costs dialog"
+    class="hc-dialog__close"
+    type="button"
+  >
+    ×
+  </button>
 
-    <header class="hc-dialog__header">
-        <h2 id="maintenance-costs-modal-title">Maintenance costs</h2>
-    </header>
+  <header class="hc-dialog__header">
+    <h2 id="maintenance-costs-modal-title">Maintenance costs</h2>
+  </header>
 
-    <label class="maintenance-costs-modal__search hc-field">
-        <span>Search</span>
-        <input
-                (input)="onSearchInput($event)"
-                aria-label="Search maintenance costs"
-                placeholder="Search costs..."
-                type="search"
-        />
-    </label>
+  <label class="maintenance-costs-modal__search hc-field">
+    <span>Search</span>
+    <input
+      (input)="onSearchInput($event)"
+      aria-label="Search maintenance costs"
+      placeholder="Search costs..."
+      type="search"
+    />
+  </label>
 
-    @if (isLoading()) {
-    <p class="maintenance-costs-modal__status">Loading maintenance costs...</p>
-    } @else if (error(); as message) {
-    <div class="hc-alert hc-alert--error" role="alert">
-        <p>{{ message }}</p>
-    </div>
-    } @else if (allCosts().length === 0) {
-    <p class="maintenance-costs-modal__status">No maintenance cost estimates are available for this vehicle.</p>
-    } @else if (filteredCosts().length === 0) {
+  @if (costs().length === 0) {
+    <p class="maintenance-costs-modal__status">
+      No maintenance cost estimates are available for this vehicle.
+    </p>
+  } @else if (filteredCosts().length === 0) {
     <p class="maintenance-costs-modal__status">No items match your search.</p>
-    } @else {
+  } @else {
     <ul class="maintenance-costs-modal__list">
-        @for (cost of filteredCosts(); track cost.maintCostId) {
+      @for (cost of filteredCosts(); track cost.miscMaintCostId) {
         <li class="maintenance-costs-modal__item">
-            <h3 class="maintenance-costs-modal__item-title">{{ cost.maintTitle }}</h3>
-            @if (cost.maintDesc) {
+          <h3 class="maintenance-costs-modal__item-title">{{ cost.maintTitle }}</h3>
+          @if (cost.maintDesc) {
             <p class="maintenance-costs-modal__item-desc">{{ cost.maintDesc }}</p>
-            }
-            <dl class="maintenance-costs-modal__prices">
-                <div>
-                    <dt>Independent shop</dt>
-                    <dd>{{ formatCostRange(cost.independentLow, cost.independentHigh, cost.independentAvg) }}</dd>
-                </div>
-                <div>
-                    <dt>Dealer</dt>
-                    <dd>{{ formatCostRange(cost.dealerLow, cost.dealerHigh, cost.dealerAvg) }}</dd>
-                </div>
-            </dl>
+          }
+          <dl class="maintenance-costs-modal__prices">
+            <div>
+              <dt>Independent shop</dt>
+              <dd>
+                {{
+                  formatCostRange(cost.independentLow, cost.independentHigh, cost.independentAvg)
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Dealer</dt>
+              <dd>{{ formatCostRange(cost.dealerLow, cost.dealerHigh, cost.dealerAvg) }}</dd>
+            </div>
+          </dl>
         </li>
-        }
+      }
     </ul>
-    }
+  }
 </section>

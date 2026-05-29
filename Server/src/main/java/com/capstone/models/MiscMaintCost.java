@@ -4,14 +4,14 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(
-    name = "maint_cost",
+    name = "misc_maint_cost",
     uniqueConstraints = @UniqueConstraint(columnNames = {"vehicle_type_id", "maint_title"}))
-public class MaintCost {
+public class MiscMaintCost {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "maint_cost_id")
-  private Long maintCostId;
+  @Column(name = "misc_maint_cost_id")
+  private Long miscMaintCostId;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "vehicle_type_id")
@@ -41,16 +41,16 @@ public class MaintCost {
   @Column(name = "dealer_low", columnDefinition = "int")
   private Integer dealerLow;
 
-  public MaintCost() {}
+  public MiscMaintCost() {}
 
-  public MaintCost(VehicleType vehicleTypeId, String maintTitle, String maintDesc) {
+  public MiscMaintCost(VehicleType vehicleTypeId, String maintTitle, String maintDesc) {
     this.vehicleTypeId = vehicleTypeId;
     this.maintTitle = maintTitle;
     this.maintDesc = maintDesc;
   }
 
-  public MaintCost(
-      Long maintCostId,
+  public MiscMaintCost(
+      Long miscMaintCostId,
       VehicleType vehicleTypeId,
       String maintTitle,
       String maintDesc,
@@ -60,7 +60,7 @@ public class MaintCost {
       Integer dealerAvg,
       Integer dealerHigh,
       Integer dealerLow) {
-    this.maintCostId = maintCostId;
+    this.miscMaintCostId = miscMaintCostId;
     this.vehicleTypeId = vehicleTypeId;
     this.maintTitle = maintTitle;
     this.maintDesc = maintDesc;
@@ -72,12 +72,12 @@ public class MaintCost {
     this.dealerLow = dealerLow;
   }
 
-  public Long getMaintCostId() {
-    return maintCostId;
+  public Long getMiscMaintCostId() {
+    return miscMaintCostId;
   }
 
-  public void setMaintCostId(Long maintCostId) {
-    this.maintCostId = maintCostId;
+  public void setMiscMaintCostId(Long miscMaintCostId) {
+    this.miscMaintCostId = miscMaintCostId;
   }
 
   public VehicleType getVehicleTypeId() {

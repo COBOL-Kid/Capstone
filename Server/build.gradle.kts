@@ -27,8 +27,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-    runtimeOnly("org.flywaydb:flyway-mysql")
+    runtimeOnly("org.flywaydb:flyway-mysql:11.15.0")
     runtimeOnly("com.mysql:mysql-connector-j")
 
     implementation(libs.jjwt.api)

@@ -12,6 +12,10 @@ import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
 import com.capstone.models.Vin;
+import com.capstone.models.dto.UpdateMileageRequest;
+import com.capstone.models.dto.UserVehicleResponse;
+import com.capstone.models.dto.VehicleDetailResponse;
+import com.capstone.read.VehicleReadService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -20,107 +24,86 @@ class VinServiceTest {
 
   @Test
   void shouldDelegateFindVinsByUserId() {
-    VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
-    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
     VinService service =
-        new VinService(
-            vinRepository,
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
-    Vin vin = vin();
-    UserVin userVin = userVin(vin);
+        vinService(
+            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
+    UserVehicleResponse vehicle =
+        new UserVehicleResponse(
+            "JTENU5JR6M5962554",
+            45000,
+            7L,
+            "Toyota",
+            "4RUNNER",
+            "SRS Prem",
+            "2021",
+            List.of(),
+            "photo.jpg");
 
-    when(userVinRepository.findAllForUser(1L)).thenReturn(List.of(userVin));
+    when(vehicleReadService.findVehiclesForUser(1L)).thenReturn(List.of(vehicle));
 
-    var responses = service.findVinsByUserId(1L);
-
-    assertEquals(1, responses.size());
-    assertEquals(vin.getVin(), responses.getFirst().vin());
-    assertEquals(45000, responses.getFirst().currentMileage());
-    assertEquals(
-        "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg",
-        responses.getFirst().selectedImageUrl());
+    assertEquals(List.of(vehicle), service.findVinsByUserId(1L));
   }
 
   @Test
-  void shouldReturnVehicleDetailForUserVin() {
-    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+  void shouldDelegateVehicleDetailLookup() {
+    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
     VinService service =
-        new VinService(
-            mock(VinRepositoryJPA.class),
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
-    UserVin userVin = userVin(vin());
-    VehicleType vehicleType = userVin.getVin().getVehicleType();
-    vehicleType.setVehicleStyle("SUV");
-    vehicleType.setSourceVin("JTENU5JR6M5962554");
-    vehicleType.setOrigin("Japan");
-    vehicleType.setBody("SUV");
-    vehicleType.setEngineDescription("V6");
-    vehicleType.setTransmissionStyle("Automatic");
-    vehicleType.setDriveType("4WD");
-    vehicleType.setOwnersManual("https://example.com/manual");
+        vinService(
+            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
+    VehicleDetailResponse detail = vehicleDetailResponse();
 
-    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
-        .thenReturn(Optional.of(userVin));
+    when(vehicleReadService.findVehicleDetail(1L, " jtenu5jr6m5962554 "))
+        .thenReturn(Optional.of(detail));
 
-    var response = service.findVehicleDetailForUser(1L, " jtenu5jr6m5962554 ");
-
-    assertTrue(response.isPresent());
-    assertEquals("JTENU5JR6M5962554", response.get().vin());
-    assertEquals(7L, response.get().vehicleTypeId());
-    assertEquals("Toyota", response.get().vehicleMake());
-    assertEquals("4RUNNER", response.get().vehicleModel());
-    assertEquals("SRS Prem", response.get().vehicleTrim());
-    assertEquals("2021", response.get().vehicleYear());
-    assertEquals("SUV", response.get().vehicleStyle());
-    assertEquals(45000, response.get().currentMileage());
-    assertEquals(
-        "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg",
-        response.get().selectedImageUrl());
+    assertEquals(Optional.of(detail), service.findVehicleDetailForUser(1L, " jtenu5jr6m5962554 "));
   }
 
   @Test
   void shouldUpdateMileageForUserVin() {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
     VinService service =
-        new VinService(
-            mock(VinRepositoryJPA.class),
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
+        vinService(mock(VinRepositoryJPA.class), userVinRepository, vehicleReadService);
     UserVin userVin = userVin(vin());
+    VehicleDetailResponse detail = vehicleDetailResponse();
 
     when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
-    when(userVinRepository.save(userVin)).thenReturn(userVin);
+    when(vehicleReadService.findVehicleDetail(1L, "JTENU5JR6M5962554"))
+        .thenReturn(Optional.of(detail));
 
     var response =
-        service.updateMileage(
-            1L, " jtenu5jr6m5962554 ", new com.capstone.models.dto.UpdateMileageRequest(52000));
+        service.updateMileage(1L, " jtenu5jr6m5962554 ", new UpdateMileageRequest(52000));
 
     assertTrue(response.isPresent());
     assertEquals(52000, response.get().currentMileage());
     assertEquals(52000, userVin.getCurrentMileage());
+    verify(userVinRepository).save(userVin);
   }
 
   @Test
   void shouldUpdateSelectedImageWhenUrlIsAvailable() {
-    VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
     VinService service =
-        new VinService(
-            vinRepository,
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
+        vinService(mock(VinRepositoryJPA.class), userVinRepository, vehicleReadService);
     UserVin userVin = userVin(vin());
+    UserVehicleResponse vehicle =
+        new UserVehicleResponse(
+            "JTENU5JR6M5962554",
+            45000,
+            7L,
+            "Toyota",
+            "4RUNNER",
+            "SRS Prem",
+            "2021",
+            List.of(),
+            "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg");
 
     when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
-    when(userVinRepository.save(userVin)).thenReturn(userVin);
+    when(vehicleReadService.findVehiclesForUser(1L)).thenReturn(List.of(vehicle));
 
     var response =
         service.updateSelectedImage(
@@ -139,11 +122,7 @@ class VinServiceTest {
     UserVin userVin = userVin(vin());
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     VinService service =
-        new VinService(
-            mock(VinRepositoryJPA.class),
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
+        vinService(mock(VinRepositoryJPA.class), userVinRepository, mock(VehicleReadService.class));
 
     when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
@@ -171,15 +150,14 @@ class VinServiceTest {
             vinRepository,
             userVinRepository,
             completedMaintenanceRepository,
-            completedRecallRepository);
+            completedRecallRepository,
+            mock(VehicleReadService.class));
     UserVin userVin = userVin(vin());
 
     when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
 
-    boolean result = service.deleteVin(1L, "JTENU5JR6M5962554");
-
-    assertTrue(result);
+    assertTrue(service.deleteVin(1L, "JTENU5JR6M5962554"));
     verify(completedMaintenanceRepository).deleteAllForUserVin(1L, "JTENU5JR6M5962554");
     verify(completedRecallRepository).deleteAllForUserVin(1L, "JTENU5JR6M5962554");
     verify(userVinRepository).deleteForUserVin(1L, "JTENU5JR6M5962554");
@@ -190,24 +168,30 @@ class VinServiceTest {
   void shouldReturnFalseWhenDeletingNonExistentVin() {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     VinService service =
-        new VinService(
-            mock(VinRepositoryJPA.class),
-            userVinRepository,
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class));
+        vinService(mock(VinRepositoryJPA.class), userVinRepository, mock(VehicleReadService.class));
 
     when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
 
-    boolean result = service.deleteVin(1L, "JTENU5JR6M5962554");
-
-    assertFalse(result);
+    assertFalse(service.deleteVin(1L, "JTENU5JR6M5962554"));
     verify(userVinRepository, never()).deleteForUserVin(any(), any());
+  }
+
+  private VinService vinService(
+      VinRepositoryJPA vinRepository,
+      UserVinRepositoryJPA userVinRepository,
+      VehicleReadService vehicleReadService) {
+    return new VinService(
+        vinRepository,
+        userVinRepository,
+        mock(CompletedMaintenanceRepositoryJPA.class),
+        mock(CompletedRecallRepositoryJPA.class),
+        vehicleReadService);
   }
 
   private Vin vin() {
     VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
     vehicleType.setVehicleTypeId(7L);
-    return new Vin("JTENU5JR6M5962554", 45000, vehicleType);
+    return new Vin("JTENU5JR6M5962554", vehicleType);
   }
 
   private UserVin userVin(Vin vin) {
@@ -220,5 +204,26 @@ class VinServiceTest {
             "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg"));
     userVin.setSelectedImageUrl("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
     return userVin;
+  }
+
+  private VehicleDetailResponse vehicleDetailResponse() {
+    return new VehicleDetailResponse(
+        "JTENU5JR6M5962554",
+        7L,
+        "Toyota",
+        "4RUNNER",
+        "SRS Prem",
+        "2021",
+        "SUV",
+        "JTENU5JR6M5962554",
+        "Japan",
+        "SUV",
+        "V6",
+        "Automatic",
+        "4WD",
+        "https://example.com/manual",
+        52000,
+        List.of("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg"),
+        "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
   }
 }

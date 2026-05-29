@@ -1,6 +1,9 @@
 package com.capstone.models;
 
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity(name = "MAINT_MILEAGE")
 @Table(
@@ -23,6 +26,15 @@ public class MaintMileage {
 
   @Column(name = "maint_desc", nullable = false, columnDefinition = "varchar(255)")
   private String maintDesc;
+
+  @Column(name = "is_inspect", nullable = false)
+  private boolean inspect;
+
+  @OneToMany(mappedBy = "maintMileage", cascade = CascadeType.PERSIST)
+  private List<MaintPartLine> partLines = new ArrayList<>();
+
+  @OneToOne(mappedBy = "maintMileage", cascade = CascadeType.PERSIST)
+  private MaintLaborLine laborLine;
 
   public MaintMileage() {}
 
@@ -70,5 +82,29 @@ public class MaintMileage {
 
   public void setMaintDesc(String maintDesc) {
     this.maintDesc = maintDesc;
+  }
+
+  public boolean isInspect() {
+    return inspect;
+  }
+
+  public void setInspect(boolean inspect) {
+    this.inspect = inspect;
+  }
+
+  public List<MaintPartLine> getPartLines() {
+    return partLines;
+  }
+
+  public void setPartLines(List<MaintPartLine> partLines) {
+    this.partLines = partLines;
+  }
+
+  public MaintLaborLine getLaborLine() {
+    return laborLine;
+  }
+
+  public void setLaborLine(MaintLaborLine laborLine) {
+    this.laborLine = laborLine;
   }
 }

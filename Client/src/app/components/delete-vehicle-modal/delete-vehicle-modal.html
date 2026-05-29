@@ -1,39 +1,54 @@
 <div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
-        #dialog
-        aria-labelledby="delete-vehicle-modal-title"
-        aria-modal="true"
-        class="hc-dialog"
-        role="dialog"
-        tabindex="-1"
+  #dialog
+  aria-labelledby="delete-vehicle-modal-title"
+  aria-modal="true"
+  class="hc-dialog"
+  role="dialog"
+  tabindex="-1"
 >
-    <button (click)="close.emit()" aria-label="Close delete vehicle dialog" class="hc-dialog__close" type="button">
-        ×
+  <button
+    (click)="close.emit()"
+    aria-label="Close delete vehicle dialog"
+    class="hc-dialog__close"
+    type="button"
+  >
+    ×
+  </button>
+
+  <header class="hc-dialog__header">
+    <h2 id="delete-vehicle-modal-title">Delete Vehicle</h2>
+  </header>
+
+  <div class="hc-form">
+    <p style="color: var(--color-text-muted); text-align: center; margin-bottom: 1rem">
+      Are you sure you want to delete the vehicle with VIN {{ vin() }}? This action cannot be
+      undone.
+    </p>
+
+    @if (serverError(); as error) {
+      <div class="hc-alert hc-alert--error" role="alert">
+        <p>{{ error }}</p>
+      </div>
+    }
+
+    <button
+      (click)="submit()"
+      [disabled]="isSubmitting()"
+      class="hc-btn hc-btn--primary hc-btn--dialog-submit hc-btn--danger"
+      type="button"
+    >
+      {{ isSubmitting() ? 'Deleting...' : 'Delete Vehicle' }}
     </button>
-
-    <header class="hc-dialog__header">
-        <h2 id="delete-vehicle-modal-title">Delete Vehicle</h2>
-    </header>
-
-    <div class="hc-form">
-        <p style="color: var(--color-text-muted); text-align: center; margin-bottom: 1rem;">
-            Are you sure you want to delete the vehicle with VIN {{ vin() }}? This action cannot be undone.
-        </p>
-
-        @if (serverError(); as error) {
-        <div class="hc-alert hc-alert--error" role="alert">
-            <p>{{ error }}</p>
-        </div>
-        }
-
-        <button (click)="submit()" [disabled]="isSubmitting()" class="hc-btn hc-btn--primary hc-btn--dialog-submit hc-btn--danger"
-                type="button">
-            {{ isSubmitting() ? 'Deleting...' : 'Delete Vehicle' }}
-        </button>
-        <button (click)="close.emit()" [disabled]="isSubmitting()" class="hc-dialog-switch-button hc-btn--block"
-                style="margin-top: 1rem;" type="button">
-            Cancel
-        </button>
-    </div>
+    <button
+      (click)="close.emit()"
+      [disabled]="isSubmitting()"
+      class="hc-dialog-switch-button hc-btn--block"
+      style="margin-top: 1rem"
+      type="button"
+    >
+      Cancel
+    </button>
+  </div>
 </section>

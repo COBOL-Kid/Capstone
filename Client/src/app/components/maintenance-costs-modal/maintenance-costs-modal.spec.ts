@@ -1,17 +1,12 @@
-import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
 
 import { MaintenanceCostsModalComponent } from './maintenance-costs-modal';
-import { MaintenanceService } from '../../core/maintenance/maintenance.service';
-import { MaintenanceCostResponse } from '../../core/maintenance/maintenance.models';
+import { MiscMaintenanceCostResponse } from '../../core/maintenance/maintenance.models';
 
 describe('MaintenanceCostsModalComponent', () => {
-  const vin = 'JTENU5JR6M5962554';
-
-  const costs: MaintenanceCostResponse[] = [
+  const costs: MiscMaintenanceCostResponse[] = [
     {
-      maintCostId: 1,
+      miscMaintCostId: 1,
       maintTitle: 'Oil Change',
       maintDesc: 'Replace engine oil and filter',
       independentAvg: 65,
@@ -22,7 +17,7 @@ describe('MaintenanceCostsModalComponent', () => {
       dealerLow: 85,
     },
     {
-      maintCostId: 2,
+      miscMaintCostId: 2,
       maintTitle: 'Brake Pad Replacement',
       maintDesc: 'Replace front brake pads and resurface rotors',
       independentAvg: 275,
@@ -34,29 +29,20 @@ describe('MaintenanceCostsModalComponent', () => {
     },
   ];
 
-  function configure(getMaintenanceCosts = vi.fn(() => of(costs))) {
+  function configure(inputCosts: MiscMaintenanceCostResponse[] = costs) {
     TestBed.configureTestingModule({
       imports: [MaintenanceCostsModalComponent],
-      providers: [
-        {
-          provide: MaintenanceService,
-          useValue: { getMaintenanceCosts },
-        },
-      ],
     });
 
     const fixture = TestBed.createComponent(MaintenanceCostsModalComponent);
-    fixture.componentRef.setInput('vin', vin);
+    fixture.componentRef.setInput('costs', inputCosts);
     fixture.detectChanges();
 
-    return { fixture, getMaintenanceCosts };
+    return { fixture };
   }
 
-  it('renders maintenance cost items from the service', () => {
-    const { fixture, getMaintenanceCosts } = configure();
-    fixture.detectChanges();
-
-    expect(getMaintenanceCosts).toHaveBeenCalledWith(vin);
+  it('renders maintenance cost items from input', () => {
+    const { fixture } = configure();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Oil Change');
     expect(text).toContain('Brake Pad Replacement');
@@ -66,16 +52,12 @@ describe('MaintenanceCostsModalComponent', () => {
 
   it('shows all items when search is empty', () => {
     const { fixture } = configure();
-    fixture.detectChanges();
-
     const items = fixture.nativeElement.querySelectorAll('.maintenance-costs-modal__item');
     expect(items.length).toBe(2);
   });
 
   it('filters items by title and description', () => {
     const { fixture } = configure();
-    fixture.detectChanges();
-
     const searchInput = fixture.nativeElement.querySelector(
       'input[type="search"]',
     ) as HTMLInputElement;
@@ -97,8 +79,6 @@ describe('MaintenanceCostsModalComponent', () => {
 
   it('shows no-match message when search has no results', () => {
     const { fixture } = configure();
-    fixture.detectChanges();
-
     const searchInput = fixture.nativeElement.querySelector(
       'input[type="search"]',
     ) as HTMLInputElement;

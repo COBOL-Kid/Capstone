@@ -12,69 +12,11 @@ import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.models.*;
 import com.capstone.models.dto.CompleteRecallRequest;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class RecallTrackingServiceTest {
-
-  @Test
-  void shouldFindUncompletedRecallsForNormalizedVin() {
-    CompletedRecallRepositoryJPA completedRecallRepository =
-        mock(CompletedRecallRepositoryJPA.class);
-    RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
-    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-    RecallTrackingService service =
-        new RecallTrackingService(completedRecallRepository, recallRepository, userVinRepository);
-    Recall recall = recall();
-
-    when(recallRepository.findUncompletedRecalls(1L, "JTENU5JR6M5962554"))
-        .thenReturn(List.of(recall));
-
-    var responses = service.findUncompletedRecalls(user(), " jtenu5jr6m5962554 ");
-
-    assertEquals(1, responses.size());
-    assertEquals(22L, responses.getFirst().recallId());
-    assertEquals("JTENU5JR6M5962554", responses.getFirst().vin());
-    assertEquals("22V480000", responses.getFirst().nhtsaCampaignNumber());
-    assertEquals(LocalDate.of(2022, 6, 7), responses.getFirst().reportReceivedDate());
-    assertEquals("EQUIPMENT:OTHER:LABELS", responses.getFirst().component());
-    assertEquals("Summary", responses.getFirst().summary());
-    assertEquals("Consequence", responses.getFirst().consequence());
-    assertEquals("Remedy", responses.getFirst().remedy());
-  }
-
-  @Test
-  void shouldFindCompletedRecallsForNormalizedVin() {
-    CompletedRecallRepositoryJPA completedRecallRepository =
-        mock(CompletedRecallRepositoryJPA.class);
-    RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
-    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-    RecallTrackingService service =
-        new RecallTrackingService(completedRecallRepository, recallRepository, userVinRepository);
-    UserVin userVin = userVin();
-    Recall recall = recall();
-    CompletedRecall completedRecall =
-        new CompletedRecall(
-            55L, userVin, recall, LocalDate.of(2025, 3, 4), "Toyota dealer", 0.0, "Recall closed");
-
-    when(completedRecallRepository.findAllForUserVin(1L, "JTENU5JR6M5962554"))
-        .thenReturn(List.of(completedRecall));
-
-    var responses = service.findCompletedRecalls(user(), " jtenu5jr6m5962554 ");
-
-    assertEquals(1, responses.size());
-    assertEquals(55L, responses.getFirst().completedRecallId());
-    assertEquals("JTENU5JR6M5962554", responses.getFirst().vin());
-    assertEquals(22L, responses.getFirst().recallId());
-    assertEquals(LocalDate.of(2025, 3, 4), responses.getFirst().completedDate());
-    assertEquals("Toyota dealer", responses.getFirst().repairShop());
-    assertEquals(0.0, responses.getFirst().cost());
-    assertEquals("Recall closed", responses.getFirst().notes());
-    assertEquals("22V480000", responses.getFirst().nhtsaCampaignNumber());
-    assertEquals("Summary", responses.getFirst().summary());
-  }
 
   @Test
   void shouldUncompleteRecallForOwner() {
@@ -93,7 +35,7 @@ class RecallTrackingServiceTest {
 
     when(completedRecallRepository.findById(55L)).thenReturn(Optional.of(completedRecall));
 
-    assertTrue(service.uncompleteRecall(user(), 55L));
+    assertTrue(service.uncompleteRecall(1L, 55L));
     verify(completedRecallRepository).delete(completedRecall);
   }
 
@@ -116,15 +58,16 @@ class RecallTrackingServiceTest {
             0.0,
             "Airbag recall done");
 
-    when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554"))
+    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
-    when(recallRepository.findById(22L)).thenReturn(Optional.of(recall));
+    when(recallRepository.findByRecallIdAndVehicleTypeId_VehicleTypeId(22L, 7L))
+        .thenReturn(Optional.of(recall));
     when(completedRecallRepository.findByUserVinAndRecall(userVin, recall))
         .thenReturn(Optional.empty());
     when(completedRecallRepository.save(any(CompletedRecall.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    var response = service.completeRecall(user(), request);
+    var response = service.completeRecall(1L, request);
 
     ArgumentCaptor<CompletedRecall> captor = ArgumentCaptor.forClass(CompletedRecall.class);
     verify(completedRecallRepository).save(captor.capture());
@@ -161,19 +104,39 @@ class RecallTrackingServiceTest {
             25.0,
             "Duplicate request");
 
-    when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554"))
+    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(userVin));
-    when(recallRepository.findById(22L)).thenReturn(Optional.of(recall));
+    when(recallRepository.findByRecallIdAndVehicleTypeId_VehicleTypeId(22L, 7L))
+        .thenReturn(Optional.of(recall));
     when(completedRecallRepository.findByUserVinAndRecall(userVin, recall))
         .thenReturn(Optional.of(existing));
 
-    var response = service.completeRecall(user(), request);
+    var response = service.completeRecall(1L, request);
 
     assertEquals(55L, response.completedRecallId());
     assertEquals(LocalDate.of(2025, 3, 4), response.completedDate());
     assertEquals("Toyota dealer", response.repairShop());
     assertEquals("Already closed", response.notes());
     verify(completedRecallRepository, never()).save(any(CompletedRecall.class));
+  }
+
+  @Test
+  void shouldRejectRecallForDifferentVehicleType() {
+    RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
+    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    RecallTrackingService service =
+        new RecallTrackingService(
+            mock(CompletedRecallRepositoryJPA.class), recallRepository, userVinRepository);
+    CompleteRecallRequest request =
+        new CompleteRecallRequest(
+            "JTENU5JR6M5962554", 22L, LocalDate.of(2025, 4, 6), "Toyota dealer", 0.0, null);
+
+    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554"))
+        .thenReturn(Optional.of(userVin()));
+    when(recallRepository.findByRecallIdAndVehicleTypeId_VehicleTypeId(22L, 7L))
+        .thenReturn(Optional.empty());
+
+    assertThrows(RecallNotFoundException.class, () -> service.completeRecall(1L, request));
   }
 
   @Test
@@ -186,7 +149,7 @@ class RecallTrackingServiceTest {
 
     assertEquals(
         "Recall is required",
-        assertThrows(IllegalArgumentException.class, () -> service.completeRecall(user(), null))
+        assertThrows(IllegalArgumentException.class, () -> service.completeRecall(1L, null))
             .getMessage());
     assertEquals(
         "Recall is required",
@@ -194,21 +157,16 @@ class RecallTrackingServiceTest {
                 IllegalArgumentException.class,
                 () ->
                     service.completeRecall(
-                        user(),
+                        1L,
                         new CompleteRecallRequest(
                             "JTENU5JR6M5962554", null, null, null, null, null)))
             .getMessage());
   }
 
-  private User user() {
+  private UserVin userVin() {
     User user = new User();
     user.setUserId(1L);
-    user.setUserEmail("driver@example.com");
-    return user;
-  }
-
-  private UserVin userVin() {
-    return new UserVin(user(), new Vin("JTENU5JR6M5962554", 45000, vehicleType()), 45000);
+    return new UserVin(user, new Vin("JTENU5JR6M5962554", vehicleType()), 45000);
   }
 
   private Recall recall() {

@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
@@ -21,6 +22,7 @@ const accountDetails = {
 
 function createAuthServiceStub(isSignedIn = false) {
   return {
+    account: signal(isSignedIn ? accountDetails : null),
     isSignedIn: vi.fn().mockReturnValue(isSignedIn),
     getCurrentAccount: vi.fn().mockReturnValue(of(accountDetails)),
     validateSession: vi.fn().mockReturnValue(of(isSignedIn)),
@@ -468,9 +470,8 @@ describe('AccountDrawerComponent', () => {
     expect(modal.componentInstance.mode()).toBe('sign-up');
   });
 
-  it('refreshes account details after the auth modal closes', () => {
-    authService.isSignedIn.mockReturnValueOnce(false).mockReturnValue(true);
-    authService.validateSession.mockReturnValue(of(false));
+  it('refreshes account details after the auth modal closes when signed in', () => {
+    authService.isSignedIn.mockReturnValue(true);
 
     component.open();
     component.openAuthModal('sign-in');
@@ -479,14 +480,12 @@ describe('AccountDrawerComponent', () => {
     component.closeAuthModal();
     fixture.detectChanges();
 
-    expect(authService.validateSession).toHaveBeenCalled();
-    expect(authService.getCurrentAccount).toHaveBeenCalled();
-    expect(router.navigate).not.toHaveBeenCalled();
+    expect(authService.getCurrentAccount).toHaveBeenCalledWith({ forceRefresh: true });
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
-  it('navigates to home after the auth modal closes with a valid session', () => {
-    authService.isSignedIn.mockReturnValue(true);
-    authService.validateSession.mockReturnValue(of(true));
+  it('returns to signed-out state when the auth modal closes without a session', () => {
+    authService.isSignedIn.mockReturnValue(false);
 
     component.open();
     component.openAuthModal('sign-in');
@@ -495,8 +494,8 @@ describe('AccountDrawerComponent', () => {
     component.closeAuthModal();
     fixture.detectChanges();
 
-    expect(authService.validateSession).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/home']);
-    expect(authService.getCurrentAccount).toHaveBeenCalled();
+    expect(authService.getCurrentAccount).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.status()).toBe('signed-out');
   });
 });

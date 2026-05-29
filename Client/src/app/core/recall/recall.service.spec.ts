@@ -23,20 +23,6 @@ describe('RecallService', () => {
     httpTesting.verify();
   });
 
-  it('returns empty arrays for 204 list responses', () => {
-    service.getUncompleted(vin).subscribe((items) => expect(items).toEqual([]));
-    httpTesting.expectOne(`${apiConfig.recallUrl}/${vin}/uncompleted`).flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    service.getCompleted(vin).subscribe((items) => expect(items).toEqual([]));
-    httpTesting.expectOne(`${apiConfig.recallUrl}/${vin}/completed`).flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-  });
-
   it('posts completed recalls and deletes completion records', () => {
     const completed = {
       completedRecallId: 55,

@@ -30,7 +30,7 @@ public class VehicleType {
   private Set<MaintMileage> maintItems;
 
   @OneToMany(mappedBy = "vehicleTypeId")
-  private Set<MaintCost> maintCosts;
+  private Set<MiscMaintCost> miscMaintCosts;
 
   @OneToMany(mappedBy = "vehicleTypeId")
   private Set<Recall> recalls = new HashSet<>();
@@ -85,7 +85,7 @@ public class VehicleType {
       Long vehicleTypeId,
       Set<Vin> vins,
       Set<MaintMileage> maintItems,
-      Set<MaintCost> maintCosts,
+      Set<MiscMaintCost> miscMaintCosts,
       Set<Recall> recalls,
       String vehicleMake,
       String vehicleModel,
@@ -95,7 +95,7 @@ public class VehicleType {
     this.vehicleTypeId = vehicleTypeId;
     this.vins = vins != null ? vins : new HashSet<>();
     this.maintItems = maintItems != null ? maintItems : new HashSet<>();
-    this.maintCosts = maintCosts != null ? maintCosts : new HashSet<>();
+    this.miscMaintCosts = miscMaintCosts != null ? miscMaintCosts : new HashSet<>();
     this.recalls = recalls != null ? recalls : new HashSet<>();
     this.vehicleMake = vehicleMake;
     this.vehicleModel = vehicleModel;
@@ -108,7 +108,7 @@ public class VehicleType {
       Long vehicleTypeId,
       Set<Vin> vins,
       Set<MaintMileage> maintItems,
-      Set<MaintCost> maintCosts,
+      Set<MiscMaintCost> miscMaintCosts,
       Set<Recall> recalls,
       String vehicleMake,
       String vehicleModel,
@@ -126,7 +126,7 @@ public class VehicleType {
         vehicleTypeId,
         vins,
         maintItems,
-        maintCosts,
+        miscMaintCosts,
         recalls,
         vehicleMake,
         vehicleModel,
@@ -166,12 +166,12 @@ public class VehicleType {
     this.maintItems = maintItems != null ? maintItems : new HashSet<>();
   }
 
-  public Set<MaintCost> getMaintCosts() {
-    return maintCosts;
+  public Set<MiscMaintCost> getMiscMaintCosts() {
+    return miscMaintCosts;
   }
 
-  public void setMaintCosts(Set<MaintCost> maintCosts) {
-    this.maintCosts = maintCosts != null ? maintCosts : new HashSet<>();
+  public void setMiscMaintCosts(Set<MiscMaintCost> miscMaintCosts) {
+    this.miscMaintCosts = miscMaintCosts != null ? miscMaintCosts : new HashSet<>();
   }
 
   public Set<Recall> getRecalls() {

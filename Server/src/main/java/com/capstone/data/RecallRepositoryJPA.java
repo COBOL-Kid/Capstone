@@ -2,11 +2,14 @@ package com.capstone.data;
 
 import com.capstone.models.Recall;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RecallRepositoryJPA extends JpaRepository<Recall, Long> {
+
+  Optional<Recall> findByRecallIdAndVehicleTypeId_VehicleTypeId(Long recallId, Long vehicleTypeId);
 
   @Query(
       "SELECT r FROM Recall r "

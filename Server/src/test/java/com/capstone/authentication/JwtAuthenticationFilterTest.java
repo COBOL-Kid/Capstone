@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.capstone.models.Role;
-import com.capstone.models.User;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
@@ -15,9 +14,6 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 class JwtAuthenticationFilterTest {
 
@@ -29,34 +25,32 @@ class JwtAuthenticationFilterTest {
   @Test
   void shouldSkipAuthenticationWhenBearerHeaderIsMissing() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    UserDetailsService userDetailsService = mock(UserDetailsService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
 
     filter.doFilter(
         new MockHttpServletRequest(), new MockHttpServletResponse(), new MockFilterChain());
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     verify(jwtService, never()).extractUserEmail(any());
-    verify(userDetailsService, never()).loadUserByUsername(any());
   }
 
   @Test
   void shouldSetAuthenticationForValidBearerToken() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    UserDetailsService userDetailsService = mock(UserDetailsService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer jwt-token");
-    User user = user();
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
 
     when(jwtService.extractUserEmail("jwt-token")).thenReturn("driver@example.com");
-    when(userDetailsService.loadUserByUsername("driver@example.com")).thenReturn(user);
+    when(jwtService.extractUserId("jwt-token")).thenReturn(1L);
+    when(jwtService.extractRole("jwt-token")).thenReturn("USER");
     when(jwtService.validateToken("jwt-token", user)).thenReturn(true);
 
     filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
     var authentication = SecurityContextHolder.getContext().getAuthentication();
-    assertSame(user, authentication.getPrincipal());
+    assertEquals(user, authentication.getPrincipal());
     assertEquals(user.getAuthorities(), authentication.getAuthorities());
     verify(jwtService).validateToken("jwt-token", user);
   }
@@ -64,14 +58,14 @@ class JwtAuthenticationFilterTest {
   @Test
   void shouldLeaveContextEmptyWhenTokenIsInvalid() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    UserDetailsService userDetailsService = mock(UserDetailsService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer jwt-token");
-    UserDetails user = user();
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
 
     when(jwtService.extractUserEmail("jwt-token")).thenReturn("driver@example.com");
-    when(userDetailsService.loadUserByUsername("driver@example.com")).thenReturn(user);
+    when(jwtService.extractUserId("jwt-token")).thenReturn(1L);
+    when(jwtService.extractRole("jwt-token")).thenReturn("USER");
     when(jwtService.validateToken("jwt-token", user)).thenReturn(false);
 
     filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
@@ -82,8 +76,7 @@ class JwtAuthenticationFilterTest {
   @Test
   void shouldRejectMalformedTokenWithoutCrashingFilterChain() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    UserDetailsService userDetailsService = mock(UserDetailsService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer not.a.real.jwt");
     MockFilterChain chain = new MockFilterChain();
@@ -95,35 +88,23 @@ class JwtAuthenticationFilterTest {
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     assertNotNull(chain.getRequest());
-    verify(userDetailsService, never()).loadUserByUsername(any());
   }
 
   @Test
-  void shouldRejectTokenForUnknownUserWithoutCrashingFilterChain()
-      throws ServletException, IOException {
+  void shouldRejectTokenMissingRoleClaim() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    UserDetailsService userDetailsService = mock(UserDetailsService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer jwt-token");
     MockFilterChain chain = new MockFilterChain();
 
-    when(jwtService.extractUserEmail("jwt-token")).thenReturn("ghost@example.com");
-    when(userDetailsService.loadUserByUsername("ghost@example.com"))
-        .thenThrow(new UsernameNotFoundException("not found"));
+    when(jwtService.extractUserEmail("jwt-token")).thenReturn("driver@example.com");
+    when(jwtService.extractUserId("jwt-token")).thenReturn(1L);
+    when(jwtService.extractRole("jwt-token")).thenReturn(null);
 
     filter.doFilter(request, new MockHttpServletResponse(), chain);
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     assertNotNull(chain.getRequest());
-  }
-
-  private User user() {
-    User user = new User();
-    user.setUserId(1L);
-    user.setUserEmail("driver@example.com");
-    user.setUserPw("encoded-secret");
-    user.setRole(Role.USER);
-    return user;
   }
 }

@@ -1,7 +1,7 @@
 package com.capstone.models.dto;
 
-public record MaintenanceCostResponse(
-    Long maintCostId,
+public record MiscMaintenanceCostResponse(
+    Long miscMaintCostId,
     String maintTitle,
     String maintDesc,
     Integer independentAvg,

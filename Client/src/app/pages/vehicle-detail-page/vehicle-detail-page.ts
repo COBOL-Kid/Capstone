@@ -1,18 +1,26 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { EMPTY, filter, map } from 'rxjs';
 
-import { VinService } from '../../core/vin/vin.service';
 import { VehicleDetailResponse } from '../../core/vin/vin.models';
-import { MaintenanceService } from '../../core/maintenance/maintenance.service';
+import { VehiclePageData } from '../../core/vin/vehicle-page.models';
+import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
 import {
   CompletedMaintenanceResponse,
-  UpcomingMaintenanceResponse,
+  LaborCostResponse,
+  SelectedUpcomingMaintenance,
 } from '../../core/maintenance/maintenance.models';
-import { RecallService } from '../../core/recall/recall.service';
 import { CompletedRecallResponse, RecallResponse } from '../../core/recall/recall.models';
 import { UpdateMileageModalComponent } from '../../components/update-mileage-modal/update-mileage-modal';
 import { MaintenanceDetailModalComponent } from '../../components/maintenance-detail-modal/maintenance-detail-modal';
@@ -37,34 +45,82 @@ type ActiveSection = 'maintenance' | 'recalls';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VehicleDetailPageComponent {
-  protected readonly vehicle = signal<VehicleDetailResponse | null>(null);
-  protected readonly upcomingMaintenance = signal<UpcomingMaintenanceResponse[]>([]);
-  protected readonly completedMaintenance = signal<CompletedMaintenanceResponse[]>([]);
-  protected readonly uncompletedRecalls = signal<RecallResponse[]>([]);
-  protected readonly completedRecalls = signal<CompletedRecallResponse[]>([]);
+  protected readonly pageData = signal<VehiclePageData | null>(null);
   protected readonly activeSection = signal<ActiveSection>('maintenance');
-  protected readonly isLoading = signal(true);
-  protected readonly error = signal<string | null>(null);
   protected readonly isMileageModalOpen = signal(false);
   protected readonly isMaintenanceCostsModalOpen = signal(false);
-  protected readonly selectedUpcomingMaintenance = signal<UpcomingMaintenanceResponse | null>(null);
+  protected readonly selectedUpcomingMaintenance = signal<SelectedUpcomingMaintenance | null>(null);
   protected readonly selectedCompletedMaintenance = signal<CompletedMaintenanceResponse | null>(
     null,
   );
   protected readonly selectedUncompletedRecall = signal<RecallResponse | null>(null);
   protected readonly selectedCompletedRecall = signal<CompletedRecallResponse | null>(null);
+  protected readonly showInspectItems = signal(true);
 
   private readonly route = inject(ActivatedRoute);
-  private readonly vinService = inject(VinService);
-  private readonly maintenanceService = inject(MaintenanceService);
-  private readonly recallService = inject(RecallService);
+  private readonly vehiclePageData = inject(VehiclePageDataService);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly routeVin = toSignal(
+    this.route.paramMap.pipe(
+      map((params) => params.get('vin')),
+      filter((vin): vin is string => vin !== null),
+    ),
+  );
+
+  private readonly pageResource = rxResource({
+    params: () => this.routeVin(),
+    stream: ({ params: vin }) => {
+      if (!vin) {
+        return EMPTY;
+      }
+      return this.vehiclePageData.loadVehiclePage(vin);
+    },
+  });
+
+  protected readonly vehicle = computed(() => this.pageData()?.detail ?? null);
+  protected readonly upcomingIntervals = computed(() => this.pageData()?.upcomingIntervals ?? []);
+  protected readonly completedMaintenance = computed(
+    () => this.pageData()?.completedMaintenance ?? [],
+  );
+  protected readonly uncompletedRecalls = computed(() => this.pageData()?.uncompletedRecalls ?? []);
+  protected readonly completedRecalls = computed(() => this.pageData()?.completedRecalls ?? []);
+  protected readonly miscMaintenanceCosts = computed(
+    () => this.pageData()?.miscMaintenanceCosts ?? [],
+  );
+  protected readonly isLoading = computed(() => {
+    const status = this.pageResource.status();
+    return status === 'loading' || status === 'reloading';
+  });
+  protected readonly error = computed(() => {
+    const err = this.pageResource.error();
+    if (!err) {
+      return null;
+    }
+    if (err instanceof HttpErrorResponse && err.status === 404) {
+      return 'Vehicle not found.';
+    }
+    return 'Failed to load vehicle.';
+  });
+
   constructor() {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const vin = params.get('vin');
+    effect(() => {
+      const vin = this.routeVin();
       if (vin) {
-        this.loadPage(vin);
+        this.beginPageLoad();
+      }
+    });
+
+    effect(() => {
+      const data = this.pageResource.value();
+      if (data) {
+        this.pageData.set(data);
+      }
+    });
+
+    effect(() => {
+      if (this.pageResource.error()) {
+        this.pageData.set(null);
       }
     });
   }
@@ -97,12 +153,41 @@ export class VehicleDetailPageComponent {
   }
 
   protected onMileageUpdated(detail: VehicleDetailResponse): void {
-    this.vehicle.set(detail);
+    this.pageData.update((current) => (current ? { ...current, detail } : current));
   }
 
-  protected openUpcomingMaintenance(item: UpcomingMaintenanceResponse): void {
-    this.selectedUpcomingMaintenance.set(item);
+  protected openUpcomingMaintenanceFromItem(
+    mileageDue: number,
+    item: { maintMileageId: number; maintDesc: string },
+    event: Event,
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectedUpcomingMaintenance.set({
+      maintMileageId: item.maintMileageId,
+      mileageDue,
+      maintDesc: item.maintDesc,
+    });
     this.selectedCompletedMaintenance.set(null);
+  }
+
+  protected formatCurrency(amount: number, currency: string): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(amount);
+  }
+
+  protected onShowInspectItemsChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.showInspectItems.set(target.checked);
+  }
+
+  protected formatLaborCost(labor: LaborCostResponse | null): string {
+    if (!labor) {
+      return '';
+    }
+    return `${this.formatCurrency(labor.totalCost, labor.currency)} (${labor.timeRequiredHours}h @ ${this.formatCurrency(labor.hourlyRate, labor.currency)}/hr)`;
   }
 
   protected openCompletedMaintenance(item: CompletedMaintenanceResponse): void {
@@ -131,77 +216,31 @@ export class VehicleDetailPageComponent {
   }
 
   protected onMaintenanceChanged(): void {
-    const vin = this.vehicle()?.vin;
-    if (vin) {
-      this.loadMaintenanceLists(vin);
-    }
+    this.refreshPageData();
   }
 
   protected onRecallChanged(): void {
-    const vin = this.vehicle()?.vin;
-    if (vin) {
-      this.loadRecallLists(vin);
-    }
+    this.refreshPageData();
   }
 
-  private loadPage(vin: string): void {
-    this.isLoading.set(true);
-    this.error.set(null);
+  private beginPageLoad(): void {
     this.closeMaintenanceModal();
     this.closeRecallModal();
     this.closeMaintenanceCostsModal();
-
-    this.vinService
-      .getVehicleDetail(vin)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (detail) => {
-          this.vehicle.set(detail);
-          this.isLoading.set(false);
-          this.loadMaintenanceLists(vin);
-          this.loadRecallLists(vin);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.vehicle.set(null);
-          this.error.set(err.status === 404 ? 'Vehicle not found.' : 'Failed to load vehicle.');
-          this.isLoading.set(false);
-        },
-      });
   }
 
-  private loadMaintenanceLists(vin: string): void {
-    forkJoin({
-      upcoming: this.maintenanceService.getUpcoming(vin),
-      completed: this.maintenanceService.getCompleted(vin),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ upcoming, completed }) => {
-          this.upcomingMaintenance.set(upcoming);
-          this.completedMaintenance.set(completed);
-        },
-        error: () => {
-          this.upcomingMaintenance.set([]);
-          this.completedMaintenance.set([]);
-        },
-      });
-  }
+  /** Refetch dashboard after mutations; rxResource.reload() does not reliably sync pageData. */
+  private refreshPageData(): void {
+    const vin = this.routeVin();
+    if (!vin) {
+      return;
+    }
 
-  private loadRecallLists(vin: string): void {
-    forkJoin({
-      uncompleted: this.recallService.getUncompleted(vin),
-      completed: this.recallService.getCompleted(vin),
-    })
+    this.vehiclePageData
+      .loadVehiclePage(vin)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ uncompleted, completed }) => {
-          this.uncompletedRecalls.set(uncompleted);
-          this.completedRecalls.set(completed);
-        },
-        error: () => {
-          this.uncompletedRecalls.set([]);
-          this.completedRecalls.set([]);
-        },
+        next: (data) => this.pageData.set(data),
       });
   }
 }

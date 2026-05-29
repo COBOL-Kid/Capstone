@@ -14,7 +14,13 @@ public interface CompletedMaintenanceRepositoryJPA
     extends JpaRepository<CompletedMaintenance, Long> {
 
   @Query(
-      "select cm from CompletedMaintenance cm where cm.userVin.user.userId = :userId and cm.userVin.vin.vin = :vin")
+      """
+      select cm from CompletedMaintenance cm
+      join fetch cm.maintMileage
+      join fetch cm.userVin uv
+      join fetch uv.vin
+      where uv.user.userId = :userId and uv.vin.vin = :vin
+      """)
   List<CompletedMaintenance> findAllForUserVin(
       @Param("userId") Long userId, @Param("vin") String vin);
 

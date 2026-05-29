@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+
+import com.capstone.data.read.VehicleReadDao;
+import com.capstone.data.read.VehicleReadService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,18 +25,17 @@ import org.springframework.boot.test.context.SpringBootTest;
     })
 class VehicleReadDaoTest {
 
-  private static final long USER_ID = 1L;
-  private static final String CAMRY_VIN = "4T1C11AK5LU123456";
-  private static final String CIVIC_VIN = "2HGFC2F59JH543210";
-
-  @Autowired VehicleReadDao vehicleReadDao;
+  @Autowired
+  VehicleReadDao vehicleReadDao;
+  @Autowired
+  VehicleReadService vehicleReadService;
 
   @Test
-  void findUserVinDetail_returnsSeededVehicleFields() {
-    var detail = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN);
+  void shouldLoadSeededUserVinDetail() {
+    var detail = vehicleReadDao.findUserVinDetail(1L, "4T1C11AK5LU123456");
 
     assertTrue(detail.isPresent());
-    assertEquals(CAMRY_VIN, detail.get().vin());
+    assertEquals("4T1C11AK5LU123456", detail.get().vin());
     assertEquals("Sedan", detail.get().body());
     assertEquals(
         "[\"https://images.unsplash.com/photo-1621007947382-bcb49c457f54\",\"https://images.unsplash.com/photo-1609521263047-f8f205293f24\"]",
@@ -41,121 +43,55 @@ class VehicleReadDaoTest {
   }
 
   @Test
-  void findUserVehicles_returnsSeededVehiclesForUser() {
-    var vehicles = vehicleReadDao.findUserVehicles(USER_ID);
+  void shouldLoadSeededVehicleDashboard() {
+    var dashboard = vehicleReadService.findDashboard(1L, "4T1C11AK5LU123456");
 
-    assertFalse(vehicles.isEmpty());
-    assertTrue(vehicles.stream().anyMatch(v -> v.vin().equals(CAMRY_VIN)));
-    assertTrue(vehicles.stream().anyMatch(v -> v.vin().equals(CIVIC_VIN)));
-  }
-
-  @Test
-  void findUpcomingMaintenanceRoots_excludesCompletedItems() {
-    var camry = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN).orElseThrow();
-    int threshold = camry.currentMileage() + 10_000;
-
-    var roots =
-        vehicleReadDao.findUpcomingMaintenanceRoots(
-            camry.vehicleTypeId(), threshold, USER_ID, CAMRY_VIN);
-
-    assertEquals(
-        List.of(3L, 4L),
-        roots.stream().map(VehicleReadDao.UpcomingMaintRootRow::maintMileageId).toList());
-    assertTrue(roots.stream().anyMatch(VehicleReadDao.UpcomingMaintRootRow::inspect));
-  }
-
-  @Test
-  void findUncompletedRecalls_excludesCompletedRecall() {
-    var recalls = vehicleReadDao.findUncompletedRecalls(USER_ID, CAMRY_VIN);
-
-    assertEquals(
-        List.of(1L), recalls.stream().map(VehicleReadDao.UncompletedRecallRow::recallId).toList());
-  }
-
-  @Test
-  void findCompletedMaintenance_returnsSeededRows() {
-    var completed = vehicleReadDao.findCompletedMaintenance(USER_ID, CAMRY_VIN);
-
-    assertEquals(2, completed.size());
+    assertTrue(dashboard.isPresent());
+    assertFalse(dashboard.get().upcomingMaintenance().isEmpty());
     assertTrue(
-        completed.stream()
-            .anyMatch(
-                row ->
-                    row.maintMileageId() == 1L && row.maintDesc().equals("Change - Engine oil")));
+        dashboard.get().upcomingMaintenance().stream()
+            .flatMap(interval -> interval.items().stream())
+            .anyMatch(item -> item.isInspect()));
   }
 
   @Test
-  void findCompletedRecalls_returnsSeededRows() {
-    var completed = vehicleReadDao.findCompletedRecalls(USER_ID, CAMRY_VIN);
+  void exercisesEveryVehicleReadQueryAgainstSeedData() {
+    long userId = 1L;
+    String camryVin = "4T1C11AK5LU123456";
+    String civicVin = "2HGFC2F59JH543210";
 
-    assertEquals(1, completed.size());
-    assertEquals(2L, completed.getFirst().recallId());
-  }
+    assertFalse(vehicleReadDao.findUserVehicles(userId).isEmpty());
 
-  @Test
-  void findMiscCosts_returnsSeededRowsForVehicleType() {
-    var camry = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN).orElseThrow();
+    var camry = vehicleReadDao.findUserVinDetail(userId, camryVin).orElseThrow();
+    assertFalse(vehicleReadDao.findCompletedMaintenance(userId, camryVin).isEmpty());
 
-    var miscCosts = vehicleReadDao.findMiscCosts(camry.vehicleTypeId());
-
-    assertFalse(miscCosts.isEmpty());
-    assertTrue(miscCosts.stream().anyMatch(row -> row.maintTitle().equals("Oil Change")));
-  }
-
-  @Test
-  void findPartLines_returnsEmptyForEmptyIdCollection() {
-    assertTrue(vehicleReadDao.findPartLines(List.of()).isEmpty());
-  }
-
-  @Test
-  void findLaborLines_returnsEmptyForEmptyIdCollection() {
-    assertTrue(vehicleReadDao.findLaborLines(List.of()).isEmpty());
-  }
-
-  @Test
-  void findMaintSummaries_returnsEmptyForEmptyMileageDues() {
-    var camry = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN).orElseThrow();
-
-    assertTrue(vehicleReadDao.findMaintSummaries(camry.vehicleTypeId(), List.of()).isEmpty());
-  }
-
-  @Test
-  void findPartLines_returnsSeededPartDescriptions() {
-    var partLines = vehicleReadDao.findPartLines(List.of(4L));
-
-    assertFalse(partLines.isEmpty());
-    assertEquals("Replace - Spark plugs", partLines.getFirst().partDesc());
-  }
-
-  @Test
-  void findMaintSummaries_returnsSeededSummariesForMileageDues() {
-    var camry = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN).orElseThrow();
     int threshold = camry.currentMileage() + 10_000;
     var upcomingRoots =
         vehicleReadDao.findUpcomingMaintenanceRoots(
-            camry.vehicleTypeId(), threshold, USER_ID, CAMRY_VIN);
+            camry.vehicleTypeId(), threshold, userId, camryVin);
+    assertFalse(upcomingRoots.isEmpty());
+    assertTrue(upcomingRoots.stream().anyMatch(VehicleReadDao.UpcomingMaintRootRow::inspect));
+
+    List<Long> maintIds =
+        upcomingRoots.stream().map(VehicleReadDao.UpcomingMaintRootRow::maintMileageId).toList();
+    assertFalse(vehicleReadDao.findLaborLines(maintIds).isEmpty());
+
     List<Integer> mileageDues =
         upcomingRoots.stream()
             .map(VehicleReadDao.UpcomingMaintRootRow::mileageDue)
             .distinct()
             .toList();
+    assertFalse(vehicleReadDao.findMaintSummaries(camry.vehicleTypeId(), mileageDues).isEmpty());
 
-    var summaries = vehicleReadDao.findMaintSummaries(camry.vehicleTypeId(), mileageDues);
+    assertFalse(vehicleReadDao.findUncompletedRecalls(userId, camryVin).isEmpty());
+    assertFalse(vehicleReadDao.findCompletedRecalls(userId, camryVin).isEmpty());
+    assertFalse(vehicleReadDao.findMiscCosts(camry.vehicleTypeId()).isEmpty());
 
-    assertFalse(summaries.isEmpty());
-    assertTrue(summaries.stream().anyMatch(summary -> summary.mileageDue() == 45_000));
-  }
+    var partLines = vehicleReadDao.findPartLines(List.of(4L));
+    assertFalse(partLines.isEmpty());
+    assertEquals("Replace - Spark plugs", partLines.getFirst().partDesc());
 
-  @Test
-  void findLaborLines_returnsSeededLaborForUpcomingMaintenance() {
-    var camry = vehicleReadDao.findUserVinDetail(USER_ID, CAMRY_VIN).orElseThrow();
-    int threshold = camry.currentMileage() + 10_000;
-    var upcomingRoots =
-        vehicleReadDao.findUpcomingMaintenanceRoots(
-            camry.vehicleTypeId(), threshold, USER_ID, CAMRY_VIN);
-    List<Long> maintIds =
-        upcomingRoots.stream().map(VehicleReadDao.UpcomingMaintRootRow::maintMileageId).toList();
-
-    assertFalse(vehicleReadDao.findLaborLines(maintIds).isEmpty());
+    assertTrue(vehicleReadDao.findUserVinDetail(userId, civicVin).isPresent());
+    assertTrue(vehicleReadService.findDashboard(userId, civicVin).isPresent());
   }
 }

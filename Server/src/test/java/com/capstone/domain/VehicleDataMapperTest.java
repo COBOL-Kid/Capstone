@@ -3,9 +3,11 @@ package com.capstone.domain;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.capstone.integration.*;
-import com.capstone.models.MaintCost;
+import com.capstone.models.MaintMileage;
+import com.capstone.models.MiscMaintCost;
 import com.capstone.models.Recall;
 import com.capstone.models.VehicleType;
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
@@ -89,16 +91,142 @@ class VehicleDataMapperTest {
   }
 
   @Test
-  void shouldMapMaintenanceScheduleRowsFromProviderResponse() {
+  void shouldMapRepairEstimatesFromProviderResponse() {
     VehicleType vehicleType =
-        new VehicleType("Toyota", "4runner", "SR5 Premium 4dr 4x4 Automatic", "2021");
-    MaintenanceScheduleResponse maintenance = maintenanceScheduleResponse();
+        new VehicleType("Dodge", "Durango", "R/T 4dr All-wheel Drive Automatic", "2014");
+    RepairEstimatesResponse repairEstimates = repairEstimatesResponse();
 
-    var rows = mapper.toMaintMileages(vehicleType, maintenance);
+    MaintenanceScheduleImport scheduleImport =
+        mapper.toMaintenanceScheduleImport(vehicleType, repairEstimates);
 
-    assertEquals(3, rows.size());
-    assertEquals(5000, rows.getFirst().getMileageDue());
-    assertEquals("Check Driver's Floor Mat", rows.getFirst().getMaintDesc());
+    assertEquals(4, scheduleImport.maintMileages().size());
+    assertEquals(1, scheduleImport.summaries().size());
+    assertEquals(50000, scheduleImport.summaries().getFirst().getMileageDue());
+    assertEquals(
+        new BigDecimal("49.59"), scheduleImport.summaries().getFirst().getTotalPartsCost());
+    assertEquals(
+        new BigDecimal("48.40"), scheduleImport.summaries().getFirst().getTotalLaborCost());
+    assertEquals(new BigDecimal("97.99"), scheduleImport.summaries().getFirst().getTotalCost());
+
+    MaintMileage oilChange =
+        scheduleImport.maintMileages().stream()
+            .filter(row -> "Change - Engine oil".equals(row.getMaintDesc()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(50000, oilChange.getMileageDue());
+    assertFalse(oilChange.isInspect());
+    assertEquals(1, oilChange.getPartLines().size());
+    assertNotNull(oilChange.getLaborLine());
+    assertEquals(
+        "Change - Engine oil",
+        oilChange.getPartLines().getFirst().getPartDesc(),
+        "part description must come from the part line, not the labor line");
+    assertEquals(new BigDecimal("41.44"), oilChange.getPartLines().getFirst().getTotalCost());
+    assertEquals(new BigDecimal("15.40"), oilChange.getLaborLine().getTotalCost());
+
+    MaintMileage batteryInspect =
+        scheduleImport.maintMileages().stream()
+            .filter(row -> "Inspect - Battery".equals(row.getMaintDesc()))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(batteryInspect.isInspect());
+    assertTrue(batteryInspect.getPartLines().isEmpty());
+    assertNotNull(batteryInspect.getLaborLine());
+  }
+
+  @Test
+  void shouldNotCreateMaintMileageForPartWithoutMatchingLabor() {
+    VehicleType vehicleType =
+        new VehicleType("Dodge", "Durango", "R/T 4dr All-wheel Drive Automatic", "2014");
+    RepairEstimatesResponse repairEstimates =
+        new RepairEstimatesResponse(
+            "success",
+            new RepairEstimatesResponse.RepairEstimatesData(
+                "1C4SDJCT2EC468620",
+                2014,
+                "Dodge",
+                "Durango",
+                "R/T 4dr All-wheel Drive Automatic",
+                List.of(
+                    new RepairEstimatesResponse.MileageInterval(
+                        "50000",
+                        List.of(
+                            new RepairEstimatesResponse.EstimateItem(
+                                List.of(
+                                    new RepairEstimatesResponse.PartLine(
+                                        "Orphan - Part only", new BigDecimal("10.00"), "USD")),
+                                List.of(
+                                    new RepairEstimatesResponse.LaborLine(
+                                        "Change - Engine oil",
+                                        new BigDecimal("0.28"),
+                                        new BigDecimal("55"),
+                                        new BigDecimal("15.40"),
+                                        "USD")),
+                                List.of()))))));
+
+    MaintenanceScheduleImport scheduleImport =
+        mapper.toMaintenanceScheduleImport(vehicleType, repairEstimates);
+
+    assertEquals(1, scheduleImport.maintMileages().size());
+    assertEquals("Change - Engine oil", scheduleImport.maintMileages().getFirst().getMaintDesc());
+    assertTrue(scheduleImport.maintMileages().getFirst().getPartLines().isEmpty());
+  }
+
+  @Test
+  void shouldCreateOneMileageSummaryPerIntervalWhenMultipleItemsPresent() {
+    VehicleType vehicleType =
+        new VehicleType("Dodge", "Durango", "R/T 4dr All-wheel Drive Automatic", "2014");
+    List<RepairEstimatesResponse.TotalLine> intervalTotals =
+        List.of(
+            new RepairEstimatesResponse.TotalLine(
+                "Total Parts Cost", new BigDecimal("49.59"), "USD"),
+            new RepairEstimatesResponse.TotalLine(
+                "Total Labor Cost", new BigDecimal("48.40"), "USD"),
+            new RepairEstimatesResponse.TotalLine("Total Cost", new BigDecimal("97.99"), "USD"));
+    RepairEstimatesResponse repairEstimates =
+        new RepairEstimatesResponse(
+            "success",
+            new RepairEstimatesResponse.RepairEstimatesData(
+                "1C4SDJCT2EC468620",
+                2014,
+                "Dodge",
+                "Durango",
+                "R/T 4dr All-wheel Drive Automatic",
+                List.of(
+                    new RepairEstimatesResponse.MileageInterval(
+                        "50000",
+                        List.of(
+                            new RepairEstimatesResponse.EstimateItem(
+                                List.of(
+                                    new RepairEstimatesResponse.PartLine(
+                                        "Change - Engine oil", new BigDecimal("41.44"), "USD")),
+                                List.of(
+                                    new RepairEstimatesResponse.LaborLine(
+                                        "Change - Engine oil",
+                                        new BigDecimal("0.28"),
+                                        new BigDecimal("55"),
+                                        new BigDecimal("15.40"),
+                                        "USD")),
+                                intervalTotals),
+                            new RepairEstimatesResponse.EstimateItem(
+                                List.of(
+                                    new RepairEstimatesResponse.PartLine(
+                                        "Replace - Oil filter", new BigDecimal("8.15"), "USD")),
+                                List.of(
+                                    new RepairEstimatesResponse.LaborLine(
+                                        "Replace - Oil filter",
+                                        new BigDecimal("0.10"),
+                                        new BigDecimal("55"),
+                                        new BigDecimal("5.50"),
+                                        "USD")),
+                                intervalTotals))))));
+
+    MaintenanceScheduleImport scheduleImport =
+        mapper.toMaintenanceScheduleImport(vehicleType, repairEstimates);
+
+    assertEquals(1, scheduleImport.summaries().size());
+    assertEquals(50000, scheduleImport.summaries().getFirst().getMileageDue());
+    assertEquals(new BigDecimal("97.99"), scheduleImport.summaries().getFirst().getTotalCost());
   }
 
   @Test
@@ -106,7 +234,7 @@ class VehicleDataMapperTest {
     VehicleType vehicleType = new VehicleType("Toyota", "4runner", "SRS Prem", "2021");
     RepairCostResponse repairCosts = repairCostResponse();
 
-    MaintCost firstCost = mapper.toMaintCosts(vehicleType, repairCosts).getFirst();
+    MiscMaintCost firstCost = mapper.toMiscMaintCosts(vehicleType, repairCosts).getFirst();
 
     assertEquals("ABS Module Replacement", firstCost.getMaintTitle());
     assertNull(firstCost.getIndependentAvg());
@@ -117,63 +245,131 @@ class VehicleDataMapperTest {
 
   @Test
   void shouldMapRecallFromProviderResponse() {
-    VehicleType vehicleType = new VehicleType("Toyota", "4runner", "SRS Prem", "2021");
-    RecallProviderResponse recalls = recallResponse();
+    VehicleType vehicleType = new VehicleType("Honda", "Element", "EX", "2008");
+    VehicleRecallsResponse recalls = recallResponse();
 
     Recall recall = mapper.toRecalls(vehicleType, recalls).getFirst();
 
-    assertEquals("25V239000", recall.getNhtsaCampaignNumber());
-    assertEquals("25V239000", recall.getCampaignId());
-    assertEquals(
-        "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE", recall.getComponent());
-    assertEquals("Ford Motor Company", recall.getManufacturer());
+    assertEquals("19V182000", recall.getNhtsaCampaignNumber());
+    assertEquals("19V182000", recall.getCampaignId());
+    assertEquals("EA15001", recall.getRecallNo());
+    assertEquals("AIR BAGS:FRONTAL:DRIVER SIDE:INFLATOR MODULE", recall.getComponent());
+    assertEquals("Honda (American Honda Motor Co.)", recall.getManufacturer());
     assertFalse(recall.isParkIt());
     assertFalse(recall.isParkOutside());
     assertFalse(recall.isOverTheAirUpdate());
-    assertEquals("2025", recall.getModelYear());
-    assertEquals("FORD", recall.getMake());
-    assertEquals("EXPLORER", recall.getModel());
-    assertEquals(2025, recall.getReportReceivedDate().getYear());
-    assertEquals(11, recall.getReportReceivedDate().getMonthValue());
-    assertEquals(4, recall.getReportReceivedDate().getDayOfMonth());
+    assertEquals("2008", recall.getModelYear());
+    assertEquals("Honda", recall.getMake());
+    assertEquals("Element", recall.getModel());
+    assertEquals(2019, recall.getReportReceivedDate().getYear());
+    assertEquals(6, recall.getReportReceivedDate().getMonthValue());
+    assertEquals(3, recall.getReportReceivedDate().getDayOfMonth());
   }
 
   @Test
-  void shouldDeserializeRecallProviderResponseFromProviderJson() {
+  void shouldSkipRecallsWithUnparseableDates() {
+    VehicleType vehicleType = new VehicleType("Honda", "Element", "EX", "2008");
+    VehicleRecallsResponse recalls =
+        new VehicleRecallsResponse(
+            "success",
+            new VehicleRecallsResponse.VehicleRecallsData(
+                "5J6YH28728L014142",
+                "2008",
+                "Honda",
+                "Element",
+                List.of(
+                    new VehicleRecallsResponse.RecallEntry(
+                        "19V501000",
+                        "EA15001",
+                        "not-a-date",
+                        "AIR BAGS",
+                        "Summary",
+                        "Consequences",
+                        "Remedy",
+                        "Notes",
+                        "Honda"),
+                    new VehicleRecallsResponse.RecallEntry(
+                        "19V182000",
+                        "EA15002",
+                        "06/03/2019",
+                        "AIR BAGS",
+                        "Summary",
+                        "Consequences",
+                        "Remedy",
+                        "Notes",
+                        "Honda"))));
+
+    List<Recall> mapped = mapper.toRecalls(vehicleType, recalls);
+
+    assertEquals(1, mapped.size());
+    assertEquals("19V182000", mapped.getFirst().getNhtsaCampaignNumber());
+  }
+
+  @Test
+  void shouldParseEuropeanRecallDateFormat() {
+    VehicleType vehicleType = new VehicleType("Honda", "Element", "EX", "2008");
+    VehicleRecallsResponse recalls =
+        new VehicleRecallsResponse(
+            "success",
+            new VehicleRecallsResponse.VehicleRecallsData(
+                "5J6YH28728L014142",
+                "2008",
+                "Honda",
+                "Element",
+                List.of(
+                    new VehicleRecallsResponse.RecallEntry(
+                        "19V501000",
+                        "EA15001",
+                        "27/06/2019",
+                        "AIR BAGS",
+                        "Summary",
+                        "Consequences",
+                        "Remedy",
+                        "Notes",
+                        "Honda"))));
+
+    Recall recall = mapper.toRecalls(vehicleType, recalls).getFirst();
+
+    assertEquals(2019, recall.getReportReceivedDate().getYear());
+    assertEquals(6, recall.getReportReceivedDate().getMonthValue());
+    assertEquals(27, recall.getReportReceivedDate().getDayOfMonth());
+  }
+
+  @Test
+  void shouldDeserializeVehicleRecallsResponseFromProviderJson() {
     String json =
         """
                 {
-                  "data": [
-                    {
-                      "manufacturer": "Ford Motor Company",
-                      "nhtsaCampaignNumber": "25V239000",
-                      "parkIt": false,
-                      "parkOutSide": false,
-                      "overTheAirUpdate": false,
-                      "reportReceivedDate": "11/04/2025",
-                      "component": "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE",
-                      "summary": "Ford Motor Company (Ford) is recalling certain 2025 Explorer vehicles.",
-                      "consequence": "A damaged park system can increase the risk of a crash.",
-                      "remedy": "Dealers will update the powertrain control module software, free of charge.",
-                      "notes": "Owners may also contact NHTSA.",
-                      "modelYear": "2025",
-                      "make": "FORD",
-                      "model": "EXPLORER"
-                    }
-                  ]
+                  "status": "success",
+                  "data": {
+                    "vin": "5J6YH28728L014142",
+                    "year": "2008",
+                    "make": "Honda",
+                    "model": "Element",
+                    "recall": [
+                      {
+                        "campaign_id": "19V182000",
+                        "recall_no": "EA15001",
+                        "recall_date": "06/03/2019",
+                        "component_affected": "AIR BAGS:FRONTAL:DRIVER SIDE:INFLATOR MODULE",
+                        "summary": "Honda is recalling vehicles.",
+                        "consequences": "Risk of injury.",
+                        "remedy": "Dealers will replace the inflator.",
+                        "notes": "Contact NHTSA.",
+                        "manufacturer_name": "Honda (American Honda Motor Co.)"
+                      }
+                    ]
+                  }
                 }
                 """;
 
-    RecallProviderResponse response =
-        new ObjectMapper().readValue(json, RecallProviderResponse.class);
+    VehicleRecallsResponse response =
+        new ObjectMapper().readValue(json, VehicleRecallsResponse.class);
 
-    assertEquals(1, response.data().size());
-    assertEquals("25V239000", response.data().getFirst().nhtsaCampaignNumber());
-    assertEquals(Boolean.FALSE, response.data().getFirst().parkOutside());
-    assertEquals(
-        "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE",
-        response.data().getFirst().component());
-    assertEquals("Ford Motor Company", response.data().getFirst().manufacturer());
+    assertEquals("success", response.status());
+    assertEquals("19V182000", response.data().recall().getFirst().campaignId());
+    assertEquals("EA15001", response.data().recall().getFirst().recallNo());
+    assertEquals("Honda", response.data().make());
   }
 
   private VinDecodeResponse vinDecodeResponse() {
@@ -203,30 +399,66 @@ class VehicleDataMapperTest {
   private OwnerManualResponse ownerManualResponse() {
     return new OwnerManualResponse(
         "success",
+        "JTENU5JR6M5962554",
         new OwnerManualResponse.OwnerManualData(
-            "JTENU5JR6M5962554",
+            null,
             "2021",
             "Toyota",
             "4runner",
             "https://vhr.nyc3.cdn.digitaloceanspaces.com/owners-manual/toyota/2021_toyota_4runner_Toyota%202021%204Runner%20Owner%27s%20Manual%20OM35B41U.pdf"));
   }
 
-  private MaintenanceScheduleResponse maintenanceScheduleResponse() {
-    return new MaintenanceScheduleResponse(
+  private RepairEstimatesResponse repairEstimatesResponse() {
+    return new RepairEstimatesResponse(
         "success",
-        new MaintenanceScheduleResponse.MaintenanceScheduleData(
-            "JTENU5JR6M5962554",
-            2021,
-            "Toyota",
-            "4runner",
-            "SR5 Premium 4dr 4x4 Automatic",
+        new RepairEstimatesResponse.RepairEstimatesData(
+            "1C4SDJCT2EC468620",
+            2014,
+            "Dodge",
+            "Durango",
+            "R/T 4dr All-wheel Drive Automatic",
             List.of(
-                new MaintenanceScheduleResponse.MaintenanceInterval(
-                    new MaintenanceScheduleResponse.Mileage(5000, 8000),
+                new RepairEstimatesResponse.MileageInterval(
+                    "50000",
                     List.of(
-                        "Check Driver's Floor Mat",
-                        "Inspect Brake System",
-                        "Replace Engine Oil & Filter")))));
+                        new RepairEstimatesResponse.EstimateItem(
+                            List.of(
+                                new RepairEstimatesResponse.PartLine(
+                                    "Change - Engine oil", new BigDecimal("41.44"), "USD"),
+                                new RepairEstimatesResponse.PartLine(
+                                    "Replace - Oil filter", new BigDecimal("8.15"), "USD")),
+                            List.of(
+                                new RepairEstimatesResponse.LaborLine(
+                                    "Inspect - Battery",
+                                    new BigDecimal("0.05"),
+                                    new BigDecimal("55"),
+                                    new BigDecimal("2.75"),
+                                    "USD"),
+                                new RepairEstimatesResponse.LaborLine(
+                                    "Change - Engine oil",
+                                    new BigDecimal("0.28"),
+                                    new BigDecimal("55"),
+                                    new BigDecimal("15.40"),
+                                    "USD"),
+                                new RepairEstimatesResponse.LaborLine(
+                                    "Replace - Oil filter",
+                                    new BigDecimal("0.10"),
+                                    new BigDecimal("55"),
+                                    new BigDecimal("5.50"),
+                                    "USD"),
+                                new RepairEstimatesResponse.LaborLine(
+                                    "Rotate - Wheels & tires",
+                                    new BigDecimal("0.25"),
+                                    new BigDecimal("55"),
+                                    new BigDecimal("13.75"),
+                                    "USD")),
+                            List.of(
+                                new RepairEstimatesResponse.TotalLine(
+                                    "Total Parts Cost", new BigDecimal("49.59"), "USD"),
+                                new RepairEstimatesResponse.TotalLine(
+                                    "Total Labor Cost", new BigDecimal("48.40"), "USD"),
+                                new RepairEstimatesResponse.TotalLine(
+                                    "Total Cost", new BigDecimal("97.99"), "USD"))))))));
   }
 
   private RepairCostResponse repairCostResponse() {
@@ -250,23 +482,24 @@ class VehicleDataMapperTest {
                             new RepairCostResponse.CostLine("total", 1396, 1470, 1322)))))));
   }
 
-  private RecallProviderResponse recallResponse() {
-    return new RecallProviderResponse(
-        List.of(
-            new RecallProviderResponse.RecallItem(
-                "Ford Motor Company",
-                "25V239000",
-                false,
-                false,
-                false,
-                "11/04/2025",
-                "POWER TRAIN:AUTOMATIC TRANSMISSION:CONTROL MODULE:SOFTWARE",
-                "Summary",
-                "Consequence",
-                "Remedy",
-                "Notes",
-                "2025",
-                "FORD",
-                "EXPLORER")));
+  private VehicleRecallsResponse recallResponse() {
+    return new VehicleRecallsResponse(
+        "success",
+        new VehicleRecallsResponse.VehicleRecallsData(
+            "5J6YH28728L014142",
+            "2008",
+            "Honda",
+            "Element",
+            List.of(
+                new VehicleRecallsResponse.RecallEntry(
+                    "19V182000",
+                    "EA15001",
+                    "06/03/2019",
+                    "AIR BAGS:FRONTAL:DRIVER SIDE:INFLATOR MODULE",
+                    "Summary",
+                    "Consequences",
+                    "Remedy",
+                    "Notes",
+                    "Honda (American Honda Motor Co.)"))));
   }
 }

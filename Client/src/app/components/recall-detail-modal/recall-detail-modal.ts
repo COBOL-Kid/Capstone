@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
+import { localDateIso } from '../../core/date/local-date';
 import { RecallService } from '../../core/recall/recall.service';
 import { CompletedRecallResponse, RecallResponse } from '../../core/recall/recall.models';
 
@@ -40,11 +41,12 @@ export class RecallDetailModalComponent implements AfterViewInit {
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
   protected readonly showCompleteForm = signal(false);
+  protected readonly maxCompletedDate = localDateIso();
 
   private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly completeForm = this.fb.group({
-    completedDate: [todayIso(), [Validators.required]],
+    completedDate: [localDateIso(), [Validators.required]],
     repairShop: [''],
     cost: [null as number | null],
     notes: [''],
@@ -63,7 +65,7 @@ export class RecallDetailModalComponent implements AfterViewInit {
 
   protected openCompleteForm(): void {
     this.showCompleteForm.set(true);
-    this.completeForm.patchValue({ completedDate: todayIso() });
+    this.completeForm.patchValue({ completedDate: localDateIso() });
   }
 
   protected markComplete(): void {
@@ -123,8 +125,4 @@ export class RecallDetailModalComponent implements AfterViewInit {
         error: () => this.serverError.set('Unable to mark recall incomplete.'),
       });
   }
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
 }

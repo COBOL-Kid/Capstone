@@ -5,13 +5,10 @@ import com.capstone.data.RecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.models.CompletedRecall;
 import com.capstone.models.Recall;
-import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.dto.CompleteRecallRequest;
 import com.capstone.models.dto.CompletedRecallResponse;
-import com.capstone.models.dto.RecallResponse;
 import java.time.LocalDate;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,42 +28,20 @@ public class RecallTrackingService {
     this.userVinRepository = userVinRepository;
   }
 
-  @Transactional(readOnly = true)
-  public List<CompletedRecallResponse> findCompletedRecalls(User user, String vin) {
-    return completedRecallRepository.findAllForUserVin(user.getUserId(), normalizeVin(vin)).stream()
-        .map(this::toResponse)
-        .toList();
-  }
-
-  @Transactional(readOnly = true)
-  public List<RecallResponse> findUncompletedRecalls(User user, String vin) {
-    String normalizedVin = normalizeVin(vin);
-    return recallRepository.findUncompletedRecalls(user.getUserId(), normalizedVin).stream()
-        .map(
-            r ->
-                new RecallResponse(
-                    r.getRecallId(),
-                    normalizedVin,
-                    r.getNhtsaCampaignNumber(),
-                    r.getReportReceivedDate(),
-                    r.getComponent(),
-                    r.getSummary(),
-                    r.getConsequence(),
-                    r.getRemedy()))
-        .toList();
-  }
-
   @Transactional
-  public CompletedRecallResponse completeRecall(User user, CompleteRecallRequest request) {
+  public CompletedRecallResponse completeRecall(long userId, CompleteRecallRequest request) {
     if (request == null || request.recallId() == null) {
       throw new IllegalArgumentException("Recall is required");
     }
     UserVin userVin =
         userVinRepository
-            .findByUserUserIdAndVinVin(user.getUserId(), normalizeVin(request.vin()))
+            .findForUserVin(userId, VinNormalizer.normalize(request.vin()))
             .orElseThrow(VinNotAssociatedException::new);
+    Long vehicleTypeId = userVin.getVin().getVehicleType().getVehicleTypeId();
     Recall recall =
-        recallRepository.findById(request.recallId()).orElseThrow(RecallNotFoundException::new);
+        recallRepository
+            .findByRecallIdAndVehicleTypeId_VehicleTypeId(request.recallId(), vehicleTypeId)
+            .orElseThrow(RecallNotFoundException::new);
     CompletedRecall completedRecall =
         completedRecallRepository
             .findByUserVinAndRecall(userVin, recall)
@@ -88,7 +63,7 @@ public class RecallTrackingService {
   }
 
   @Transactional
-  public boolean uncompleteRecall(User user, Long completedRecallId) {
+  public boolean uncompleteRecall(long userId, Long completedRecallId) {
     if (completedRecallId == null) {
       throw new IllegalArgumentException("Completed recall id is required");
     }
@@ -96,7 +71,7 @@ public class RecallTrackingService {
         completedRecallRepository
             .findById(completedRecallId)
             .orElseThrow(RecallNotFoundException::new);
-    if (!completedRecall.getUserVin().getId().getUserId().equals(user.getUserId())) {
+    if (!completedRecall.getUserVin().getId().getUserId().equals(userId)) {
       throw new RecallNotFoundException();
     }
     completedRecallRepository.delete(completedRecall);
@@ -119,12 +94,5 @@ public class RecallTrackingService {
         recall.getSummary(),
         recall.getConsequence(),
         recall.getRemedy());
-  }
-
-  private String normalizeVin(String vin) {
-    if (vin == null || vin.isBlank()) {
-      throw new IllegalArgumentException("VIN is required");
-    }
-    return vin.trim().toUpperCase();
   }
 }

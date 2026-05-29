@@ -12,11 +12,16 @@ import com.capstone.models.*;
 import com.capstone.models.dto.AddVinRequest;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 class VehicleOnboardingServiceTest {
+
+  private static final ExecutorService TEST_VEHICLE_DATA_EXECUTOR =
+      Executors.newVirtualThreadPerTaskExecutor();
 
   private static final String PHOTO_1 =
       "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg";
@@ -30,14 +35,16 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     VehicleDataMapper mapper = new VehicleDataMapper();
     TransactionTemplate transactionTemplate = transactionTemplate();
 
     VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
     vehicleType.setVehicleTypeId(7L);
-    Vin vin = new Vin("JTENU5JR6M5962554", 12000, vehicleType);
+    Vin vin = new Vin("JTENU5JR6M5962554", vehicleType);
     User user = user();
 
     when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
@@ -54,10 +61,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             mapper,
-            transactionTemplate);
+            transactionTemplate,
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     var response = service.addVinToUser(user, new AddVinRequest("jtenu5jr6m5962554", 45000));
 
@@ -78,13 +87,15 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
     VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
     vehicleType.setVehicleTypeId(7L);
-    Vin vin = new Vin("JTENU5JR6M5962554", 12000, vehicleType);
+    Vin vin = new Vin("JTENU5JR6M5962554", vehicleType);
     UserVin existingAssociation = new UserVin(user, vin, 32000);
     existingAssociation.setAvailableImageUrls(List.of(PHOTO_1));
     existingAssociation.setSelectedImageUrl(PHOTO_1);
@@ -100,10 +111,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate);
+            transactionTemplate,
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     var response = service.addVinToUser(user, new AddVinRequest(" JTENU5JR6M5962554 ", 45000));
 
@@ -125,7 +138,9 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -152,10 +167,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate);
+            transactionTemplate,
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     var response = service.addVinToUser(user, new AddVinRequest("jtenu5jr6m5962554", 45000));
 
@@ -166,12 +183,13 @@ class VehicleOnboardingServiceTest {
     assertTrue(response.createdAssociation());
     assertEquals(PHOTO_1, response.selectedImageUrl());
     verify(providerClient, never()).getOwnerManual(any());
-    verify(providerClient, never()).getMaintenanceSchedule(any());
+    verify(providerClient, never()).getRepairEstimates(any());
     verify(providerClient, never()).getRepairCosts(any());
     verify(providerClient, never()).getRecalls(any());
     verify(recallRepository, never()).saveAll(any());
     verify(maintMileageRepository, never()).saveAll(any());
-    verify(maintCostRepository, never()).saveAll(any());
+    verify(maintMileageSummaryRepository, never()).saveAll(any());
+    verify(miscMaintCostRepository, never()).saveAll(any());
   }
 
   @Test
@@ -181,7 +199,9 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     VehicleOnboardingService service =
         new VehicleOnboardingService(
@@ -190,10 +210,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate());
+            transactionTemplate(),
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     assertEquals(
         "Authenticated user is required",
@@ -223,13 +245,15 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
     VehicleType vehicleType = new VehicleType("Toyota", "4RUNNER", "SRS Prem", "2021");
     vehicleType.setVehicleTypeId(7L);
-    Vin vin = new Vin("JTENU5JR6M5962554", 12000, vehicleType);
+    Vin vin = new Vin("JTENU5JR6M5962554", vehicleType);
 
     when(vinRepository.findById("JTENU5JR6M5962554")).thenReturn(Optional.of(vin));
     when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554"))
@@ -245,10 +269,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate);
+            transactionTemplate,
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     var response = service.addVinToUser(user, new AddVinRequest("JTENU5JR6M5962554", 45000));
 
@@ -264,7 +290,9 @@ class VehicleOnboardingServiceTest {
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     RecallRepositoryJPA recallRepository = mock(RecallRepositoryJPA.class);
     MaintMileageRepositoryJPA maintMileageRepository = mock(MaintMileageRepositoryJPA.class);
-    MaintCostRepositoryJPA maintCostRepository = mock(MaintCostRepositoryJPA.class);
+    MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
+        mock(MaintMileageSummaryRepositoryJPA.class);
+    MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -279,10 +307,12 @@ class VehicleOnboardingServiceTest {
             userVinRepository,
             recallRepository,
             maintMileageRepository,
-            maintCostRepository,
+            maintMileageSummaryRepository,
+            miscMaintCostRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate);
+            transactionTemplate,
+            TEST_VEHICLE_DATA_EXECUTOR);
 
     assertThrows(
         VinNotFoundException.class,

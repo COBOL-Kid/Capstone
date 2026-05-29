@@ -3,55 +3,65 @@ package com.capstone.configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class VehicleDataProviderConfig {
 
-  @Value("${vehicle-data.base-url:https://api.auto.dev}")
-  private String vehicleDataBaseUrl;
+  @Value("${vehicle-data.auto-dev.base-url:${vehicle-data.base-url:https://api.auto.dev}}")
+  private String autoDevBaseUrl;
 
-  @Value("${vehicle-data.api-key:}")
-  private String vehicleDataApiKey;
+  @Value("${vehicle-data.auto-dev.api-key:${vehicle-data.api-key:}}")
+  private String autoDevApiKey;
 
-  @Value("${vehicle-data.api-key-header:x-api-key}")
-  private String vehicleDataApiKeyHeader;
+  @Value("${vehicle-data.auto-dev.api-key-header:${vehicle-data.api-key-header:x-api-key}}")
+  private String autoDevApiKeyHeader;
 
-  @Value("${vehicle-data.recall-base-url:https://api.auto.dev}")
-  private String vehicleDataRecallBaseUrl;
+  @Value("${vehicle-data.vehicle-databases.base-url:https://api.vehicledatabases.com}")
+  private String vehicleDatabasesBaseUrl;
 
-  @Value("${vehicle-data.recall-api-key:${vehicle-data.api-key:}}")
-  private String vehicleDataRecallApiKey;
+  @Value("${vehicle-data.vehicle-databases.api-key:}")
+  private String vehicleDatabasesApiKey;
 
-  @Value("${vehicle-data.recall-api-key-header:${vehicle-data.api-key-header:x-api-key}}")
-  private String vehicleDataRecallApiKeyHeader;
+  @Value("${vehicle-data.vehicle-databases.api-key-header:x-authkey}")
+  private String vehicleDatabasesApiKeyHeader;
+
+  @Value("${vehicle-data.http.connect-timeout-ms:5000}")
+  private int connectTimeoutMs;
+
+  @Value("${vehicle-data.http.read-timeout-ms:30000}")
+  private int readTimeoutMs;
 
   @Bean
   public RestTemplate restTemplate() {
-    return new RestTemplate();
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setConnectTimeout(connectTimeoutMs);
+    requestFactory.setReadTimeout(readTimeoutMs);
+    return new RestTemplate(requestFactory);
   }
 
-  public String getVehicleDataBaseUrl() {
-    return vehicleDataBaseUrl;
+  public String getAutoDevBaseUrl() {
+    return autoDevBaseUrl;
   }
 
-  public String getVehicleDataApiKey() {
-    return vehicleDataApiKey;
+  public String getAutoDevApiKey() {
+    return autoDevApiKey;
   }
 
-  public String getVehicleDataApiKeyHeader() {
-    return vehicleDataApiKeyHeader;
+  public String getAutoDevApiKeyHeader() {
+    return autoDevApiKeyHeader;
   }
 
-  public String getVehicleDataRecallBaseUrl() {
-    return vehicleDataRecallBaseUrl;
+  public String getVehicleDatabasesBaseUrl() {
+    return vehicleDatabasesBaseUrl;
   }
 
-  public String getVehicleDataRecallApiKey() {
-    return vehicleDataRecallApiKey;
+  public String getVehicleDatabasesApiKey() {
+    return vehicleDatabasesApiKey;
   }
 
-  public String getVehicleDataRecallApiKeyHeader() {
-    return vehicleDataRecallApiKeyHeader;
+  public String getVehicleDatabasesApiKeyHeader() {
+    return vehicleDatabasesApiKeyHeader;
   }
 }

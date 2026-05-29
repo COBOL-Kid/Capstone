@@ -23,26 +23,6 @@ describe('MaintenanceService', () => {
     httpTesting.verify();
   });
 
-  it('returns empty arrays for 204 list responses', () => {
-    service.getUpcoming(vin).subscribe((items) => expect(items).toEqual([]));
-    httpTesting.expectOne(`${apiConfig.maintenanceUrl}/${vin}/upcoming`).flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    service.getCompleted(vin).subscribe((items) => expect(items).toEqual([]));
-    httpTesting.expectOne(`${apiConfig.maintenanceUrl}/${vin}/completed`).flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    service.getMaintenanceCosts(vin).subscribe((items) => expect(items).toEqual([]));
-    httpTesting.expectOne(`${apiConfig.maintenanceUrl}/${vin}/costs`).flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-  });
-
   it('posts completed maintenance and deletes completion records', () => {
     const completed = {
       completedMaintenanceId: 99,

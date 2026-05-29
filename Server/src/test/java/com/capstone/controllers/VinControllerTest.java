@@ -3,8 +3,12 @@ package com.capstone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.capstone.authentication.AuthenticatedUser;
+import com.capstone.data.UserRepositoryJPA;
+import com.capstone.domain.VehicleDashboardService;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
+import com.capstone.models.Role;
 import com.capstone.models.User;
 import com.capstone.models.dto.*;
 import java.util.List;
@@ -17,7 +21,10 @@ class VinControllerTest {
   @Test
   void shouldRequireAuthenticationForCurrentUserVinsAndAddVin() {
     VinController controller =
-        new VinController(mock(VinService.class), mock(VehicleOnboardingService.class));
+        controller(
+            mock(VinService.class),
+            mock(VehicleOnboardingService.class),
+            mock(VehicleDashboardService.class));
 
     assertEquals(HttpStatus.UNAUTHORIZED, controller.getCurrentUserVins(null).getStatusCode());
     assertEquals(
@@ -28,8 +35,10 @@ class VinControllerTest {
   @Test
   void shouldReturnNoContentWhenCurrentUserHasNoVins() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
 
     when(vinService.findVinsByUserId(1L)).thenReturn(List.of());
 
@@ -39,8 +48,10 @@ class VinControllerTest {
   @Test
   void shouldReturnCurrentUserVins() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
     UserVehicleResponse vehicle = userVehicleResponse();
 
     when(vinService.findVinsByUserId(1L)).thenReturn(List.of(vehicle));
@@ -52,10 +63,38 @@ class VinControllerTest {
   }
 
   @Test
+  void shouldReturnVehicleDashboardForCurrentUser() {
+    VehicleDashboardService dashboardService = mock(VehicleDashboardService.class);
+    VinController controller =
+        controller(mock(VinService.class), mock(VehicleOnboardingService.class), dashboardService);
+    AuthenticatedUser user = user();
+    VehicleDashboardResponse dashboard =
+        new VehicleDashboardResponse(
+            vehicleDetailResponse(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+    when(dashboardService.findDashboardForUser(1L, "JTENU5JR6M5962554"))
+        .thenReturn(Optional.of(dashboard));
+    when(dashboardService.findDashboardForUser(1L, "MISSINGVIN1234567"))
+        .thenReturn(Optional.empty());
+
+    var foundResponse = controller.getVehicleDashboard(user, "JTENU5JR6M5962554");
+    var missingResponse = controller.getVehicleDashboard(user, "MISSINGVIN1234567");
+
+    assertEquals(HttpStatus.OK, foundResponse.getStatusCode());
+    assertEquals(dashboard, foundResponse.getBody());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.getVehicleDashboard(null, "JTENU5JR6M5962554").getStatusCode());
+  }
+
+  @Test
   void shouldReturnVehicleDetailForCurrentUser() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
     VehicleDetailResponse detail = vehicleDetailResponse();
 
     when(vinService.findVehicleDetailForUser(1L, "JTENU5JR6M5962554"))
@@ -75,8 +114,10 @@ class VinControllerTest {
   @Test
   void shouldUpdateMileageForCurrentUserVin() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
     VehicleDetailResponse detail = vehicleDetailResponse();
     UpdateMileageRequest request = new UpdateMileageRequest(52000);
 
@@ -98,8 +139,16 @@ class VinControllerTest {
   @Test
   void shouldReturnCreatedOnlyWhenAddVinCreatesAssociation() {
     VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
-    VinController controller = new VinController(mock(VinService.class), onboardingService);
-    User user = user();
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    VinController controller =
+        new VinController(
+            mock(VinService.class),
+            onboardingService,
+            mock(VehicleDashboardService.class),
+            userRepository);
+    AuthenticatedUser authUser = user();
+    User user = new User();
+    user.setUserId(1L);
     AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000);
     AddVinResponse created =
         new AddVinResponse(
@@ -130,10 +179,11 @@ class VinControllerTest {
             false,
             false);
 
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(onboardingService.addVinToUser(user, request)).thenReturn(created, existing);
 
-    var createdResponse = controller.addVin(user, request);
-    var existingResponse = controller.addVin(user, request);
+    var createdResponse = controller.addVin(authUser, request);
+    var existingResponse = controller.addVin(authUser, request);
 
     assertEquals(HttpStatus.CREATED, createdResponse.getStatusCode());
     assertEquals(created, createdResponse.getBody());
@@ -145,8 +195,10 @@ class VinControllerTest {
   @Test
   void shouldUpdateSelectedPhotoForCurrentUserVin() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
     UserVehicleResponse vehicle = userVehicleResponse();
     UpdateVehiclePhotoRequest request =
         new UpdateVehiclePhotoRequest("https://api.auto.dev/photos/retail/JTENU5JR6M5962554-1.jpg");
@@ -170,8 +222,10 @@ class VinControllerTest {
   @Test
   void shouldDeleteVinForCurrentUser() {
     VinService vinService = mock(VinService.class);
-    VinController controller = new VinController(vinService, mock(VehicleOnboardingService.class));
-    User user = user();
+    VinController controller =
+        controller(
+            vinService, mock(VehicleOnboardingService.class), mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
 
     when(vinService.deleteVin(1L, "JTENU5JR6M5962554")).thenReturn(true);
     when(vinService.deleteVin(1L, "MISSINGVIN1234567")).thenReturn(false);
@@ -185,11 +239,16 @@ class VinControllerTest {
         HttpStatus.UNAUTHORIZED, controller.deleteVin(null, "JTENU5JR6M5962554").getStatusCode());
   }
 
-  private User user() {
-    User user = new User();
-    user.setUserId(1L);
-    user.setUserEmail("driver@example.com");
-    return user;
+  private VinController controller(
+      VinService vinService,
+      VehicleOnboardingService onboardingService,
+      VehicleDashboardService dashboardService) {
+    return new VinController(
+        vinService, onboardingService, dashboardService, mock(UserRepositoryJPA.class));
+  }
+
+  private AuthenticatedUser user() {
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
   }
 
   private VehicleDetailResponse vehicleDetailResponse() {

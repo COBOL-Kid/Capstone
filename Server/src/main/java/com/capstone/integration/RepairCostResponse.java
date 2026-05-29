@@ -1,7 +1,9 @@
 package com.capstone.integration;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record RepairCostResponse(String status, RepairCostData data) {
 
   public record RepairCostData(

@@ -3,7 +3,9 @@ package com.capstone.domain;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.data.*;
+import com.capstone.models.Role;
 import com.capstone.models.User;
 import com.capstone.models.dto.ChangePasswordRequest;
 import com.capstone.models.dto.DeleteAccountRequest;
@@ -22,7 +24,7 @@ class AccountServiceTest {
   void shouldReturnSafeAccountProfileForCurrentUser() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     AccountService service = service(userRepository);
-    User principal = principal();
+    AuthenticatedUser principal = authenticatedPrincipal();
     User storedUser = storedUser();
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
@@ -50,7 +52,7 @@ class AccountServiceTest {
     when(userRepository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(storedUser));
     when(userRepository.save(storedUser)).thenReturn(storedUser);
 
-    var response = service.updateProfile(principal(), request);
+    var response = service.updateProfile(authenticatedPrincipal(), request);
 
     assertEquals("Patricia", storedUser.getFirstName());
     assertEquals("Driver-Smith", storedUser.getLastName());
@@ -73,7 +75,7 @@ class AccountServiceTest {
     when(userRepository.findByUserEmail("new.driver@example.com")).thenReturn(Optional.empty());
     when(userRepository.save(storedUser)).thenReturn(storedUser);
 
-    var response = service.updateProfile(principal(), request);
+    var response = service.updateProfile(authenticatedPrincipal(), request);
 
     assertEquals("new.driver@example.com", storedUser.getUserEmail());
     assertEquals("+1 555 222 3333", storedUser.getUserSms());
@@ -94,7 +96,9 @@ class AccountServiceTest {
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
     when(userRepository.findByUserEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
 
-    assertThrows(DuplicateEmailException.class, () -> service.updateProfile(principal(), request));
+    assertThrows(
+        DuplicateEmailException.class,
+        () -> service.updateProfile(authenticatedPrincipal(), request));
     verify(userRepository, never()).save(any());
   }
 
@@ -111,7 +115,9 @@ class AccountServiceTest {
     when(userRepository.save(storedUser))
         .thenThrow(new DataIntegrityViolationException("duplicate email"));
 
-    assertThrows(DuplicateEmailException.class, () -> service.updateProfile(principal(), request));
+    assertThrows(
+        DuplicateEmailException.class,
+        () -> service.updateProfile(authenticatedPrincipal(), request));
   }
 
   @Test
@@ -122,6 +128,7 @@ class AccountServiceTest {
         service(
             userRepository,
             passwordEncoder,
+            mock(RefreshTokenRepositoryJPA.class),
             mock(CompletedMaintenanceRepositoryJPA.class),
             mock(CompletedRecallRepositoryJPA.class),
             mock(UserVinRepositoryJPA.class),
@@ -132,7 +139,8 @@ class AccountServiceTest {
     when(passwordEncoder.matches("old-secret", "encoded-old")).thenReturn(true);
     when(passwordEncoder.encode("new-secret")).thenReturn("encoded-new");
 
-    service.changePassword(principal(), new ChangePasswordRequest("old-secret", "new-secret"));
+    service.changePassword(
+        authenticatedPrincipal(), new ChangePasswordRequest("old-secret", "new-secret"));
 
     assertEquals("encoded-new", storedUser.getUserPw());
     verify(userRepository).save(storedUser);
@@ -146,6 +154,7 @@ class AccountServiceTest {
         service(
             userRepository,
             passwordEncoder,
+            mock(RefreshTokenRepositoryJPA.class),
             mock(CompletedMaintenanceRepositoryJPA.class),
             mock(CompletedRecallRepositoryJPA.class),
             mock(UserVinRepositoryJPA.class),
@@ -157,7 +166,8 @@ class AccountServiceTest {
     assertThrows(
         InvalidAccountCredentialsException.class,
         () ->
-            service.changePassword(principal(), new ChangePasswordRequest("wrong", "new-secret")));
+            service.changePassword(
+                authenticatedPrincipal(), new ChangePasswordRequest("wrong", "new-secret")));
   }
 
   @Test
@@ -170,10 +180,12 @@ class AccountServiceTest {
         mock(CompletedRecallRepositoryJPA.class);
     UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
     VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
+    RefreshTokenRepositoryJPA refreshTokenRepository = mock(RefreshTokenRepositoryJPA.class);
     AccountService service =
         service(
             userRepository,
             passwordEncoder,
+            refreshTokenRepository,
             completedMaintenanceRepository,
             completedRecallRepository,
             userVinRepository,
@@ -184,7 +196,7 @@ class AccountServiceTest {
     when(passwordEncoder.matches("secret", "encoded-old")).thenReturn(true);
     when(userVinRepository.findVinNumbersForUser(1L)).thenReturn(List.of("JTENU5JR6M5962554"));
 
-    service.deleteAccount(principal(), new DeleteAccountRequest("secret"));
+    service.deleteAccount(authenticatedPrincipal(), new DeleteAccountRequest("secret"));
 
     InOrder inOrder =
         inOrder(
@@ -192,12 +204,14 @@ class AccountServiceTest {
             completedRecallRepository,
             userVinRepository,
             vinRepository,
+            refreshTokenRepository,
             userRepository);
     inOrder.verify(userVinRepository).findVinNumbersForUser(1L);
     inOrder.verify(completedMaintenanceRepository).deleteAllForUserId(1L);
     inOrder.verify(completedRecallRepository).deleteAllForUserId(1L);
     inOrder.verify(userVinRepository).deleteAllForUserId(1L);
     inOrder.verify(vinRepository).deleteOrphanedVins(List.of("JTENU5JR6M5962554"));
+    inOrder.verify(refreshTokenRepository).deleteByUser(storedUser);
     inOrder.verify(userRepository).delete(storedUser);
   }
 
@@ -205,6 +219,7 @@ class AccountServiceTest {
     return service(
         userRepository,
         mock(PasswordEncoder.class),
+        mock(RefreshTokenRepositoryJPA.class),
         mock(CompletedMaintenanceRepositoryJPA.class),
         mock(CompletedRecallRepositoryJPA.class),
         mock(UserVinRepositoryJPA.class),
@@ -214,6 +229,7 @@ class AccountServiceTest {
   private AccountService service(
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
+      RefreshTokenRepositoryJPA refreshTokenRepository,
       CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
       CompletedRecallRepositoryJPA completedRecallRepository,
       UserVinRepositoryJPA userVinRepository,
@@ -221,16 +237,15 @@ class AccountServiceTest {
     return new AccountService(
         userRepository,
         passwordEncoder,
+        refreshTokenRepository,
         completedMaintenanceRepository,
         completedRecallRepository,
         userVinRepository,
         vinRepository);
   }
 
-  private User principal() {
-    User user = new User();
-    user.setUserId(1L);
-    return user;
+  private AuthenticatedUser authenticatedPrincipal() {
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
   }
 
   private User storedUser() {

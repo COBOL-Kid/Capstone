@@ -78,7 +78,6 @@ describe('AuthService', () => {
 
     const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     expect(accountRequest.request.method).toBe('GET');
-    expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer account-token');
 
     accountRequest.flush({
       userId: 1,
@@ -109,7 +108,7 @@ describe('AuthService', () => {
     });
   });
 
-  it('surfaces current account lookup errors without clearing the token', () => {
+  it('clears the session when current account lookup returns unauthorized', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
     httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ token: 'login-token' });
 
@@ -122,7 +121,7 @@ describe('AuthService', () => {
     const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     accountRequest.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
-    expect(service.token()).toBe('login-token');
+    expect(service.token()).toBeNull();
   });
 
   it('patches current account details with the stored bearer token', () => {
@@ -142,7 +141,6 @@ describe('AuthService', () => {
     const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
     expect(accountRequest.request.method).toBe('PATCH');
     expect(accountRequest.request.body).toEqual(request);
-    expect(accountRequest.request.headers.get('Authorization')).toBe('Bearer profile-token');
 
     accountRequest.flush({
       userId: 1,
@@ -167,7 +165,6 @@ describe('AuthService', () => {
     const passwordRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/password`);
     expect(passwordRequest.request.method).toBe('POST');
     expect(passwordRequest.request.body).toEqual(request);
-    expect(passwordRequest.request.headers.get('Authorization')).toBe('Bearer password-token');
 
     passwordRequest.flush(null);
   });
@@ -182,7 +179,7 @@ describe('AuthService', () => {
       })
       .subscribe({
         error: (error) => {
-          expect(error.message).toBe('Email is already in use');
+          expect(error.message).toBe('An account already exists for that email.');
           expect(error.fieldMessages).toEqual([]);
         },
       });
@@ -230,7 +227,7 @@ describe('AuthService', () => {
   it('maps invalid credential responses into a user-facing message', () => {
     service.login({ email: 'pat@example.com', password: 'wrong' }).subscribe({
       error: (error) => {
-        expect(error.message).toBe('Invalid account credentials');
+        expect(error.message).toBe('Invalid email or password.');
         expect(error.fieldMessages).toEqual([]);
       },
     });

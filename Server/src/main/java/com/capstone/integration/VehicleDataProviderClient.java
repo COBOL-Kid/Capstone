@@ -21,46 +21,50 @@ public class VehicleDataProviderClient {
   }
 
   public VinDecodeResponse decodeVin(String vin) {
-    return get("/vin/{vin}", vin, VinDecodeResponse.class, true);
+    return getAutoDev("/vin/{vin}", vin, VinDecodeResponse.class, true);
   }
 
-  public MaintenanceScheduleResponse getMaintenanceSchedule(String vin) {
-    return get("/vehicle-maintenance/v4/{vin}", vin, MaintenanceScheduleResponse.class, false);
+  public RepairEstimatesResponse getRepairEstimates(String vin) {
+    return getVehicleDatabases("/repair-estimates/{vin}", vin, RepairEstimatesResponse.class);
   }
 
   public RepairCostResponse getRepairCosts(String vin) {
-    return get("/vehicle-repairs/v2/{vin}", vin, RepairCostResponse.class, false);
+    return getVehicleDatabases("/vehicle-repairs/v2/{vin}", vin, RepairCostResponse.class);
   }
 
-  public RecallProviderResponse getRecalls(String vin) {
-    return get(
-        providerConfig.getVehicleDataRecallBaseUrl(),
-        "/openrecalls/{vin}",
-        vin,
-        RecallProviderResponse.class,
-        providerConfig.getVehicleDataRecallApiKey(),
-        providerConfig.getVehicleDataRecallApiKeyHeader(),
-        false);
+  public VehicleRecallsResponse getRecalls(String vin) {
+    return getVehicleDatabases("/vehicle-recalls/{vin}", vin, VehicleRecallsResponse.class);
   }
 
   public OwnerManualResponse getOwnerManual(String vin) {
-    return get("/owner-manual/{vin}", vin, OwnerManualResponse.class, false);
+    return getVehicleDatabases("/owner-manual/{vin}", vin, OwnerManualResponse.class);
   }
 
   public VehiclePhotosResponse getPhotos(String vin) {
-    return get("/photos/{vin}", vin, VehiclePhotosResponse.class, false);
+    return getAutoDev("/photos/{vin}", vin, VehiclePhotosResponse.class, false);
   }
 
-  private <T> T get(
+  private <T> T getAutoDev(
       String path, String vin, Class<T> responseType, boolean notFoundMeansInvalidVin) {
     return get(
-        providerConfig.getVehicleDataBaseUrl(),
+        providerConfig.getAutoDevBaseUrl(),
         path,
         vin,
         responseType,
-        providerConfig.getVehicleDataApiKey(),
-        providerConfig.getVehicleDataApiKeyHeader(),
+        providerConfig.getAutoDevApiKey(),
+        providerConfig.getAutoDevApiKeyHeader(),
         notFoundMeansInvalidVin);
+  }
+
+  private <T> T getVehicleDatabases(String path, String vin, Class<T> responseType) {
+    return get(
+        providerConfig.getVehicleDatabasesBaseUrl(),
+        path,
+        vin,
+        responseType,
+        providerConfig.getVehicleDatabasesApiKey(),
+        providerConfig.getVehicleDatabasesApiKeyHeader(),
+        false);
   }
 
   private <T> T get(

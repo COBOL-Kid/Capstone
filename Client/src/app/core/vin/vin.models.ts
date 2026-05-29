@@ -30,20 +30,15 @@ export interface AddVinResponse {
   createdAssociation: boolean;
 }
 
-export interface VinErrorMessage {
-  message: string;
-  fieldMessages: string[];
-}
+import { FieldErrorMessage } from '../http/http-error.util';
+import {
+  CompletedMaintenanceResponse,
+  MiscMaintenanceCostResponse,
+  UpcomingMaintenanceIntervalResponse,
+} from '../maintenance/maintenance.models';
+import { CompletedRecallResponse, RecallResponse } from '../recall/recall.models';
 
-export interface ValidationErrorResponse {
-  message: string;
-  errors: FieldValidationError[];
-}
-
-export interface FieldValidationError {
-  field: string;
-  message: string;
-}
+export type VinErrorMessage = FieldErrorMessage;
 
 export interface VehicleDetailResponse {
   vin: string;
@@ -67,4 +62,13 @@ export interface VehicleDetailResponse {
 
 export interface UpdateMileageRequest {
   currentMileage: number;
+}
+
+export interface VehicleDashboardResponse {
+  detail: VehicleDetailResponse;
+  upcomingMaintenance: UpcomingMaintenanceIntervalResponse[];
+  completedMaintenance: CompletedMaintenanceResponse[];
+  uncompletedRecalls: RecallResponse[];
+  completedRecalls: CompletedRecallResponse[];
+  miscMaintenanceCosts: MiscMaintenanceCostResponse[];
 }

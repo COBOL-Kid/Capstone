@@ -1,5 +1,8 @@
 package com.capstone.integration;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record VinDecodeResponse(
     String vin,
     Boolean vinValid,

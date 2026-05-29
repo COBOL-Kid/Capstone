@@ -11,8 +11,9 @@ import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -24,10 +25,12 @@ public class VehicleOnboardingService {
   private final UserVinRepositoryJPA userVinRepository;
   private final RecallRepositoryJPA recallRepository;
   private final MaintMileageRepositoryJPA maintMileageRepository;
-  private final MaintCostRepositoryJPA maintCostRepository;
+  private final MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository;
+  private final MiscMaintCostRepositoryJPA miscMaintCostRepository;
   private final VehicleDataProviderClient vehicleDataProviderClient;
   private final VehicleDataMapper vehicleDataMapper;
   private final TransactionTemplate transactionTemplate;
+  private final ExecutorService vehicleDataExecutor;
 
   public VehicleOnboardingService(
       VinRepositoryJPA vinRepository,
@@ -35,19 +38,23 @@ public class VehicleOnboardingService {
       UserVinRepositoryJPA userVinRepository,
       RecallRepositoryJPA recallRepository,
       MaintMileageRepositoryJPA maintMileageRepository,
-      MaintCostRepositoryJPA maintCostRepository,
+      MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository,
+      MiscMaintCostRepositoryJPA miscMaintCostRepository,
       VehicleDataProviderClient vehicleDataProviderClient,
       VehicleDataMapper vehicleDataMapper,
-      TransactionTemplate transactionTemplate) {
+      TransactionTemplate transactionTemplate,
+      @Qualifier("vehicleDataExecutor") ExecutorService vehicleDataExecutor) {
     this.vinRepository = vinRepository;
     this.vehicleTypeRepository = vehicleTypeRepository;
     this.userVinRepository = userVinRepository;
     this.recallRepository = recallRepository;
     this.maintMileageRepository = maintMileageRepository;
-    this.maintCostRepository = maintCostRepository;
+    this.maintMileageSummaryRepository = maintMileageSummaryRepository;
+    this.miscMaintCostRepository = miscMaintCostRepository;
     this.vehicleDataProviderClient = vehicleDataProviderClient;
     this.vehicleDataMapper = vehicleDataMapper;
     this.transactionTemplate = transactionTemplate;
+    this.vehicleDataExecutor = vehicleDataExecutor;
   }
 
   public AddVinResponse addVinToUser(User user, AddVinRequest request) {
@@ -57,7 +64,7 @@ public class VehicleOnboardingService {
     if (request == null) {
       throw new IllegalArgumentException("Request is required");
     }
-    String normalizedVin = normalizeVin(request.vin());
+    String normalizedVin = VinNormalizer.normalize(request.vin());
     Integer currentMileage = request.currentMileage();
     if (currentMileage == null) {
       throw new IllegalArgumentException("Current mileage is required");
@@ -90,17 +97,18 @@ public class VehicleOnboardingService {
       return saveVinAndAssociation(user, normalizedVin, currentMileage, existingVehicleType);
     }
 
-    SupplementalVehicleData supplementalVehicleData = fetchSupplementalVehicleData(normalizedVin);
+    NewVehicleTypePrefetch prefetch = fetchNewVehicleTypeData(normalizedVin);
     VehicleType vehicleType =
-        vehicleDataMapper.toVehicleType(vinDecodeResponse, supplementalVehicleData.ownerManual());
+        vehicleDataMapper.toVehicleType(vinDecodeResponse, prefetch.supplemental().ownerManual());
     return saveFullVehicleData(
         user,
         normalizedVin,
         currentMileage,
         vehicleType,
-        supplementalVehicleData.maintenanceSchedule(),
-        supplementalVehicleData.repairCosts(),
-        supplementalVehicleData.recalls());
+        prefetch.supplemental().repairEstimates(),
+        prefetch.supplemental().repairCosts(),
+        prefetch.supplemental().recalls(),
+        prefetch.photos());
   }
 
   protected AddVinResponse linkExistingVin(User user, Vin vin, int currentMileage) {
@@ -126,8 +134,7 @@ public class VehicleOnboardingService {
           var existingVin = vinRepository.findById(vinNumber);
           boolean createdVin = existingVin.isEmpty();
           Vin vin =
-              existingVin.orElseGet(
-                  () -> vinRepository.save(new Vin(vinNumber, currentMileage, vehicleType)));
+              existingVin.orElseGet(() -> vinRepository.save(new Vin(vinNumber, vehicleType)));
           UserVin userVin =
               userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).orElse(null);
           boolean createdAssociation = false;
@@ -144,9 +151,10 @@ public class VehicleOnboardingService {
       String vinNumber,
       int currentMileage,
       VehicleType incomingVehicleType,
-      MaintenanceScheduleResponse maintenanceScheduleResponse,
+      RepairEstimatesResponse repairEstimatesResponse,
       RepairCostResponse repairCostResponse,
-      RecallProviderResponse recallResponse) {
+      VehicleRecallsResponse recallResponse,
+      List<String> preloadedPhotos) {
     return transactionTemplate.execute(
         _ -> {
           VehicleType vehicleType =
@@ -161,10 +169,12 @@ public class VehicleOnboardingService {
           boolean createdVehicleType = false;
           if (vehicleType == null) {
             vehicleType = vehicleTypeRepository.save(incomingVehicleType);
-            maintMileageRepository.saveAll(
-                vehicleDataMapper.toMaintMileages(vehicleType, maintenanceScheduleResponse));
-            maintCostRepository.saveAll(
-                vehicleDataMapper.toMaintCosts(vehicleType, repairCostResponse));
+            MaintenanceScheduleImport scheduleImport =
+                vehicleDataMapper.toMaintenanceScheduleImport(vehicleType, repairEstimatesResponse);
+            maintMileageSummaryRepository.saveAll(scheduleImport.summaries());
+            maintMileageRepository.saveAll(scheduleImport.maintMileages());
+            miscMaintCostRepository.saveAll(
+                vehicleDataMapper.toMiscMaintCosts(vehicleType, repairCostResponse));
             recallRepository.saveAll(vehicleDataMapper.toRecalls(vehicleType, recallResponse));
             createdVehicleType = true;
           }
@@ -172,13 +182,13 @@ public class VehicleOnboardingService {
           var existingVin = vinRepository.findById(vinNumber);
           boolean createdVin = existingVin.isEmpty();
           Vin vin =
-              existingVin.orElseGet(
-                  () -> vinRepository.save(new Vin(vinNumber, currentMileage, savedVehicleType)));
+              existingVin.orElseGet(() -> vinRepository.save(new Vin(vinNumber, savedVehicleType)));
           UserVin userVin =
               userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).orElse(null);
           boolean createdAssociation = false;
           if (userVin == null) {
-            userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
+            userVin =
+                userVinRepository.save(newUserVin(user, vin, currentMileage, preloadedPhotos));
             createdAssociation = true;
           }
           return response(vin, userVin, createdVin, createdVehicleType, createdAssociation);
@@ -186,8 +196,13 @@ public class VehicleOnboardingService {
   }
 
   private UserVin newUserVin(User user, Vin vin, int currentMileage) {
+    return newUserVin(user, vin, currentMileage, null);
+  }
+
+  private UserVin newUserVin(User user, Vin vin, int currentMileage, List<String> preloadedPhotos) {
     UserVin userVin = new UserVin(user, vin, currentMileage);
-    List<String> availableImageUrls = fetchVehiclePhotos(vin.getVin());
+    List<String> availableImageUrls =
+        preloadedPhotos != null ? preloadedPhotos : fetchVehiclePhotos(vin.getVin());
     userVin.setAvailableImageUrls(availableImageUrls);
     userVin.setSelectedImageUrl(
         availableImageUrls.isEmpty() ? null : availableImageUrls.getFirst());
@@ -227,20 +242,23 @@ public class VehicleOnboardingService {
         .toList();
   }
 
-  private SupplementalVehicleData fetchSupplementalVehicleData(String normalizedVin) {
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      Future<OwnerManualResponse> ownerManual =
-          executor.submit(() -> vehicleDataProviderClient.getOwnerManual(normalizedVin));
-      Future<MaintenanceScheduleResponse> maintenanceSchedule =
-          executor.submit(() -> vehicleDataProviderClient.getMaintenanceSchedule(normalizedVin));
-      Future<RepairCostResponse> repairCosts =
-          executor.submit(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin));
-      Future<RecallProviderResponse> recalls =
-          executor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
+  private NewVehicleTypePrefetch fetchNewVehicleTypeData(String normalizedVin) {
+    Future<List<String>> photos =
+        vehicleDataExecutor.submit(() -> fetchVehiclePhotos(normalizedVin));
+    Future<OwnerManualResponse> ownerManual =
+        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getOwnerManual(normalizedVin));
+    Future<RepairEstimatesResponse> repairEstimates =
+        vehicleDataExecutor.submit(
+            () -> vehicleDataProviderClient.getRepairEstimates(normalizedVin));
+    Future<RepairCostResponse> repairCosts =
+        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin));
+    Future<VehicleRecallsResponse> recalls =
+        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
 
-      return new SupplementalVehicleData(
-          await(ownerManual), await(maintenanceSchedule), await(repairCosts), await(recalls));
-    }
+    SupplementalVehicleData supplemental =
+        new SupplementalVehicleData(
+            await(ownerManual), await(repairEstimates), await(repairCosts), await(recalls));
+    return new NewVehicleTypePrefetch(supplemental, await(photos));
   }
 
   private <T> T await(Future<T> future) {
@@ -261,20 +279,12 @@ public class VehicleOnboardingService {
     }
   }
 
-  private String normalizeVin(String vin) {
-    if (vin == null || vin.isBlank()) {
-      throw new IllegalArgumentException("VIN is required");
-    }
-    String normalizedVin = vin.trim().toUpperCase();
-    if (normalizedVin.length() != 17) {
-      throw new IllegalArgumentException("VIN must be 17 characters");
-    }
-    return normalizedVin;
-  }
-
   private record SupplementalVehicleData(
       OwnerManualResponse ownerManual,
-      MaintenanceScheduleResponse maintenanceSchedule,
+      RepairEstimatesResponse repairEstimates,
       RepairCostResponse repairCosts,
-      RecallProviderResponse recalls) {}
+      VehicleRecallsResponse recalls) {}
+
+  private record NewVehicleTypePrefetch(
+      SupplementalVehicleData supplemental, List<String> photos) {}
 }

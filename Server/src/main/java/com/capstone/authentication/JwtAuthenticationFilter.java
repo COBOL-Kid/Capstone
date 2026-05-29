@@ -1,5 +1,6 @@
 package com.capstone.authentication;
 
+import com.capstone.models.Role;
 import io.jsonwebtoken.JwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
@@ -12,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -25,11 +24,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
   private final JwtService jwtService;
-  private final UserDetailsService userDetailsService;
 
-  public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+  public JwtAuthenticationFilter(JwtService jwtService) {
     this.jwtService = jwtService;
-    this.userDetailsService = userDetailsService;
   }
 
   @Override
@@ -47,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     try {
       String userEmail = jwtService.extractUserEmail(jwtToken);
       if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-        UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        AuthenticatedUser userDetails = toAuthenticatedUser(jwtToken, userEmail);
         if (jwtService.validateToken(jwtToken, userDetails)) {
           UsernamePasswordAuthenticationToken authToken =
               new UsernamePasswordAuthenticationToken(
@@ -60,5 +57,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       log.debug("Rejecting request with invalid JWT: {}", ex.getMessage());
     }
     filterChain.doFilter(request, response);
+  }
+
+  private AuthenticatedUser toAuthenticatedUser(String jwtToken, String userEmail) {
+    Long userId = jwtService.extractUserId(jwtToken);
+    String roleName = jwtService.extractRole(jwtToken);
+    if (roleName == null || roleName.isBlank()) {
+      throw new IllegalArgumentException("JWT is missing role claim");
+    }
+    Role role = Role.valueOf(roleName);
+    return new AuthenticatedUser(userId, userEmail, role);
   }
 }

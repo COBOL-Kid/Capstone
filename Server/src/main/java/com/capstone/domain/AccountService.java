@@ -1,5 +1,6 @@
 package com.capstone.domain;
 
+import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.EmailNormalizer;
 import com.capstone.data.*;
 import com.capstone.models.User;
@@ -18,6 +19,7 @@ public class AccountService {
 
   private final UserRepositoryJPA userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final RefreshTokenRepositoryJPA refreshTokenRepository;
   private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
   private final CompletedRecallRepositoryJPA completedRecallRepository;
   private final UserVinRepositoryJPA userVinRepository;
@@ -26,12 +28,14 @@ public class AccountService {
   public AccountService(
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
+      RefreshTokenRepositoryJPA refreshTokenRepository,
       CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
       CompletedRecallRepositoryJPA completedRecallRepository,
       UserVinRepositoryJPA userVinRepository,
       VinRepositoryJPA vinRepository) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
+    this.refreshTokenRepository = refreshTokenRepository;
     this.completedMaintenanceRepository = completedMaintenanceRepository;
     this.completedRecallRepository = completedRecallRepository;
     this.userVinRepository = userVinRepository;
@@ -39,12 +43,12 @@ public class AccountService {
   }
 
   @Transactional(readOnly = true)
-  public AccountResponse getAccount(User principal) {
+  public AccountResponse getAccount(AuthenticatedUser principal) {
     return toResponse(loadCurrentUser(principal));
   }
 
   @Transactional
-  public AccountResponse updateProfile(User principal, UpdateAccountRequest request) {
+  public AccountResponse updateProfile(AuthenticatedUser principal, UpdateAccountRequest request) {
     User user = loadCurrentUser(principal);
     String normalizedEmail = EmailNormalizer.normalize(request.email());
     userRepository
@@ -66,7 +70,7 @@ public class AccountService {
   }
 
   @Transactional
-  public void changePassword(User principal, ChangePasswordRequest request) {
+  public void changePassword(AuthenticatedUser principal, ChangePasswordRequest request) {
     User user = loadCurrentUser(principal);
     if (!passwordEncoder.matches(request.currentPassword(), user.getUserPw())) {
       throw new InvalidAccountCredentialsException();
@@ -76,7 +80,7 @@ public class AccountService {
   }
 
   @Transactional
-  public void deleteAccount(User principal, DeleteAccountRequest request) {
+  public void deleteAccount(AuthenticatedUser principal, DeleteAccountRequest request) {
     User user = loadCurrentUser(principal);
     if (!passwordEncoder.matches(request.password(), user.getUserPw())) {
       throw new InvalidAccountCredentialsException();
@@ -89,15 +93,16 @@ public class AccountService {
     if (!userVins.isEmpty()) {
       vinRepository.deleteOrphanedVins(userVins);
     }
+    refreshTokenRepository.deleteByUser(user);
     userRepository.delete(user);
   }
 
-  private User loadCurrentUser(User principal) {
-    if (principal == null || principal.getUserId() == null) {
+  private User loadCurrentUser(AuthenticatedUser principal) {
+    if (principal == null || principal.userId() == null) {
       throw new InvalidAccountCredentialsException();
     }
     return userRepository
-        .findById(principal.getUserId())
+        .findById(principal.userId())
         .orElseThrow(InvalidAccountCredentialsException::new);
   }
 

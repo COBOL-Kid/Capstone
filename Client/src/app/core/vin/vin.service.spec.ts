@@ -22,6 +22,15 @@ describe('VinService', () => {
     httpTesting.verify();
   });
 
+  it('returns empty array for 204 list responses', () => {
+    service.getUserVehicles().subscribe((items) => expect(items).toEqual([]));
+
+    httpTesting.expectOne(apiConfig.vinUrl).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+  });
+
   it('maps 404 responses into a VIN-not-found message', () => {
     service.addVehicle({ vin: 'MISSINGVIN1234567', currentMileage: 1000 }).subscribe({
       error: (error) => {
@@ -74,6 +83,41 @@ describe('VinService', () => {
       },
       { status: 400, statusText: 'Bad Request' },
     );
+  });
+
+  it('loads vehicle dashboard', () => {
+    const dashboard = {
+      detail: {
+        vin: 'JTENU5JR6M5962554',
+        vehicleTypeId: 7,
+        vehicleMake: 'Toyota',
+        vehicleModel: '4RUNNER',
+        vehicleTrim: 'SRS Prem',
+        vehicleYear: '2021',
+        vehicleStyle: 'SUV',
+        sourceVin: null,
+        origin: null,
+        body: null,
+        engineDescription: null,
+        transmissionStyle: null,
+        driveType: null,
+        ownersManual: null,
+        currentMileage: 45000,
+        availableImageUrls: [],
+        selectedImageUrl: '',
+      },
+      upcomingMaintenance: [],
+      completedMaintenance: [],
+      uncompletedRecalls: [],
+      completedRecalls: [],
+    };
+
+    service.getVehicleDashboard('JTENU5JR6M5962554').subscribe((response) => {
+      expect(response).toEqual(dashboard);
+    });
+
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/dashboard`);
+    request.flush(dashboard);
   });
 
   it('loads vehicle detail and patches mileage', () => {

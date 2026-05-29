@@ -137,6 +137,7 @@ public class AuthenticationService {
   private Map<String, Object> buildExtraClaims(User user) {
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("userId", user.getUserId());
+    extraClaims.put("role", user.getRole().name());
     return extraClaims;
   }
 

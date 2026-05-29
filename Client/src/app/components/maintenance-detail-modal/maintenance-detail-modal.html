@@ -1,74 +1,125 @@
 <div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
-        #dialog
-        aria-labelledby="maintenance-detail-modal-title"
-        aria-modal="true"
-        class="hc-dialog"
-        role="dialog"
-        tabindex="-1"
+  #dialog
+  aria-labelledby="maintenance-detail-modal-title"
+  aria-modal="true"
+  class="hc-dialog"
+  role="dialog"
+  tabindex="-1"
 >
-    <button (click)="close.emit()" aria-label="Close maintenance detail dialog" class="hc-dialog__close" type="button">
-        ×
-    </button>
+  <button
+    (click)="close.emit()"
+    aria-label="Close maintenance detail dialog"
+    class="hc-dialog__close"
+    type="button"
+  >
+    ×
+  </button>
 
-    <header class="hc-dialog__header">
-        <h2 id="maintenance-detail-modal-title">Maintenance</h2>
-    </header>
+  <header class="hc-dialog__header">
+    <h2 id="maintenance-detail-modal-title">Maintenance</h2>
+  </header>
 
-    <div class="hc-form">
-        @if (isCompleted() && completedItem(); as item) {
-        <dl class="hc-detail-fields">
-            <div><dt>Description</dt><dd>{{ item.maintDesc }}</dd></div>
-            <div><dt>Due at</dt><dd>{{ item.mileageDue }} miles</dd></div>
-            <div><dt>Completed</dt><dd>{{ item.completedDate }} at {{ item.mileageCompleted }} miles</dd></div>
-            @if (item.cost != null) {
-            <div><dt>Cost</dt><dd>${{ item.cost }}</dd></div>
-            }
-            @if (item.notes) {
-            <div><dt>Notes</dt><dd>{{ item.notes }}</dd></div>
-            }
-        </dl>
-        <button (click)="markIncomplete()" [disabled]="isSubmitting()" class="hc-btn hc-btn--primary hc-btn--dialog-submit hc-btn--danger" type="button">
-            {{ isSubmitting() ? 'Updating...' : 'Mark incomplete' }}
-        </button>
-        } @else if (upcomingItem(); as item) {
-        <dl class="hc-detail-fields">
-            <div><dt>Description</dt><dd>{{ item.maintDesc }}</dd></div>
-            <div><dt>Due at</dt><dd>{{ item.mileageDue }} miles</dd></div>
-        </dl>
-
-        @if (showCompleteForm()) {
-        <form (ngSubmit)="markComplete()" [formGroup]="completeForm" class="hc-detail-complete-form" novalidate>
-            <label class="hc-field">
-                <span>Completed date</span>
-                <input formControlName="completedDate" required type="date"/>
-            </label>
-            <label class="hc-field">
-                <span>Mileage completed</span>
-                <input formControlName="mileageCompleted" min="0" required type="number"/>
-            </label>
-            <label class="hc-field">
-                <span>Cost (optional)</span>
-                <input formControlName="cost" min="0" step="0.01" type="number"/>
-            </label>
-            <label class="hc-field">
-                <span>Notes (optional)</span>
-                <textarea formControlName="notes" rows="3"></textarea>
-            </label>
-            <button [disabled]="isSubmitting()" class="hc-btn hc-btn--primary hc-btn--dialog-submit" type="submit">
-                {{ isSubmitting() ? 'Saving...' : 'Confirm complete' }}
-            </button>
-        </form>
-        } @else {
-        <button (click)="openCompleteForm()" class="hc-btn hc-btn--primary hc-btn--dialog-submit" type="button">Mark complete</button>
-        }
-        }
-
-        @if (serverError(); as error) {
-        <div class="hc-alert hc-alert--error" role="alert">
-            <p>{{ error }}</p>
+  <div class="hc-form">
+    @if (isCompleted() && completedItem(); as item) {
+      <dl class="hc-detail-fields">
+        <div>
+          <dt>Description</dt>
+          <dd>{{ item.maintDesc }}</dd>
         </div>
+        <div>
+          <dt>Due at</dt>
+          <dd>{{ item.mileageDue }} miles</dd>
+        </div>
+        <div>
+          <dt>Completed</dt>
+          <dd>{{ item.completedDate }} at {{ item.mileageCompleted }} miles</dd>
+        </div>
+        @if (item.cost != null) {
+          <div>
+            <dt>Cost</dt>
+            <dd>${{ item.cost }}</dd>
+          </div>
         }
-    </div>
+        @if (item.notes) {
+          <div>
+            <dt>Notes</dt>
+            <dd>{{ item.notes }}</dd>
+          </div>
+        }
+      </dl>
+      <button
+        (click)="markIncomplete()"
+        [disabled]="isSubmitting()"
+        class="hc-btn hc-btn--primary hc-btn--dialog-submit hc-btn--danger"
+        type="button"
+      >
+        {{ isSubmitting() ? 'Updating...' : 'Mark incomplete' }}
+      </button>
+    } @else if (upcomingItem(); as item) {
+      <dl class="hc-detail-fields">
+        <div>
+          <dt>Description</dt>
+          <dd>{{ item.maintDesc }}</dd>
+        </div>
+        <div>
+          <dt>Due at</dt>
+          <dd>{{ item.mileageDue }} miles</dd>
+        </div>
+      </dl>
+
+      @if (showCompleteForm()) {
+        <form
+          (ngSubmit)="markComplete()"
+          [formGroup]="completeForm"
+          class="hc-detail-complete-form"
+          novalidate
+        >
+          <label class="hc-field">
+            <span>Completed date</span>
+            <input
+              [max]="maxCompletedDate"
+              formControlName="completedDate"
+              required
+              type="date"
+            />
+          </label>
+          <label class="hc-field">
+            <span>Mileage completed</span>
+            <input formControlName="mileageCompleted" min="0" required type="number" />
+          </label>
+          <label class="hc-field">
+            <span>Cost (optional)</span>
+            <input formControlName="cost" min="0" step="0.01" type="number" />
+          </label>
+          <label class="hc-field">
+            <span>Notes (optional)</span>
+            <textarea formControlName="notes" rows="3"></textarea>
+          </label>
+          <button
+            [disabled]="isSubmitting()"
+            class="hc-btn hc-btn--primary hc-btn--dialog-submit"
+            type="submit"
+          >
+            {{ isSubmitting() ? 'Saving...' : 'Confirm complete' }}
+          </button>
+        </form>
+      } @else {
+        <button
+          (click)="openCompleteForm()"
+          class="hc-btn hc-btn--primary hc-btn--dialog-submit"
+          type="button"
+        >
+          Mark complete
+        </button>
+      }
+    }
+
+    @if (serverError(); as error) {
+      <div class="hc-alert hc-alert--error" role="alert">
+        <p>{{ error }}</p>
+      </div>
+    }
+  </div>
 </section>

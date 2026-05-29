@@ -201,16 +201,14 @@ export class AccountDrawerComponent {
       return;
     }
 
-    this.authService
-      .validateSession()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((valid) => {
-        if (valid) {
-          void this.router.navigate(['/home']);
-        }
+    if (this.authService.isSignedIn()) {
+      void this.router.navigate(['/home']);
+      this.loadAccountDetails(true);
+      return;
+    }
 
-        this.loadAccountDetails();
-      });
+    this.resetSignedInState();
+    this.status.set('signed-out');
   }
 
   @HostListener('document:keydown.escape')
@@ -222,7 +220,19 @@ export class AccountDrawerComponent {
     this.close();
   }
 
-  private loadAccountDetails(): void {
+  private loadAccountDetails(forceRefresh = false): void {
+    const cachedAccount = forceRefresh ? null : this.authService.account();
+    if (cachedAccount) {
+      this.account.set(cachedAccount);
+      this.resetProfileForm(cachedAccount);
+      this.isEditingProfile.set(false);
+      this.profileServerError.set(null);
+      this.profileSuccessMessage.set(null);
+      this.passwordSuccessMessage.set(null);
+      this.status.set('signed-in');
+      return;
+    }
+
     this.account.set(null);
 
     if (!this.authService.isSignedIn()) {
@@ -234,7 +244,7 @@ export class AccountDrawerComponent {
     this.status.set('loading');
 
     this.authService
-      .getCurrentAccount()
+      .getCurrentAccount({ forceRefresh })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (account) => {

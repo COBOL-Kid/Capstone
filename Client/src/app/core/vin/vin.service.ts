@@ -6,11 +6,13 @@ import {
   AddVinResponse,
   UpdateMileageRequest,
   UserVehicleResponse,
-  ValidationErrorResponse,
+  VehicleDashboardResponse,
   VehicleDetailResponse,
   VinErrorMessage,
 } from './vin.models';
 import { apiConfig } from '../api/api.config';
+import { normalizeListResponse } from '../http/normalize-list-response';
+import { toFieldErrorMessage } from '../http/http-error.util';
 
 const vinNotFoundMessage =
   "We couldn't find a vehicle for that VIN. Check the number and try again.";
@@ -25,11 +27,15 @@ export class VinService {
   private readonly baseUrl = apiConfig.vinUrl;
 
   getUserVehicles(): Observable<UserVehicleResponse[]> {
-    return this.http.get<UserVehicleResponse[]>(this.baseUrl);
+    return normalizeListResponse(this.http.get<UserVehicleResponse[]>(this.baseUrl));
   }
 
   getVehicleDetail(vin: string): Observable<VehicleDetailResponse> {
     return this.http.get<VehicleDetailResponse>(`${this.baseUrl}/${vin}`);
+  }
+
+  getVehicleDashboard(vin: string): Observable<VehicleDashboardResponse> {
+    return this.http.get<VehicleDashboardResponse>(`${this.baseUrl}/${vin}/dashboard`);
   }
 
   updateMileage(vin: string, request: UpdateMileageRequest): Observable<VehicleDetailResponse> {
@@ -58,13 +64,6 @@ export class VinService {
   }
 
   private toVinErrorMessage(error: HttpErrorResponse): VinErrorMessage {
-    if (this.isValidationErrorResponse(error.error)) {
-      return {
-        message: error.error.message,
-        fieldMessages: error.error.errors.map((fieldError) => fieldError.message),
-      };
-    }
-
     if (error.status === 404) {
       return { message: vinNotFoundMessage, fieldMessages: [] };
     }
@@ -73,20 +72,11 @@ export class VinService {
       return { message: serverErrorMessage, fieldMessages: [] };
     }
 
-    if (typeof error.error === 'string' && error.error.trim().length > 0) {
-      return { message: error.error, fieldMessages: [] };
+    const fieldError = toFieldErrorMessage(error, genericErrorMessage);
+    if (fieldError.message !== genericErrorMessage || fieldError.fieldMessages.length > 0) {
+      return fieldError;
     }
 
     return { message: genericErrorMessage, fieldMessages: [] };
-  }
-
-  private isValidationErrorResponse(value: unknown): value is ValidationErrorResponse {
-    return (
-      typeof value === 'object' &&
-      value !== null &&
-      'message' in value &&
-      'errors' in value &&
-      Array.isArray((value as ValidationErrorResponse).errors)
-    );
   }
 }

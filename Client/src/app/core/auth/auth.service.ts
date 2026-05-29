@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of, throwError } from 'rxjs';
+import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
 
 import {
   AccountDetails,
@@ -10,15 +10,20 @@ import {
   ChangePasswordRequest,
   RegisterRequest,
   UpdateAccountRequest,
-  ValidationErrorResponse,
 } from './auth.models';
 import { apiConfig } from '../api/api.config';
+import { toFieldErrorMessage } from '../http/http-error.util';
 
 const authTokenStorageKey = 'honest-car.access-token';
+
+export interface GetCurrentAccountOptions {
+  forceRefresh?: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly token = signal<string | null>(this.readStoredToken());
+  readonly account = signal<AccountDetails | null>(null);
   readonly isSignedIn = computed(() => this.token() !== null);
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = apiConfig.authUrl;
@@ -67,7 +72,7 @@ export class AuthService {
   logout(): Observable<void> {
     return this.http.post<void>(`${this.apiBaseUrl}/logout`, {}, { withCredentials: true }).pipe(
       map((response) => {
-        this.clearToken();
+        this.clearSession();
         return response;
       }),
       catchError((error) => this.handleAuthError(error)),
@@ -83,6 +88,10 @@ export class AuthService {
       return of(false);
     }
 
+    if (this.account() !== null) {
+      return of(true);
+    }
+
     return this.getCurrentAccount().pipe(
       map(() => true),
       catchError(() => {
@@ -92,35 +101,38 @@ export class AuthService {
     );
   }
 
-  getCurrentAccount(): Observable<AccountDetails> {
-    return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`, {
-      headers: this.accountAuthorizationHeaders(),
-    });
+  getCurrentAccount(options: GetCurrentAccountOptions = {}): Observable<AccountDetails> {
+    const cached = this.account();
+    if (cached && !options.forceRefresh) {
+      return of(cached);
+    }
+
+    return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`).pipe(
+      tap((account) => this.account.set(account)),
+      catchError((error) => {
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          this.clearSession();
+        }
+        return throwError(() => error);
+      }),
+    );
   }
 
   updateCurrentAccount(request: UpdateAccountRequest): Observable<AccountDetails> {
-    return this.http
-      .patch<AccountDetails>(`${this.accountApiBaseUrl}/me`, request, {
-        headers: this.accountAuthorizationHeaders(),
-      })
-      .pipe(catchError((error) => this.handleAuthError(error)));
+    return this.http.patch<AccountDetails>(`${this.accountApiBaseUrl}/me`, request).pipe(
+      tap((account) => this.account.set(account)),
+      catchError((error) => this.handleAuthError(error)),
+    );
   }
 
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http
-      .post<void>(`${this.accountApiBaseUrl}/password`, request, {
-        headers: this.accountAuthorizationHeaders(),
-      })
+      .post<void>(`${this.accountApiBaseUrl}/password`, request)
       .pipe(catchError((error) => this.handleAuthError(error)));
   }
 
-  private accountAuthorizationHeaders(): { Authorization: string } | undefined {
-    const token = this.token();
-
-    return token ? { Authorization: `Bearer ${token}` } : undefined;
-  }
-
   private storeToken(token: string): void {
+    this.account.set(null);
     this.token.set(token);
 
     try {
@@ -132,6 +144,7 @@ export class AuthService {
 
   private clearToken(): void {
     this.token.set(null);
+    this.account.set(null);
 
     try {
       localStorage.removeItem(authTokenStorageKey);
@@ -160,17 +173,6 @@ export class AuthService {
   }
 
   private toAuthErrorMessage(error: HttpErrorResponse): AuthErrorMessage {
-    if (this.isValidationErrorResponse(error.error)) {
-      return {
-        message: error.error.message,
-        fieldMessages: error.error.errors.map((fieldError) => fieldError.message),
-      };
-    }
-
-    if (typeof error.error === 'string' && error.error.trim().length > 0) {
-      return { message: error.error, fieldMessages: [] };
-    }
-
     if (error.status === 401) {
       return { message: 'Invalid email or password.', fieldMessages: [] };
     }
@@ -179,16 +181,6 @@ export class AuthService {
       return { message: 'An account already exists for that email.', fieldMessages: [] };
     }
 
-    return { message: 'Unable to complete the request. Please try again.', fieldMessages: [] };
-  }
-
-  private isValidationErrorResponse(value: unknown): value is ValidationErrorResponse {
-    return (
-      typeof value === 'object' &&
-      value !== null &&
-      'message' in value &&
-      'errors' in value &&
-      Array.isArray((value as ValidationErrorResponse).errors)
-    );
+    return toFieldErrorMessage(error, 'Unable to complete the request. Please try again.');
   }
 }

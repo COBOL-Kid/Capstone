@@ -25,6 +25,18 @@ public class JwtService {
     return extractClaim(token, Claims::getSubject);
   }
 
+  public Long extractUserId(String token) {
+    Number userId = extractClaim(token, claims -> claims.get("userId", Number.class));
+    if (userId == null) {
+      throw new IllegalArgumentException("JWT is missing userId claim");
+    }
+    return userId.longValue();
+  }
+
+  public String extractRole(String token) {
+    return extractClaim(token, claims -> claims.get("role", String.class));
+  }
+
   public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
     final Claims claims = getClaimsFromToken(token);
     return claimsResolver.apply(claims);
@@ -42,7 +54,14 @@ public class JwtService {
 
   public boolean validateToken(String token, UserDetails ownerDetails) {
     final String userEmail = extractUserEmail(token);
-    return (userEmail.equals(ownerDetails.getUsername()) && !isTokenExpired(token));
+    if (!userEmail.equals(ownerDetails.getUsername()) || isTokenExpired(token)) {
+      return false;
+    }
+    if (ownerDetails instanceof AuthenticatedUser authenticatedUser) {
+      Long tokenUserId = extractUserId(token);
+      return tokenUserId.equals(authenticatedUser.userId());
+    }
+    return true;
   }
 
   private boolean isTokenExpired(String token) {

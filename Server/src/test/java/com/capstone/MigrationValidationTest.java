@@ -45,6 +45,22 @@ class MigrationValidationTest {
   }
 
   @Test
+  void vinMigrationDropsUnusedVinMileageColumn() {
+    Integer columnCount =
+        new JdbcTemplate(dataSource)
+            .queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE lower(table_name) = 'vin'
+                  AND lower(column_name) = 'vin_mileage'
+                """,
+                Integer.class);
+
+    assertEquals(0, columnCount);
+  }
+
+  @Test
   void accountMigrationHardensUserColumns() {
     Integer columnCount =
         new JdbcTemplate(dataSource)
@@ -69,5 +85,30 @@ class MigrationValidationTest {
 
     assertEquals(2, columnCount);
     assertEquals(254, emailLength);
+  }
+
+  @Test
+  void readIndexMigrationAddsPerformanceIndexes() {
+    JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.indexes
+            WHERE lower(table_name) = 'maint_mileage'
+              AND lower(index_name) = 'idx_maint_mileage_vehicle_type_mileage'
+            """,
+            Integer.class));
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.indexes
+            WHERE lower(table_name) = 'recall'
+              AND lower(index_name) = 'idx_recall_vehicle_type'
+            """,
+            Integer.class));
   }
 }

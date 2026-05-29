@@ -44,7 +44,6 @@ CREATE TABLE vehicle_type
 CREATE TABLE vin
 (
     vin_num         CHAR(17) PRIMARY KEY,
-    vin_mileage     INTEGER NOT NULL,
     vehicle_type_id BIGINT  NOT NULL,
     CONSTRAINT fk_vin_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
 );
@@ -67,24 +66,60 @@ CREATE TABLE maint_mileage
     vehicle_type_id  BIGINT       NOT NULL,
     mileage_due      INT          NOT NULL,
     maint_desc       VARCHAR(255) NOT NULL,
+    is_inspect       BOOLEAN      NOT NULL DEFAULT FALSE,
     CONSTRAINT uk_maint_mileage UNIQUE (vehicle_type_id, mileage_due, maint_desc),
     CONSTRAINT fk_maint_mileage_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
 );
 
-CREATE TABLE maint_cost
+CREATE TABLE misc_maint_cost
 (
-    maint_cost_id    BIGINT AUTO_INCREMENT PRIMARY KEY,
-    vehicle_type_id  BIGINT,
-    maint_title      VARCHAR(120) NOT NULL,
-    maint_desc       TEXT,
-    independent_avg  INT,
-    independent_high INT,
-    independent_low  INT,
-    dealer_avg       INT,
-    dealer_high      INT,
-    dealer_low       INT,
-    CONSTRAINT uk_maint_cost UNIQUE (vehicle_type_id, maint_title),
-    CONSTRAINT fk_maint_cost_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
+    misc_maint_cost_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_type_id    BIGINT,
+    maint_title        VARCHAR(120) NOT NULL,
+    maint_desc         TEXT,
+    independent_avg    INT,
+    independent_high   INT,
+    independent_low    INT,
+    dealer_avg         INT,
+    dealer_high        INT,
+    dealer_low         INT,
+    CONSTRAINT uk_misc_maint_cost UNIQUE (vehicle_type_id, maint_title),
+    CONSTRAINT fk_misc_maint_cost_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
+);
+
+CREATE TABLE maint_mileage_summary
+(
+    maint_mileage_summary_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_type_id          BIGINT         NOT NULL,
+    mileage_due              INT            NOT NULL,
+    total_parts_cost         DECIMAL(10, 2) NOT NULL,
+    total_labor_cost         DECIMAL(10, 2) NOT NULL,
+    total_cost               DECIMAL(10, 2) NOT NULL,
+    currency                 VARCHAR(3)     NOT NULL,
+    CONSTRAINT uk_maint_mileage_summary UNIQUE (vehicle_type_id, mileage_due),
+    CONSTRAINT fk_maint_mileage_summary_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
+);
+
+CREATE TABLE maint_part_line
+(
+    maint_part_line_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    maint_mileage_id   BIGINT         NOT NULL,
+    part_desc          VARCHAR(255)   NOT NULL,
+    total_cost         DECIMAL(10, 2) NOT NULL,
+    currency           VARCHAR(3)     NOT NULL,
+    CONSTRAINT fk_maint_part_line_maint_mileage FOREIGN KEY (maint_mileage_id) REFERENCES maint_mileage (maint_mileage_id)
+);
+
+CREATE TABLE maint_labor_line
+(
+    maint_labor_line_id  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    maint_mileage_id     BIGINT         NOT NULL,
+    time_required_hours  DECIMAL(6, 2)  NOT NULL,
+    hourly_rate          DECIMAL(10, 2) NOT NULL,
+    total_cost           DECIMAL(10, 2) NOT NULL,
+    currency             VARCHAR(3)     NOT NULL,
+    CONSTRAINT uk_maint_labor_line_maint_mileage UNIQUE (maint_mileage_id),
+    CONSTRAINT fk_maint_labor_line_maint_mileage FOREIGN KEY (maint_mileage_id) REFERENCES maint_mileage (maint_mileage_id)
 );
 
 CREATE TABLE recall
@@ -140,8 +175,23 @@ CREATE TABLE completed_maintenance
     CONSTRAINT fk_completed_maintenance_maint_mileage FOREIGN KEY (maint_mileage_id) REFERENCES maint_mileage (maint_mileage_id)
 );
 
--- Demo data for manual frontend testing
+CREATE INDEX idx_completed_maintenance_user_vin
+    ON completed_maintenance (user_id, vin_num);
+
+CREATE INDEX idx_completed_recall_user_vin
+    ON completed_recall (user_id, vin_num);
+
+CREATE INDEX idx_maint_mileage_vehicle_type_mileage
+    ON maint_mileage (vehicle_type_id, mileage_due);
+
+CREATE INDEX idx_recall_vehicle_type
+    ON recall (vehicle_type_id);
+
+-- Demo data for manual frontend testing (no external vehicle-data API calls required).
 -- Login: test.user@example.com / Password123!
+-- Vehicles on /home after login:
+--   4T1C11AK5LU123456 — 2020 Toyota Camry (45,200 mi): upcoming 30k/45k service, open + completed recalls, misc costs
+--   2HGFC2F59JH543210 — 2018 Honda Civic (78,500 mi): upcoming 30k/80k service, open recall, maintenance history
 
 INSERT INTO user_detail (user_id, user_email, first_name, last_name, user_sms, user_pw, role,
                          failed_login_attempts, lockout_end, created_at, updated_at)
@@ -158,29 +208,52 @@ VALUES (1, 'Toyota', 'Camry', 'SE', '2020', '4-Door Sedan', '4T1C11AK5LU123456',
         '2.0L 4-Cylinder', 'CVT', 'FWD',
         'https://owners.honda.com/vehicles/information/2018/Civic');
 
-INSERT INTO vin (vin_num, vin_mileage, vehicle_type_id)
-VALUES ('4T1C11AK5LU123456', 45200, 1),
-       ('2HGFC2F59JH543210', 78500, 2);
+INSERT INTO vin (vin_num, vehicle_type_id)
+VALUES ('4T1C11AK5LU123456', 1),
+       ('2HGFC2F59JH543210', 2);
 
 INSERT INTO user_vin (user_id, vin_num, current_mileage, available_image_urls, selected_image_url)
 VALUES (1, '4T1C11AK5LU123456', 45200,
-        '["https://images.unsplash.com/photo-1621007947382-b76b4c3e8a2a","https://images.unsplash.com/photo-1549399542-7e3f8b79c341"]',
-        'https://images.unsplash.com/photo-1621007947382-b76b4c3e8a2a'),
+        '["https://images.unsplash.com/photo-1621007947382-bcb49c457f54","https://images.unsplash.com/photo-1609521263047-f8f205293f24"]',
+        'https://images.unsplash.com/photo-1621007947382-bcb49c457f54'),
        (1, '2HGFC2F59JH543210', 78500,
         '["https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6","https://images.unsplash.com/photo-1494976388531-d1058494cdd8"]',
         'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6');
 
-INSERT INTO maint_mileage (maint_mileage_id, vehicle_type_id, mileage_due, maint_desc)
-VALUES (1, 1, 5000, 'Engine oil and filter change'),
-       (2, 1, 15000, 'Tire rotation and inspection'),
-       (3, 1, 30000, 'Transmission fluid inspection'),
-       (4, 1, 45000, 'Spark plug replacement'),
-       (5, 2, 7500, 'Engine oil and filter change'),
-       (6, 2, 30000, 'Brake inspection'),
-       (7, 2, 80000, 'Timing belt replacement');
+-- Maintenance descriptions mirror provider repair-estimate labor-line types.
+INSERT INTO maint_mileage (maint_mileage_id, vehicle_type_id, mileage_due, maint_desc, is_inspect)
+VALUES (1, 1, 5000, 'Change - Engine oil', FALSE),
+       (2, 1, 15000, 'Rotate - Wheels & tires', FALSE),
+       (3, 1, 30000, 'Inspect - Transmission fluid', TRUE),
+       (4, 1, 45000, 'Replace - Spark plugs', FALSE),
+       (5, 2, 7500, 'Change - Engine oil', FALSE),
+       (6, 2, 30000, 'Inspect - Brakes', TRUE),
+       (7, 2, 80000, 'Replace - Timing belt and water pump', FALSE);
 
-INSERT INTO maint_cost (maint_cost_id, vehicle_type_id, maint_title, maint_desc, independent_avg, independent_high,
-                        independent_low, dealer_avg, dealer_high, dealer_low)
+INSERT INTO maint_labor_line (maint_labor_line_id, maint_mileage_id, time_required_hours, hourly_rate, total_cost,
+                              currency)
+VALUES (1, 1, 0.50, 85.00, 42.50, 'USD'),
+       (2, 2, 0.25, 85.00, 21.25, 'USD'),
+       (3, 3, 0.40, 85.00, 34.00, 'USD'),
+       (4, 4, 1.20, 85.00, 102.00, 'USD'),
+       (5, 5, 0.50, 90.00, 45.00, 'USD'),
+       (6, 6, 0.75, 90.00, 67.50, 'USD'),
+       (7, 7, 4.50, 90.00, 405.00, 'USD');
+
+INSERT INTO maint_part_line (maint_part_line_id, maint_mileage_id, part_desc, total_cost, currency)
+VALUES (1, 1, 'Change - Engine oil', 35.00, 'USD'),
+       (2, 4, 'Replace - Spark plugs', 48.00, 'USD'),
+       (3, 7, 'Replace - Timing belt and water pump', 520.00, 'USD');
+
+INSERT INTO maint_mileage_summary (maint_mileage_summary_id, vehicle_type_id, mileage_due, total_parts_cost,
+                                   total_labor_cost, total_cost, currency)
+VALUES (1, 1, 30000, 0.00, 34.00, 34.00, 'USD'),
+       (2, 1, 45000, 48.00, 102.00, 150.00, 'USD'),
+       (3, 2, 30000, 0.00, 67.50, 67.50, 'USD'),
+       (4, 2, 80000, 520.00, 405.00, 925.00, 'USD');
+
+INSERT INTO misc_maint_cost (misc_maint_cost_id, vehicle_type_id, maint_title, maint_desc, independent_avg,
+                             independent_high, independent_low, dealer_avg, dealer_high, dealer_low)
 VALUES (1, 1, 'Oil Change', 'Replace engine oil and filter', 65, 95, 45, 110, 145, 85),
        (2, 1, 'Brake Pad Replacement', 'Replace front brake pads and resurface rotors', 275, 380, 210, 425, 550, 340),
        (3, 2, 'Oil Change', 'Replace engine oil and filter', 60, 90, 40, 105, 135, 80),
@@ -207,9 +280,9 @@ VALUES (1, 1, '23V123000', '23TA01', '2023-03-15', 'FUEL SYSTEM, GASOLINE:DELIVE
 
 INSERT INTO completed_maintenance (completed_maintenance_id, user_id, vin_num, maint_mileage_id, completed_date,
                                    mileage_completed, cost, notes)
-VALUES (1, 1, '4T1C11AK5LU123456', 1, '2020-06-10', 5100, 58.50, 'First oil change at local shop'),
-       (2, 1, '4T1C11AK5LU123456', 2, '2021-02-14', 15200, 35.00, 'Included with oil change'),
-       (3, 1, '2HGFC2F59JH543210', 5, '2019-04-22', 7800, 54.25, 'Dealer service visit');
+VALUES (1, 1, '4T1C11AK5LU123456', 1, '2020-06-10', 5100, 77.50, 'First oil change at local shop'),
+       (2, 1, '4T1C11AK5LU123456', 2, '2021-02-14', 15200, 56.25, 'Tire rotation during 15k visit'),
+       (3, 1, '2HGFC2F59JH543210', 5, '2019-04-22', 7800, 99.00, 'Dealer 7.5k service visit');
 
 INSERT INTO completed_recall (completed_recall_id, user_id, vin_num, recall_id, completed_date, repair_shop, cost,
                               notes)

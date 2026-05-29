@@ -38,17 +38,6 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export interface AuthErrorMessage {
-  message: string;
-  fieldMessages: string[];
-}
+import { FieldErrorMessage } from '../http/http-error.util';
 
-export interface ValidationErrorResponse {
-  message: string;
-  errors: FieldValidationError[];
-}
-
-export interface FieldValidationError {
-  field: string;
-  message: string;
-}
+export type AuthErrorMessage = FieldErrorMessage;

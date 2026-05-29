@@ -1,238 +1,396 @@
 <section aria-labelledby="vehicle-detail-title" class="vehicle-detail hc-page-shell">
-    <div class="vehicle-detail__content hc-page-shell__inner">
-        <a class="vehicle-detail__back" routerLink="/home">← Back to vehicles</a>
+  <div class="vehicle-detail__content hc-page-shell__inner">
+    <a class="vehicle-detail__back" routerLink="/home">← Back to vehicles</a>
 
-        @if (isLoading()) {
-        <div class="vehicle-detail__status hc-state-message">Loading vehicle...</div>
-        } @else if (error(); as message) {
-        <div class="vehicle-detail__status vehicle-detail__status--error hc-state-message">{{ message }}</div>
-        } @else if (vehicle(); as v) {
-        <h1 class="vehicle-detail__title" id="vehicle-detail-title">
-            {{ v.vehicleYear }} {{ v.vehicleMake }} {{ v.vehicleModel }}
-        </h1>
+    @if (isLoading()) {
+      <div class="vehicle-detail__status hc-state-message">Loading vehicle...</div>
+    } @else if (error(); as message) {
+      <div class="vehicle-detail__status vehicle-detail__status--error hc-state-message">
+        {{ message }}
+      </div>
+    } @else if (vehicle(); as v) {
+      <h1 class="vehicle-detail__title" id="vehicle-detail-title">
+        {{ v.vehicleYear }} {{ v.vehicleMake }} {{ v.vehicleModel }}
+      </h1>
 
-        <div class="vehicle-detail__header">
-            <div class="vehicle-detail__image-wrap hc-surface">
-                @if (v.selectedImageUrl) {
-                <img
-                        [alt]="'Photo of ' + v.vehicleYear + ' ' + v.vehicleMake + ' ' + v.vehicleModel"
-                        [src]="v.selectedImageUrl"
-                        class="vehicle-detail__image"
+      <div class="vehicle-detail__header">
+        <div class="vehicle-detail__image-wrap hc-surface">
+          @if (v.selectedImageUrl) {
+            <img
+              [alt]="'Photo of ' + v.vehicleYear + ' ' + v.vehicleMake + ' ' + v.vehicleModel"
+              [src]="v.selectedImageUrl"
+              class="vehicle-detail__image"
+            />
+          } @else {
+            <div class="vehicle-detail__image-placeholder">No Image</div>
+          }
+        </div>
+        <div class="vehicle-detail__details-column">
+          <div class="vehicle-detail__specs hc-surface">
+            <p class="vehicle-detail__mileage">
+              <span class="vehicle-detail__mileage-value">{{ v.currentMileage | number }} mi</span>
+              <button
+                (click)="openMileageModal()"
+                class="vehicle-detail__mileage-btn"
+                type="button"
+              >
+                Update
+              </button>
+            </p>
+            <dl class="vehicle-detail__dl">
+              <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
+                <dt>VIN</dt>
+                <dd>{{ v.vin }}</dd>
+              </div>
+              <div>
+                <dt>Trim</dt>
+                <dd>{{ v.vehicleTrim }}</dd>
+              </div>
+              @if (v.vehicleStyle) {
+                <div>
+                  <dt>Style</dt>
+                  <dd>{{ v.vehicleStyle }}</dd>
+                </div>
+              }
+              @if (v.body) {
+                <div>
+                  <dt>Body</dt>
+                  <dd>{{ v.body }}</dd>
+                </div>
+              }
+              @if (v.engineDescription) {
+                <div>
+                  <dt>Engine</dt>
+                  <dd>{{ v.engineDescription }}</dd>
+                </div>
+              }
+              @if (v.transmissionStyle) {
+                <div>
+                  <dt>Trans.</dt>
+                  <dd>{{ v.transmissionStyle }}</dd>
+                </div>
+              }
+              @if (v.driveType) {
+                <div>
+                  <dt>Drive</dt>
+                  <dd>{{ v.driveType }}</dd>
+                </div>
+              }
+            </dl>
+            @if (v.origin || v.sourceVin) {
+              <details class="vehicle-detail__more-specs">
+                <summary>More details</summary>
+                <dl class="vehicle-detail__dl">
+                  @if (v.origin) {
+                    <div>
+                      <dt>Origin</dt>
+                      <dd>{{ v.origin }}</dd>
+                    </div>
+                  }
+                  @if (v.sourceVin) {
+                    <div>
+                      <dt>Source VIN</dt>
+                      <dd>{{ v.sourceVin }}</dd>
+                    </div>
+                  }
+                </dl>
+              </details>
+            }
+            @if (v.ownersManual) {
+              <button
+                (click)="openOwnersManual(v.ownersManual)"
+                class="vehicle-detail__manual-btn"
+                type="button"
+              >
+                Owner's manual
+              </button>
+            }
+          </div>
+
+          <button
+            (click)="openMaintenanceCostsModal()"
+            class="vehicle-detail__costs-btn"
+            type="button"
+          >
+            Maintenance costs
+          </button>
+
+          <div class="vehicle-detail__toggle" role="tablist">
+            <button
+              (click)="setActiveSection('maintenance')"
+              [class.vehicle-detail__toggle-btn--active]="activeSection() === 'maintenance'"
+              class="vehicle-detail__toggle-btn"
+              type="button"
+            >
+              Maintenance
+            </button>
+            <button
+              (click)="setActiveSection('recalls')"
+              [class.vehicle-detail__toggle-btn--active]="activeSection() === 'recalls'"
+              class="vehicle-detail__toggle-btn"
+              type="button"
+            >
+              Recalls
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if (activeSection() === 'maintenance') {
+        <div class="vehicle-detail__panel">
+          <details class="vehicle-detail__collapsible hc-surface" open>
+            <summary>Upcoming maintenance</summary>
+            @if (upcomingIntervals().length === 0) {
+              <p class="vehicle-detail__empty">No upcoming maintenance.</p>
+            } @else {
+              <label class="vehicle-detail__inspect-filter">
+                <input
+                  type="checkbox"
+                  [checked]="showInspectItems()"
+                  (change)="onShowInspectItemsChange($event)"
                 />
-                } @else {
-                <div class="vehicle-detail__image-placeholder">No Image</div>
-                }
-            </div>
-            <div class="vehicle-detail__details-column">
-                <div class="vehicle-detail__specs hc-surface">
-                    <p class="vehicle-detail__mileage">
-                        <span class="vehicle-detail__mileage-value">{{ v.currentMileage | number }} mi</span>
-                        <button (click)="openMileageModal()" class="vehicle-detail__mileage-btn" type="button">
-                            Update
-                        </button>
-                    </p>
-                    <dl class="vehicle-detail__dl">
-                        <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
-                            <dt>VIN</dt>
-                            <dd>{{ v.vin }}</dd>
+                Show inspections
+              </label>
+              <div class="vehicle-detail__mileage-groups">
+                @for (interval of upcomingIntervals(); track interval.mileageDue) {
+                  <section class="vehicle-detail__mileage-group">
+                    <h3 class="vehicle-detail__mileage-heading">
+                      {{ interval.mileageDue | number }} mi service
+                    </h3>
+                    <ul class="vehicle-detail__list">
+                      @for (item of interval.items; track item.maintMileageId) {
+                        @if (!item.isInspect || showInspectItems()) {
+                          <li class="vehicle-detail__maint-item">
+                            @if (item.parts.length > 0) {
+                              <details class="vehicle-detail__maint-details">
+                                <summary class="vehicle-detail__maint-summary">
+                                  <span class="vehicle-detail__maint-summary-main">
+                                    <span class="vehicle-detail__maint-desc">{{
+                                      item.maintDesc
+                                    }}</span>
+                                    @if (item.isInspect) {
+                                      <span class="vehicle-detail__maint-badge">Inspection</span>
+                                    }
+                                    @if (item.labor) {
+                                      <span class="vehicle-detail__maint-labor">{{
+                                        formatLaborCost(item.labor)
+                                      }}</span>
+                                    }
+                                  </span>
+                                  <button
+                                    (click)="
+                                      openUpcomingMaintenanceFromItem(
+                                        interval.mileageDue,
+                                        item,
+                                        $event
+                                      )
+                                    "
+                                    class="vehicle-detail__maint-action"
+                                    type="button"
+                                  >
+                                    Mark complete
+                                  </button>
+                                </summary>
+                                <div class="vehicle-detail__maint-costs">
+                                  @for (part of item.parts; track part.partDesc) {
+                                    <p class="vehicle-detail__cost-line">
+                                      <span>{{ part.partDesc }}</span>
+                                      <span>{{
+                                        formatCurrency(part.totalCost, part.currency)
+                                      }}</span>
+                                    </p>
+                                  }
+                                </div>
+                              </details>
+                            } @else {
+                              <div class="vehicle-detail__maint-row">
+                                <span class="vehicle-detail__maint-summary-main">
+                                  <span class="vehicle-detail__maint-desc">{{
+                                    item.maintDesc
+                                  }}</span>
+                                  @if (item.isInspect) {
+                                    <span class="vehicle-detail__maint-badge">Inspection</span>
+                                  }
+                                  @if (item.labor) {
+                                    <span class="vehicle-detail__maint-labor">{{
+                                      formatLaborCost(item.labor)
+                                    }}</span>
+                                  } @else {
+                                    <span class="vehicle-detail__empty"
+                                      >No cost breakdown available.</span
+                                    >
+                                  }
+                                </span>
+                                <button
+                                  (click)="
+                                    openUpcomingMaintenanceFromItem(
+                                      interval.mileageDue,
+                                      item,
+                                      $event
+                                    )
+                                  "
+                                  class="vehicle-detail__maint-action"
+                                  type="button"
+                                >
+                                  Mark complete
+                                </button>
+                              </div>
+                            }
+                          </li>
+                        }
+                      }
+                    </ul>
+                    @if (interval.summary; as summary) {
+                      <dl class="vehicle-detail__mileage-summary">
+                        <div>
+                          <dt>Total parts</dt>
+                          <dd>{{ formatCurrency(summary.totalPartsCost, summary.currency) }}</dd>
                         </div>
-                        <div><dt>Trim</dt><dd>{{ v.vehicleTrim }}</dd></div>
-                        @if (v.vehicleStyle) {
-                        <div><dt>Style</dt><dd>{{ v.vehicleStyle }}</dd></div>
-                        }
-                        @if (v.body) {
-                        <div><dt>Body</dt><dd>{{ v.body }}</dd></div>
-                        }
-                        @if (v.engineDescription) {
-                        <div><dt>Engine</dt><dd>{{ v.engineDescription }}</dd></div>
-                        }
-                        @if (v.transmissionStyle) {
-                        <div><dt>Trans.</dt><dd>{{ v.transmissionStyle }}</dd></div>
-                        }
-                        @if (v.driveType) {
-                        <div><dt>Drive</dt><dd>{{ v.driveType }}</dd></div>
-                        }
-                    </dl>
-                    @if (v.origin || v.sourceVin) {
-                    <details class="vehicle-detail__more-specs">
-                        <summary>More details</summary>
-                        <dl class="vehicle-detail__dl">
-                            @if (v.origin) {
-                            <div><dt>Origin</dt><dd>{{ v.origin }}</dd></div>
-                            }
-                            @if (v.sourceVin) {
-                            <div><dt>Source VIN</dt><dd>{{ v.sourceVin }}</dd></div>
-                            }
-                        </dl>
-                    </details>
+                        <div>
+                          <dt>Total labor</dt>
+                          <dd>{{ formatCurrency(summary.totalLaborCost, summary.currency) }}</dd>
+                        </div>
+                        <div class="vehicle-detail__mileage-summary-total">
+                          <dt>Total cost</dt>
+                          <dd>{{ formatCurrency(summary.totalCost, summary.currency) }}</dd>
+                        </div>
+                      </dl>
                     }
-                    @if (v.ownersManual) {
-                    <button (click)="openOwnersManual(v.ownersManual)" class="vehicle-detail__manual-btn" type="button">
-                        Owner's manual
-                    </button>
-                    }
-                </div>
+                  </section>
+                }
+              </div>
+            }
+          </details>
 
-                <button (click)="openMaintenanceCostsModal()" class="vehicle-detail__costs-btn" type="button">
-                    Maintenance costs
-                </button>
-
-                <div class="vehicle-detail__toggle" role="tablist">
+          <details class="vehicle-detail__collapsible hc-surface">
+            <summary>Complete maintenance</summary>
+            @if (completedMaintenance().length === 0) {
+              <p class="vehicle-detail__empty">No completed maintenance.</p>
+            } @else {
+              <ul class="vehicle-detail__list">
+                @for (item of completedMaintenance(); track item.completedMaintenanceId) {
+                  <li>
                     <button
-                            (click)="setActiveSection('maintenance')"
-                            [class.vehicle-detail__toggle-btn--active]="activeSection() === 'maintenance'"
-                            class="vehicle-detail__toggle-btn"
-                            type="button"
+                      (click)="openCompletedMaintenance(item)"
+                      class="vehicle-detail__list-btn"
+                      type="button"
                     >
-                        Maintenance
+                      <span>{{ item.maintDesc }}</span>
+                      <span class="vehicle-detail__list-meta">
+                        {{ item.completedDate }} · {{ item.mileageCompleted }} mi
+                      </span>
                     </button>
+                  </li>
+                }
+              </ul>
+            }
+          </details>
+        </div>
+      } @else {
+        <div class="vehicle-detail__panel">
+          <details class="vehicle-detail__collapsible hc-surface" open>
+            <summary>Not complete</summary>
+            @if (uncompletedRecalls().length === 0) {
+              <p class="vehicle-detail__empty">No open recalls.</p>
+            } @else {
+              <ul class="vehicle-detail__list">
+                @for (item of uncompletedRecalls(); track item.recallId) {
+                  <li>
                     <button
-                            (click)="setActiveSection('recalls')"
-                            [class.vehicle-detail__toggle-btn--active]="activeSection() === 'recalls'"
-                            class="vehicle-detail__toggle-btn"
-                            type="button"
+                      (click)="openUncompletedRecall(item)"
+                      class="vehicle-detail__list-btn"
+                      type="button"
                     >
-                        Recalls
+                      <span>{{ item.component }}</span>
+                      <span class="vehicle-detail__list-meta">{{ item.nhtsaCampaignNumber }}</span>
                     </button>
-                </div>
-            </div>
+                  </li>
+                }
+              </ul>
+            }
+          </details>
+
+          <details class="vehicle-detail__collapsible hc-surface">
+            <summary>Complete</summary>
+            @if (completedRecalls().length === 0) {
+              <p class="vehicle-detail__empty">No completed recalls.</p>
+            } @else {
+              <ul class="vehicle-detail__list">
+                @for (item of completedRecalls(); track item.completedRecallId) {
+                  <li>
+                    <button
+                      (click)="openCompletedRecall(item)"
+                      class="vehicle-detail__list-btn"
+                      type="button"
+                    >
+                      <span>{{ item.component }}</span>
+                      <span class="vehicle-detail__list-meta">{{ item.completedDate }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </details>
         </div>
+      }
+    }
+  </div>
 
-        @if (activeSection() === 'maintenance') {
-        <div class="vehicle-detail__panel">
-            <details class="vehicle-detail__collapsible hc-surface" open>
-                <summary>Upcoming maintenance</summary>
-                @if (upcomingMaintenance().length === 0) {
-                <p class="vehicle-detail__empty">No upcoming maintenance.</p>
-                } @else {
-                <ul class="vehicle-detail__list">
-                    @for (item of upcomingMaintenance(); track item.maintMileageId) {
-                    <li>
-                        <button (click)="openUpcomingMaintenance(item)" class="vehicle-detail__list-btn" type="button">
-                            <span>{{ item.maintDesc }}</span>
-                            <span class="vehicle-detail__list-meta">Due at {{ item.mileageDue }} mi</span>
-                        </button>
-                    </li>
-                    }
-                </ul>
-                }
-            </details>
-
-            <details class="vehicle-detail__collapsible hc-surface">
-                <summary>Complete maintenance</summary>
-                @if (completedMaintenance().length === 0) {
-                <p class="vehicle-detail__empty">No completed maintenance.</p>
-                } @else {
-                <ul class="vehicle-detail__list">
-                    @for (item of completedMaintenance(); track item.completedMaintenanceId) {
-                    <li>
-                        <button (click)="openCompletedMaintenance(item)" class="vehicle-detail__list-btn" type="button">
-                            <span>{{ item.maintDesc }}</span>
-                            <span class="vehicle-detail__list-meta">
-                                {{ item.completedDate }} · {{ item.mileageCompleted }} mi
-                            </span>
-                        </button>
-                    </li>
-                    }
-                </ul>
-                }
-            </details>
-        </div>
-        } @else {
-        <div class="vehicle-detail__panel">
-            <details class="vehicle-detail__collapsible hc-surface" open>
-                <summary>Not complete</summary>
-                @if (uncompletedRecalls().length === 0) {
-                <p class="vehicle-detail__empty">No open recalls.</p>
-                } @else {
-                <ul class="vehicle-detail__list">
-                    @for (item of uncompletedRecalls(); track item.recallId) {
-                    <li>
-                        <button (click)="openUncompletedRecall(item)" class="vehicle-detail__list-btn" type="button">
-                            <span>{{ item.component }}</span>
-                            <span class="vehicle-detail__list-meta">{{ item.nhtsaCampaignNumber }}</span>
-                        </button>
-                    </li>
-                    }
-                </ul>
-                }
-            </details>
-
-            <details class="vehicle-detail__collapsible hc-surface">
-                <summary>Complete</summary>
-                @if (completedRecalls().length === 0) {
-                <p class="vehicle-detail__empty">No completed recalls.</p>
-                } @else {
-                <ul class="vehicle-detail__list">
-                    @for (item of completedRecalls(); track item.completedRecallId) {
-                    <li>
-                        <button (click)="openCompletedRecall(item)" class="vehicle-detail__list-btn" type="button">
-                            <span>{{ item.component }}</span>
-                            <span class="vehicle-detail__list-meta">{{ item.completedDate }}</span>
-                        </button>
-                    </li>
-                    }
-                </ul>
-                }
-            </details>
-        </div>
-        }
-        }
-    </div>
-
-    @if (isMileageModalOpen() && vehicle(); as v) {
+  @if (isMileageModalOpen() && vehicle(); as v) {
     <app-update-mileage-modal
-            (close)="closeMileageModal()"
-            (updated)="onMileageUpdated($event)"
-            [currentMileage]="v.currentMileage"
-            [vin]="v.vin"
+      (close)="closeMileageModal()"
+      (updated)="onMileageUpdated($event)"
+      [currentMileage]="v.currentMileage"
+      [vin]="v.vin"
     />
-    }
+  }
 
-    @if (isMaintenanceCostsModalOpen() && vehicle(); as v) {
-    <app-maintenance-costs-modal (close)="closeMaintenanceCostsModal()" [vin]="v.vin"/>
-    }
+  @if (isMaintenanceCostsModalOpen() && vehicle(); as v) {
+    <app-maintenance-costs-modal
+      (close)="closeMaintenanceCostsModal()"
+      [costs]="miscMaintenanceCosts()"
+    />
+  }
 
-    @if (selectedUpcomingMaintenance(); as item) {
+  @if (selectedUpcomingMaintenance(); as item) {
     <app-maintenance-detail-modal
-            (changed)="onMaintenanceChanged()"
-            (close)="closeMaintenanceModal()"
-            [currentMileage]="vehicle()!.currentMileage"
-            [isCompleted]="false"
-            [upcomingItem]="item"
-            [vin]="vehicle()!.vin"
+      (changed)="onMaintenanceChanged()"
+      (close)="closeMaintenanceModal()"
+      [currentMileage]="vehicle()!.currentMileage"
+      [isCompleted]="false"
+      [upcomingItem]="item"
+      [vin]="vehicle()!.vin"
     />
-    }
+  }
 
-    @if (selectedCompletedMaintenance(); as item) {
+  @if (selectedCompletedMaintenance(); as item) {
     <app-maintenance-detail-modal
-            (changed)="onMaintenanceChanged()"
-            (close)="closeMaintenanceModal()"
-            [completedItem]="item"
-            [currentMileage]="vehicle()!.currentMileage"
-            [isCompleted]="true"
-            [vin]="vehicle()!.vin"
+      (changed)="onMaintenanceChanged()"
+      (close)="closeMaintenanceModal()"
+      [completedItem]="item"
+      [currentMileage]="vehicle()!.currentMileage"
+      [isCompleted]="true"
+      [vin]="vehicle()!.vin"
     />
-    }
+  }
 
-    @if (selectedUncompletedRecall(); as item) {
+  @if (selectedUncompletedRecall(); as item) {
     <app-recall-detail-modal
-            (changed)="onRecallChanged()"
-            (close)="closeRecallModal()"
-            [isCompleted]="false"
-            [uncompletedItem]="item"
-            [vin]="vehicle()!.vin"
+      (changed)="onRecallChanged()"
+      (close)="closeRecallModal()"
+      [isCompleted]="false"
+      [uncompletedItem]="item"
+      [vin]="vehicle()!.vin"
     />
-    }
+  }
 
-    @if (selectedCompletedRecall(); as item) {
+  @if (selectedCompletedRecall(); as item) {
     <app-recall-detail-modal
-            (changed)="onRecallChanged()"
-            (close)="closeRecallModal()"
-            [completedItem]="item"
-            [isCompleted]="true"
-            [vin]="vehicle()!.vin"
+      (changed)="onRecallChanged()"
+      (close)="closeRecallModal()"
+      [completedItem]="item"
+      [isCompleted]="true"
+      [vin]="vehicle()!.vin"
     />
-    }
-
+  }
 </section>

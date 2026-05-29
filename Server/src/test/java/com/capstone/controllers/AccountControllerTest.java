@@ -3,8 +3,9 @@ package com.capstone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.domain.AccountService;
-import com.capstone.models.User;
+import com.capstone.models.Role;
 import com.capstone.models.dto.AccountResponse;
 import com.capstone.models.dto.ChangePasswordRequest;
 import com.capstone.models.dto.DeleteAccountRequest;
@@ -40,7 +41,7 @@ class AccountControllerTest {
   void shouldReturnCurrentAccount() {
     AccountService accountService = mock(AccountService.class);
     AccountController controller = new AccountController(accountService);
-    User user = user();
+    AuthenticatedUser user = user();
     AccountResponse account = account();
 
     when(accountService.getAccount(user)).thenReturn(account);
@@ -55,7 +56,7 @@ class AccountControllerTest {
   void shouldUpdateCurrentAccount() {
     AccountService accountService = mock(AccountService.class);
     AccountController controller = new AccountController(accountService);
-    User user = user();
+    AuthenticatedUser user = user();
     UpdateAccountRequest request =
         new UpdateAccountRequest("Patricia", "Driver", "driver@example.com", "+15551234567");
     AccountResponse account = account();
@@ -72,7 +73,7 @@ class AccountControllerTest {
   void shouldChangePasswordAndDeleteAccount() {
     AccountService accountService = mock(AccountService.class);
     AccountController controller = new AccountController(accountService);
-    User user = user();
+    AuthenticatedUser user = user();
     ChangePasswordRequest passwordRequest = new ChangePasswordRequest("old-secret", "new-secret");
     DeleteAccountRequest deleteRequest = new DeleteAccountRequest("new-secret");
 
@@ -84,11 +85,8 @@ class AccountControllerTest {
     verify(accountService).deleteAccount(user, deleteRequest);
   }
 
-  private User user() {
-    User user = new User();
-    user.setUserId(1L);
-    user.setUserEmail("driver@example.com");
-    return user;
+  private AuthenticatedUser user() {
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
   }
 
   private AccountResponse account() {

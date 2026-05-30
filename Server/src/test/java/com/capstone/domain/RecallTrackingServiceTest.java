@@ -40,6 +40,66 @@ class RecallTrackingServiceTest {
   }
 
   @Test
+  void shouldRejectUncompleteRecallForOtherUser() {
+    CompletedRecallRepositoryJPA completedRecallRepository =
+        mock(CompletedRecallRepositoryJPA.class);
+    RecallTrackingService service =
+        new RecallTrackingService(
+            completedRecallRepository,
+            mock(RecallRepositoryJPA.class),
+            mock(UserVinRepositoryJPA.class));
+    User otherUser = new User();
+    otherUser.setUserId(2L);
+    UserVin userVin = new UserVin(otherUser, new Vin("JTENU5JR6M5962554", vehicleType()), 32000);
+    CompletedRecall completedRecall =
+        new CompletedRecall(
+            55L,
+            userVin,
+            recall(),
+            LocalDate.of(2025, 3, 4),
+            "Toyota dealer",
+            0.0,
+            "Recall closed");
+
+    when(completedRecallRepository.findById(55L)).thenReturn(Optional.of(completedRecall));
+
+    assertThrows(RecallNotFoundException.class, () -> service.uncompleteRecall(1L, 55L));
+    verify(completedRecallRepository, never()).delete(any(CompletedRecall.class));
+  }
+
+  @Test
+  void shouldRejectUncompleteWhenCompletedRecallMissing() {
+    CompletedRecallRepositoryJPA completedRecallRepository =
+        mock(CompletedRecallRepositoryJPA.class);
+    RecallTrackingService service =
+        new RecallTrackingService(
+            completedRecallRepository,
+            mock(RecallRepositoryJPA.class),
+            mock(UserVinRepositoryJPA.class));
+
+    when(completedRecallRepository.findById(55L)).thenReturn(Optional.empty());
+
+    assertThrows(RecallNotFoundException.class, () -> service.uncompleteRecall(1L, 55L));
+  }
+
+  @Test
+  void shouldRejectCompleteRecallWhenVinNotAssociated() {
+    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    RecallTrackingService service =
+        new RecallTrackingService(
+            mock(CompletedRecallRepositoryJPA.class),
+            mock(RecallRepositoryJPA.class),
+            userVinRepository);
+    CompleteRecallRequest request =
+        new CompleteRecallRequest(
+            "JTENU5JR6M5962554", 22L, LocalDate.of(2025, 4, 6), "Toyota dealer", 0.0, null);
+
+    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
+
+    assertThrows(VinNotAssociatedException.class, () -> service.completeRecall(1L, request));
+  }
+
+  @Test
   void shouldCreateCompletedRecallWithRequestFields() {
     CompletedRecallRepositoryJPA completedRecallRepository =
         mock(CompletedRecallRepositoryJPA.class);

@@ -163,6 +163,40 @@ class MaintenanceTrackingServiceTest {
   }
 
   @Test
+  void shouldRejectCompleteMaintenanceWhenVinNotAssociated() {
+    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
+    MaintenanceTrackingService service =
+        new MaintenanceTrackingService(
+            mock(CompletedMaintenanceRepositoryJPA.class),
+            mock(MaintMileageRepositoryJPA.class),
+            userVinRepository);
+    CompleteMaintenanceRequest request =
+        new CompleteMaintenanceRequest(
+            "JTENU5JR6M5962554", 11L, LocalDate.of(2025, 2, 3), 31000, 89.99, "Changed oil");
+
+    when(userVinRepository.findForUserVin(1L, "JTENU5JR6M5962554")).thenReturn(Optional.empty());
+
+    assertThrows(VinNotAssociatedException.class, () -> service.completeMaintenance(1L, request));
+  }
+
+  @Test
+  void shouldRejectNegativeMileageCompleted() {
+    MaintenanceTrackingService service =
+        new MaintenanceTrackingService(
+            mock(CompletedMaintenanceRepositoryJPA.class),
+            mock(MaintMileageRepositoryJPA.class),
+            mock(UserVinRepositoryJPA.class));
+    CompleteMaintenanceRequest request =
+        new CompleteMaintenanceRequest(
+            "JTENU5JR6M5962554", 11L, LocalDate.of(2025, 2, 3), -1, 89.99, "Changed oil");
+
+    assertEquals(
+        "Mileage completed cannot be negative",
+        assertThrows(IllegalArgumentException.class, () -> service.completeMaintenance(1L, request))
+            .getMessage());
+  }
+
+  @Test
   void shouldRejectMissingMaintenanceItem() {
     MaintenanceTrackingService service =
         new MaintenanceTrackingService(

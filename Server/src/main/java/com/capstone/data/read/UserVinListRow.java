@@ -1,4 +1,4 @@
-package com.capstone.read;
+package com.capstone.data.read;
 
 public record UserVinListRow(
     String vin,

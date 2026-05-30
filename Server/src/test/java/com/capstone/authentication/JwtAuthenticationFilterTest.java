@@ -87,7 +87,7 @@ class JwtAuthenticationFilterTest {
     filter.doFilter(request, new MockHttpServletResponse(), chain);
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertNotNull(chain.getRequest());
+    verify(jwtService, never()).validateToken(any(), any());
   }
 
   @Test
@@ -105,6 +105,6 @@ class JwtAuthenticationFilterTest {
     filter.doFilter(request, new MockHttpServletResponse(), chain);
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertNotNull(chain.getRequest());
+    verify(jwtService, never()).validateToken(any(), any());
   }
 }

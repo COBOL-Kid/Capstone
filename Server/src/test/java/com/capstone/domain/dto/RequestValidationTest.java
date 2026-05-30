@@ -137,6 +137,27 @@ class RequestValidationTest {
   }
 
   @Test
+  void shouldValidateUpdateMileageRequests() {
+    assertTrue(validator.validate(new UpdateMileageRequest(0)).isEmpty());
+
+    Set<String> messages = messages(new UpdateMileageRequest(-1));
+
+    assertTrue(messages.contains("Current mileage cannot be negative"));
+  }
+
+  @Test
+  void shouldValidateUpdateVehiclePhotoRequests() {
+    assertTrue(
+        validator
+            .validate(new UpdateVehiclePhotoRequest("https://example.com/photo.jpg"))
+            .isEmpty());
+
+    Set<String> messages = messages(new UpdateVehiclePhotoRequest(" "));
+
+    assertTrue(messages.contains("Selected image URL is required"));
+  }
+
+  @Test
   void shouldValidateCompleteRecallRequests() {
     assertTrue(
         validator

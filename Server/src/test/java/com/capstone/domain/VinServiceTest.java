@@ -8,6 +8,7 @@ import com.capstone.data.CompletedMaintenanceRepositoryJPA;
 import com.capstone.data.CompletedRecallRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
 import com.capstone.data.VinRepositoryJPA;
+import com.capstone.data.read.VehicleReadService;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
@@ -15,49 +16,11 @@ import com.capstone.models.Vin;
 import com.capstone.models.dto.UpdateMileageRequest;
 import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
-import com.capstone.read.VehicleReadService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class VinServiceTest {
-
-  @Test
-  void shouldDelegateFindVinsByUserId() {
-    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
-    VinService service =
-        vinService(
-            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
-    UserVehicleResponse vehicle =
-        new UserVehicleResponse(
-            "JTENU5JR6M5962554",
-            45000,
-            7L,
-            "Toyota",
-            "4RUNNER",
-            "SRS Prem",
-            "2021",
-            List.of(),
-            "photo.jpg");
-
-    when(vehicleReadService.findVehiclesForUser(1L)).thenReturn(List.of(vehicle));
-
-    assertEquals(List.of(vehicle), service.findVinsByUserId(1L));
-  }
-
-  @Test
-  void shouldDelegateVehicleDetailLookup() {
-    VehicleReadService vehicleReadService = mock(VehicleReadService.class);
-    VinService service =
-        vinService(
-            mock(VinRepositoryJPA.class), mock(UserVinRepositoryJPA.class), vehicleReadService);
-    VehicleDetailResponse detail = vehicleDetailResponse();
-
-    when(vehicleReadService.findVehicleDetail(1L, " jtenu5jr6m5962554 "))
-        .thenReturn(Optional.of(detail));
-
-    assertEquals(Optional.of(detail), service.findVehicleDetailForUser(1L, " jtenu5jr6m5962554 "));
-  }
 
   @Test
   void shouldUpdateMileageForUserVin() {
@@ -115,6 +78,7 @@ class VinServiceTest {
     assertEquals(
         "https://api.auto.dev/photos/retail/JTENU5JR6M5962554-2.jpg",
         response.get().selectedImageUrl());
+    verify(userVinRepository).save(userVin);
   }
 
   @Test

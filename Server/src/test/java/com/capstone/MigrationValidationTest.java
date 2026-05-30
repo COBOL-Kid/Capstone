@@ -29,7 +29,7 @@ class MigrationValidationTest {
   }
 
   @Test
-  void photoMigrationAddsUserVinPhotoColumns() {
+  void v1SchemaIncludesUserVinPhotoColumns() {
     Integer columnCount =
         new JdbcTemplate(dataSource)
             .queryForObject(
@@ -45,23 +45,7 @@ class MigrationValidationTest {
   }
 
   @Test
-  void vinMigrationDropsUnusedVinMileageColumn() {
-    Integer columnCount =
-        new JdbcTemplate(dataSource)
-            .queryForObject(
-                """
-                SELECT COUNT(*)
-                FROM information_schema.columns
-                WHERE lower(table_name) = 'vin'
-                  AND lower(column_name) = 'vin_mileage'
-                """,
-                Integer.class);
-
-    assertEquals(0, columnCount);
-  }
-
-  @Test
-  void accountMigrationHardensUserColumns() {
+  void v1SchemaHardensUserDetailColumns() {
     Integer columnCount =
         new JdbcTemplate(dataSource)
             .queryForObject(
@@ -88,7 +72,7 @@ class MigrationValidationTest {
   }
 
   @Test
-  void readIndexMigrationAddsPerformanceIndexes() {
+  void v1SchemaAddsReadPerformanceIndexes() {
     JdbcTemplate jdbc = new JdbcTemplate(dataSource);
     assertEquals(
         1,

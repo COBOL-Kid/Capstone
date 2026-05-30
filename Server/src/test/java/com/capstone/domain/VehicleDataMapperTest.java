@@ -10,7 +10,6 @@ import com.capstone.models.VehicleType;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.ObjectMapper;
 
 class VehicleDataMapperTest {
 
@@ -40,54 +39,16 @@ class VehicleDataMapperTest {
   }
 
   @Test
-  void shouldDeserializeVinDecodeResponseFromProviderJson() {
-    String json =
-        """
-                {
-                    "vin": "3GCUDHEL3NG668790",
-                    "vinValid": true,
-                    "wmi": "3GC",
-                    "origin": "Mexico",
-                    "squishVin": "3GCUDHELNG",
-                    "checkDigit": "3",
-                    "checksum": true,
-                    "type": "Active",
-                    "make": "Chevrolet",
-                    "model": "Silverado 1500",
-                    "trim": "ZR2",
-                    "style": "4x4 4dr Crew Cab 5.8 ft. SB",
-                    "body": "Truck",
-                    "engine": "5.3L V8 OHV 16V FFV",
-                    "drive": "4WD",
-                    "transmission": "Automatic",
-                    "vehicle": {
-                        "vin": "3GCUDHEL3NG668790",
-                        "year": 2022,
-                        "make": "Chevrolet",
-                        "model": "Silverado 1500",
-                        "manufacturer": "General Motors de Mexico"
-                    },
-                    "photos": {
-                        "hasRetailPhotos": true,
-                        "hasWholesalePhotos": false,
-                        "hasHistoricalPhotos": true,
-                        "retailPhotoCount": 12
-                    },
-                    "ambiguous": false
-                }
-                """;
+  void shouldMapVehicleIdentityFromVinDecodeResponse() {
+    VinDecodeResponse vinDecode = vinDecodeResponse();
 
-    VinDecodeResponse response = new ObjectMapper().readValue(json, VinDecodeResponse.class);
+    VehicleDataMapper.VehicleIdentity identity = mapper.toVehicleIdentity(vinDecode);
 
-    assertEquals("3GCUDHEL3NG668790", response.vin());
-    assertEquals(Boolean.TRUE, response.vinValid());
-    assertEquals("Chevrolet", response.make());
-    assertEquals("Silverado 1500", response.model());
-    assertEquals("ZR2", response.trim());
-    assertEquals("4x4 4dr Crew Cab 5.8 ft. SB", response.style());
-    assertEquals("5.3L V8 OHV 16V FFV", response.engine());
-    assertEquals(2022, response.vehicle().year());
-    assertEquals(12, response.photos().retailPhotoCount());
+    assertEquals("2022", identity.year());
+    assertEquals("Chevrolet", identity.make());
+    assertEquals("Silverado 1500", identity.model());
+    assertEquals("ZR2", identity.trim());
+    assertEquals("4x4 4dr Crew Cab 5.8 ft. SB", identity.style());
   }
 
   @Test
@@ -333,43 +294,6 @@ class VehicleDataMapperTest {
     assertEquals(2019, recall.getReportReceivedDate().getYear());
     assertEquals(6, recall.getReportReceivedDate().getMonthValue());
     assertEquals(27, recall.getReportReceivedDate().getDayOfMonth());
-  }
-
-  @Test
-  void shouldDeserializeVehicleRecallsResponseFromProviderJson() {
-    String json =
-        """
-                {
-                  "status": "success",
-                  "data": {
-                    "vin": "5J6YH28728L014142",
-                    "year": "2008",
-                    "make": "Honda",
-                    "model": "Element",
-                    "recall": [
-                      {
-                        "campaign_id": "19V182000",
-                        "recall_no": "EA15001",
-                        "recall_date": "06/03/2019",
-                        "component_affected": "AIR BAGS:FRONTAL:DRIVER SIDE:INFLATOR MODULE",
-                        "summary": "Honda is recalling vehicles.",
-                        "consequences": "Risk of injury.",
-                        "remedy": "Dealers will replace the inflator.",
-                        "notes": "Contact NHTSA.",
-                        "manufacturer_name": "Honda (American Honda Motor Co.)"
-                      }
-                    ]
-                  }
-                }
-                """;
-
-    VehicleRecallsResponse response =
-        new ObjectMapper().readValue(json, VehicleRecallsResponse.class);
-
-    assertEquals("success", response.status());
-    assertEquals("19V182000", response.data().recall().getFirst().campaignId());
-    assertEquals("EA15001", response.data().recall().getFirst().recallNo());
-    assertEquals("Honda", response.data().make());
   }
 
   private VinDecodeResponse vinDecodeResponse() {

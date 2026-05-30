@@ -1,4 +1,4 @@
-package com.capstone.read;
+package com.capstone.data.read;
 
 /**
  * Column labels expected by Spring JDBC when mapping rows into Java records via {@code

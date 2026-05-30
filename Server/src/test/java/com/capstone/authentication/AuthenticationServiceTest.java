@@ -59,6 +59,7 @@ class AuthenticationServiceTest {
     assertEquals("encoded-secret", savedUser.getUserPw());
     assertEquals(Role.USER, savedUser.getRole());
     assertEquals("jwt-token", response.getToken());
+    verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
     assertTokenClaims(jwtService, savedUser);
   }
 
@@ -149,7 +150,78 @@ class AuthenticationServiceTest {
     assertEquals("driver@example.com", authenticationCaptor.getValue().getPrincipal());
     assertEquals("secret", authenticationCaptor.getValue().getCredentials());
     assertEquals("jwt-token", response.getToken());
+    verify(refreshTokenRepositoryJPA).deleteByUser(user);
+    verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
     assertTokenClaims(jwtService, user);
+  }
+
+  @Test
+  void shouldRejectAuthenticationWhenAccountIsLocked() {
+    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+    AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+    AuthenticationService service =
+        new AuthenticationService(
+            repository,
+            mock(RefreshTokenRepositoryJPA.class),
+            mock(PasswordEncoder.class),
+            mock(JwtService.class),
+            authenticationManager,
+            mock(JwtProperties.class));
+    User user = new User();
+    user.setUserEmail("driver@example.com");
+    user.setLockoutEnd(java.time.LocalDateTime.now().plusMinutes(10));
+
+    when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
+
+    assertThrows(
+        org.springframework.security.authentication.LockedException.class,
+        () -> service.authenticate(new AuthenticationRequest("driver@example.com", "secret")));
+    verifyNoInteractions(authenticationManager);
+  }
+
+  @Test
+  void shouldIncrementFailedAttemptsOnBadCredentials() {
+    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+    AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+    AuthenticationService service =
+        new AuthenticationService(
+            repository,
+            mock(RefreshTokenRepositoryJPA.class),
+            mock(PasswordEncoder.class),
+            mock(JwtService.class),
+            authenticationManager,
+            mock(JwtProperties.class));
+    User user = new User();
+    user.setUserEmail("driver@example.com");
+    user.setFailedLoginAttempts(2);
+
+    when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
+    when(authenticationManager.authenticate(any()))
+        .thenThrow(
+            new org.springframework.security.authentication.BadCredentialsException("Invalid"));
+
+    assertThrows(
+        org.springframework.security.authentication.BadCredentialsException.class,
+        () -> service.authenticate(new AuthenticationRequest("driver@example.com", "wrong")));
+    assertEquals(3, user.getFailedLoginAttempts());
+    verify(repository).save(user);
+  }
+
+  @Test
+  void shouldLogoutByDeletingRefreshToken() {
+    RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+    AuthenticationService service =
+        new AuthenticationService(
+            mock(UserRepositoryJPA.class),
+            refreshTokenRepositoryJPA,
+            mock(PasswordEncoder.class),
+            mock(JwtService.class),
+            mock(AuthenticationManager.class),
+            mock(JwtProperties.class));
+
+    service.logout("refresh-token");
+
+    verify(refreshTokenRepositoryJPA).deleteByToken("refresh-token");
   }
 
   @Test
@@ -293,5 +365,6 @@ class AuthenticationServiceTest {
     assertFalse(claims.containsKey("firstName"));
     assertFalse(claims.containsKey("lastName"));
     assertEquals(user.getUserId(), claims.get("userId"));
+    assertEquals(user.getRole().name(), claims.get("role"));
   }
 }

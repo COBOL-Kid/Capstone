@@ -147,6 +147,48 @@ class AccountServiceTest {
   }
 
   @Test
+  void shouldRejectAccountAccessWhenPrincipalIsMissing() {
+    AccountService service = service(mock(UserRepositoryJPA.class));
+
+    assertThrows(InvalidAccountCredentialsException.class, () -> service.getAccount(null));
+  }
+
+  @Test
+  void shouldRejectAccountAccessWhenUserRecordMissing() {
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    AccountService service = service(userRepository);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThrows(
+        InvalidAccountCredentialsException.class,
+        () -> service.getAccount(authenticatedPrincipal()));
+  }
+
+  @Test
+  void shouldRejectAccountDeletionWhenPasswordDoesNotMatch() {
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+    AccountService service =
+        service(
+            userRepository,
+            passwordEncoder,
+            mock(RefreshTokenRepositoryJPA.class),
+            mock(CompletedMaintenanceRepositoryJPA.class),
+            mock(CompletedRecallRepositoryJPA.class),
+            mock(UserVinRepositoryJPA.class),
+            mock(VinRepositoryJPA.class));
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser()));
+    when(passwordEncoder.matches("wrong", "encoded-old")).thenReturn(false);
+
+    assertThrows(
+        InvalidAccountCredentialsException.class,
+        () -> service.deleteAccount(authenticatedPrincipal(), new DeleteAccountRequest("wrong")));
+    verify(userRepository, never()).delete(any(User.class));
+  }
+
+  @Test
   void shouldRejectPasswordChangeWhenCurrentPasswordDoesNotMatch() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);

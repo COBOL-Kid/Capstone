@@ -4,6 +4,7 @@ import {
   UpcomingMaintenanceIntervalResponse,
 } from '../maintenance/maintenance.models';
 import { CompletedRecallResponse, RecallResponse } from '../recall/recall.models';
+import { VehicleWarrantyResponse } from '../warranty/warranty.models';
 import { VehicleDetailResponse } from './vin.models';
 
 export interface VehiclePageData {
@@ -13,4 +14,5 @@ export interface VehiclePageData {
   uncompletedRecalls: RecallResponse[];
   completedRecalls: CompletedRecallResponse[];
   miscMaintenanceCosts: MiscMaintenanceCostResponse[];
+  vehicleWarranty: VehicleWarrantyResponse | null;
 }

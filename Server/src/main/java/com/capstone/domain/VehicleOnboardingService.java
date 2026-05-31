@@ -6,10 +6,13 @@ import com.capstone.integration.*;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
+import com.capstone.models.VehicleWarranty;
+import com.capstone.models.VehicleWarrantyId;
 import com.capstone.models.Vin;
 import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -27,6 +30,7 @@ public class VehicleOnboardingService {
   private final MaintMileageRepositoryJPA maintMileageRepository;
   private final MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository;
   private final MiscMaintCostRepositoryJPA miscMaintCostRepository;
+  private final VehicleWarrantyRepositoryJPA vehicleWarrantyRepository;
   private final VehicleDataProviderClient vehicleDataProviderClient;
   private final VehicleDataMapper vehicleDataMapper;
   private final TransactionTemplate transactionTemplate;
@@ -40,6 +44,7 @@ public class VehicleOnboardingService {
       MaintMileageRepositoryJPA maintMileageRepository,
       MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository,
       MiscMaintCostRepositoryJPA miscMaintCostRepository,
+      VehicleWarrantyRepositoryJPA vehicleWarrantyRepository,
       VehicleDataProviderClient vehicleDataProviderClient,
       VehicleDataMapper vehicleDataMapper,
       TransactionTemplate transactionTemplate,
@@ -51,6 +56,7 @@ public class VehicleOnboardingService {
     this.maintMileageRepository = maintMileageRepository;
     this.maintMileageSummaryRepository = maintMileageSummaryRepository;
     this.miscMaintCostRepository = miscMaintCostRepository;
+    this.vehicleWarrantyRepository = vehicleWarrantyRepository;
     this.vehicleDataProviderClient = vehicleDataProviderClient;
     this.vehicleDataMapper = vehicleDataMapper;
     this.transactionTemplate = transactionTemplate;
@@ -94,10 +100,14 @@ public class VehicleOnboardingService {
             .orElse(null);
 
     if (existingVehicleType != null) {
+      ensureWarrantyForYearMakeModel(
+          existingVehicleType.getVehicleYear(),
+          existingVehicleType.getVehicleMake(),
+          existingVehicleType.getVehicleModel());
       return saveVinAndAssociation(user, normalizedVin, currentMileage, existingVehicleType);
     }
 
-    NewVehicleTypePrefetch prefetch = fetchNewVehicleTypeData(normalizedVin);
+    NewVehicleTypePrefetch prefetch = fetchNewVehicleTypeData(normalizedVin, identity);
     VehicleType vehicleType =
         vehicleDataMapper.toVehicleType(vinDecodeResponse, prefetch.supplemental().ownerManual());
     return saveFullVehicleData(
@@ -108,10 +118,14 @@ public class VehicleOnboardingService {
         prefetch.supplemental().repairEstimates(),
         prefetch.supplemental().repairCosts(),
         prefetch.supplemental().recalls(),
+        prefetch.supplemental().vehicleWarranty(),
         prefetch.photos());
   }
 
   protected AddVinResponse linkExistingVin(User user, Vin vin, int currentMileage) {
+    VehicleType vehicleType = vin.getVehicleType();
+    ensureWarrantyForYearMakeModel(
+        vehicleType.getVehicleYear(), vehicleType.getVehicleMake(), vehicleType.getVehicleModel());
     return transactionTemplate.execute(
         _ -> {
           UserVin userVin =
@@ -154,6 +168,7 @@ public class VehicleOnboardingService {
       RepairEstimatesResponse repairEstimatesResponse,
       RepairCostResponse repairCostResponse,
       VehicleRecallsResponse recallResponse,
+      VehicleWarrantyResponse vehicleWarrantyResponse,
       List<String> preloadedPhotos) {
     return transactionTemplate.execute(
         _ -> {
@@ -176,6 +191,7 @@ public class VehicleOnboardingService {
             miscMaintCostRepository.saveAll(
                 vehicleDataMapper.toMiscMaintCosts(vehicleType, repairCostResponse));
             recallRepository.saveAll(vehicleDataMapper.toRecalls(vehicleType, recallResponse));
+            persistWarrantyIfAbsent(vehicleType, vehicleWarrantyResponse);
             createdVehicleType = true;
           }
           VehicleType savedVehicleType = vehicleType;
@@ -193,6 +209,47 @@ public class VehicleOnboardingService {
           }
           return response(vin, userVin, createdVin, createdVehicleType, createdAssociation);
         });
+  }
+
+  protected void ensureWarrantyForYearMakeModel(String year, String make, String model) {
+    if (warrantyExists(year, make, model)) {
+      return;
+    }
+    VehicleWarrantyResponse warrantyResponse =
+        vehicleDataProviderClient.getVehicleWarranty(year, make, model);
+    Optional<VehicleWarranty> mapped =
+        vehicleDataMapper.toVehicleWarranty(warrantyResponse, year, make, model);
+    if (mapped.isEmpty()) {
+      return;
+    }
+    transactionTemplate.execute(
+        _ -> {
+          persistWarrantyIfAbsent(year, make, model, mapped.get());
+          return null;
+        });
+  }
+
+  private void persistWarrantyIfAbsent(VehicleType vehicleType, VehicleWarrantyResponse response) {
+    String year = vehicleType.getVehicleYear();
+    String make = vehicleType.getVehicleMake();
+    String model = vehicleType.getVehicleModel();
+    persistWarrantyIfAbsent(
+        year,
+        make,
+        model,
+        vehicleDataMapper.toVehicleWarranty(response, year, make, model).orElse(null));
+  }
+
+  private void persistWarrantyIfAbsent(
+      String year, String make, String model, VehicleWarranty vehicleWarranty) {
+    if (vehicleWarranty == null || warrantyExists(year, make, model)) {
+      return;
+    }
+    vehicleWarrantyRepository.save(vehicleWarranty);
+  }
+
+  private boolean warrantyExists(String year, String make, String model) {
+    return vehicleWarrantyRepository.existsById(new VehicleWarrantyId(year, make, model));
   }
 
   private UserVin newUserVin(User user, Vin vin, int currentMileage) {
@@ -242,7 +299,8 @@ public class VehicleOnboardingService {
         .toList();
   }
 
-  private NewVehicleTypePrefetch fetchNewVehicleTypeData(String normalizedVin) {
+  private NewVehicleTypePrefetch fetchNewVehicleTypeData(
+      String normalizedVin, VehicleIdentity identity) {
     Future<List<String>> photos =
         vehicleDataExecutor.submit(() -> fetchVehiclePhotos(normalizedVin));
     Future<OwnerManualResponse> ownerManual =
@@ -254,10 +312,19 @@ public class VehicleOnboardingService {
         vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin));
     Future<VehicleRecallsResponse> recalls =
         vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
+    Future<VehicleWarrantyResponse> vehicleWarranty =
+        vehicleDataExecutor.submit(
+            () ->
+                vehicleDataProviderClient.getVehicleWarranty(
+                    identity.year(), identity.make(), identity.model()));
 
     SupplementalVehicleData supplemental =
         new SupplementalVehicleData(
-            await(ownerManual), await(repairEstimates), await(repairCosts), await(recalls));
+            await(ownerManual),
+            await(repairEstimates),
+            await(repairCosts),
+            await(recalls),
+            await(vehicleWarranty));
     return new NewVehicleTypePrefetch(supplemental, await(photos));
   }
 
@@ -283,7 +350,8 @@ public class VehicleOnboardingService {
       OwnerManualResponse ownerManual,
       RepairEstimatesResponse repairEstimates,
       RepairCostResponse repairCosts,
-      VehicleRecallsResponse recalls) {}
+      VehicleRecallsResponse recalls,
+      VehicleWarrantyResponse vehicleWarranty) {}
 
   private record NewVehicleTypePrefetch(
       SupplementalVehicleData supplemental, List<String> photos) {}

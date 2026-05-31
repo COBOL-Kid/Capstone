@@ -65,11 +65,16 @@ class VehicleReadDaoTest {
     assertFalse(vehicleReadDao.findCompletedRecalls(userId, camryVin).isEmpty());
     assertFalse(vehicleReadDao.findMiscCosts(camry.vehicleTypeId()).isEmpty());
 
+    var camryWarranty = vehicleReadDao.findVehicleWarranty("2020", "Toyota", "Camry").orElseThrow();
+    assertFalse(camryWarranty.coverages().isBlank());
+
     var partLines = vehicleReadDao.findPartLines(List.of(4L));
     assertFalse(partLines.isEmpty());
     assertEquals("Replace - Spark plugs", partLines.getFirst().partDesc());
 
     var dashboard = vehicleReadService.findDashboard(userId, camryVin).orElseThrow();
+    assertEquals("2020", dashboard.vehicleWarranty().vehicleYear());
+    assertFalse(dashboard.vehicleWarranty().coverages().isEmpty());
     assertFalse(dashboard.upcomingMaintenance().isEmpty());
     assertTrue(
         dashboard.upcomingMaintenance().stream()

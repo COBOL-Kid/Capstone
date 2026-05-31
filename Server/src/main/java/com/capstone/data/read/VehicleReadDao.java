@@ -153,6 +153,15 @@ public class VehicleReadDao {
         dealer_low AS dealer_low
       """;
 
+  static final String VEHICLE_WARRANTY_SELECT =
+      """
+      SELECT
+        vehicle_year AS vehicle_year,
+        vehicle_make AS vehicle_make,
+        vehicle_model AS vehicle_model,
+        coverages AS coverages
+      """;
+
   private final JdbcClient jdbcClient;
 
   public VehicleReadDao(JdbcClient jdbcClient) {
@@ -331,6 +340,24 @@ public class VehicleReadDao {
         .list();
   }
 
+  public Optional<VehicleWarrantyRow> findVehicleWarranty(
+      String vehicleYear, String vehicleMake, String vehicleModel) {
+    return jdbcClient
+        .sql(
+            VEHICLE_WARRANTY_SELECT
+                + """
+            FROM vehicle_warranty
+            WHERE lower(vehicle_year) = lower(:vehicleYear)
+              AND lower(vehicle_make) = lower(:vehicleMake)
+              AND lower(vehicle_model) = lower(:vehicleModel)
+            """)
+        .param("vehicleYear", vehicleYear)
+        .param("vehicleMake", vehicleMake)
+        .param("vehicleModel", vehicleModel)
+        .query(VehicleWarrantyRow.class)
+        .optional();
+  }
+
   public record CompletedMaintenanceRow(
       long completedMaintenanceId,
       LocalDate completedDate,
@@ -460,4 +487,7 @@ public class VehicleReadDao {
       Integer dealerAvg,
       Integer dealerHigh,
       Integer dealerLow) {}
+
+  public record VehicleWarrantyRow(
+      String vehicleYear, String vehicleMake, String vehicleModel, String coverages) {}
 }

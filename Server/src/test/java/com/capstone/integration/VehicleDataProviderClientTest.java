@@ -1,12 +1,15 @@
 package com.capstone.integration;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.capstone.configuration.VehicleDataProviderConfig;
 import com.capstone.domain.VinNotFoundException;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpEntity;
@@ -163,6 +166,42 @@ class VehicleDataProviderClientTest {
         restTemplate,
         "https://api.vehicledatabases.com/vehicle-repairs/v2/JTENU5JR6M5962554",
         RepairCostResponse.class);
+  }
+
+  @Test
+  void shouldFetchVehicleWarrantyFromVehicleDatabasesEndpoint() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    VehicleDataProviderConfig providerConfig = mock(VehicleDataProviderConfig.class);
+    Map<String, String> warranty = Map.of("Warranty - Basic (months/miles)", "36/36,000");
+    VehicleWarrantyResponse providerResponse =
+        new VehicleWarrantyResponse(
+            "success", new VehicleWarrantyResponse.WarrantyData("2019", "Mazda", "CX 3", warranty));
+
+    when(providerConfig.getVehicleDatabasesBaseUrl()).thenReturn(VDB_BASE);
+    when(providerConfig.getVehicleDatabasesApiKey()).thenReturn("vdb-key");
+    when(providerConfig.getVehicleDatabasesApiKeyHeader()).thenReturn("x-authkey");
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(VehicleWarrantyResponse.class)))
+        .thenReturn(ResponseEntity.ok(providerResponse));
+
+    VehicleDataProviderClient client = new VehicleDataProviderClient(restTemplate, providerConfig);
+
+    VehicleWarrantyResponse response = client.getVehicleWarranty("2019", "Mazda", "CX 3");
+
+    assertEquals("success", response.status());
+    assertEquals("CX 3", response.data().model());
+    ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+    verify(restTemplate)
+        .exchange(
+            urlCaptor.capture(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(VehicleWarrantyResponse.class));
+    assertTrue(urlCaptor.getValue().contains("/vehicle-warranty/2019/Mazda/"));
+    assertTrue(urlCaptor.getValue().contains("CX"));
   }
 
   @Test

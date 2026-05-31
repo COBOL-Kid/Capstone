@@ -40,6 +40,15 @@ public class VehicleDataProviderClient {
     return getVehicleDatabases("/owner-manual/{vin}", vin, OwnerManualResponse.class);
   }
 
+  public VehicleWarrantyResponse getVehicleWarranty(String year, String make, String model) {
+    return getVehicleDatabasesByYearMakeModel(
+        "/vehicle-warranty/{year}/{make}/{model}",
+        year,
+        make,
+        model,
+        VehicleWarrantyResponse.class);
+  }
+
   public VehiclePhotosResponse getPhotos(String vin) {
     return getAutoDev("/photos/{vin}", vin, VehiclePhotosResponse.class, false);
   }
@@ -65,6 +74,36 @@ public class VehicleDataProviderClient {
         providerConfig.getVehicleDatabasesApiKey(),
         providerConfig.getVehicleDatabasesApiKeyHeader(),
         false);
+  }
+
+  private <T> T getVehicleDatabasesByYearMakeModel(
+      String path, String year, String make, String model, Class<T> responseType) {
+    String url =
+        UriComponentsBuilder.fromUriString(providerConfig.getVehicleDatabasesBaseUrl())
+            .path(path)
+            .buildAndExpand(year, make, model)
+            .toUriString();
+    try {
+      ResponseEntity<T> response =
+          restTemplate.exchange(
+              url,
+              HttpMethod.GET,
+              new HttpEntity<>(
+                  headers(
+                      providerConfig.getVehicleDatabasesApiKey(),
+                      providerConfig.getVehicleDatabasesApiKeyHeader())),
+              responseType);
+      T body = response.getBody();
+      if (body == null) {
+        throw new IllegalStateException("Vehicle data provider returned an empty response");
+      }
+      return body;
+    } catch (HttpStatusCodeException ex) {
+      if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+        return null;
+      }
+      throw ex;
+    }
   }
 
   private <T> T get(

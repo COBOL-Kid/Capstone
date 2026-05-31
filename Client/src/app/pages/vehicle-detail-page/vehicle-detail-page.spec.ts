@@ -36,6 +36,35 @@ describe('VehicleDetailPageComponent', () => {
     uncompletedRecalls: [] as never[],
     completedRecalls: [] as never[],
     miscMaintenanceCosts: [] as never[],
+    vehicleWarranty: null,
+  };
+
+  const sampleWarranty = {
+    vehicleYear: '2021',
+    vehicleMake: 'Toyota',
+    vehicleModel: '4RUNNER',
+    coverages: [
+      {
+        coverageName: 'Warranty - Basic (months/miles)',
+        coverageValue: '36/36,000',
+        estimatedExpirationDate: '2024-01-01',
+        expired: false,
+        remainingMonths: 6,
+        remainingMiles: 8_432,
+      },
+    ],
+  };
+
+  const expiredWarranty = {
+    ...sampleWarranty,
+    coverages: [
+      {
+        ...sampleWarranty.coverages[0],
+        expired: true,
+        remainingMonths: null,
+        remainingMiles: null,
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -99,6 +128,150 @@ describe('VehicleDetailPageComponent', () => {
     ).find((button) => button.textContent?.includes("Owner's manual"));
 
     expect(manualButton).toBeUndefined();
+  });
+
+  it('does not show warranty button when vehicleWarranty is null', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const warrantyButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Warranty information'));
+
+    expect(warrantyButton).toBeUndefined();
+  });
+
+  it('opens warranty modal when warranty button is clicked', async () => {
+    const loadVehiclePage = vi.fn(() => of({ ...emptyPageData, vehicleWarranty: sampleWarranty }));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const warrantyButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Warranty information'));
+
+    expect(warrantyButton).toBeDefined();
+    warrantyButton!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-warranty-modal')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Basic');
+    expect(fixture.nativeElement.textContent).toContain('36/36,000');
+    expect(fixture.nativeElement.textContent).toContain('Active');
+  });
+
+  it('shows warranty status in specs when coverage has computed fields', async () => {
+    const loadVehiclePage = vi.fn(() => of({ ...emptyPageData, vehicleWarranty: sampleWarranty }));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const specs = fixture.nativeElement.querySelector('.vehicle-detail__specs');
+    expect(specs?.textContent).toContain('Basic');
+    expect(specs?.textContent).toContain('Active');
+    expect(specs?.textContent).toContain('8,432 mi');
+    expect(specs?.textContent).toContain('exp. 2024');
+  });
+
+  it('shows expired warranty status in specs', async () => {
+    const loadVehiclePage = vi.fn(() => of({ ...emptyPageData, vehicleWarranty: expiredWarranty }));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const specs = fixture.nativeElement.querySelector('.vehicle-detail__specs');
+    expect(specs?.textContent).toContain('Expired');
+    expect(specs?.textContent).toContain('exp. 2024');
+  });
+
+  it('reloads dashboard after mileage update', async () => {
+    const loadVehiclePage = vi.fn(() => of(emptyPageData));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(loadVehiclePage).toHaveBeenCalledTimes(1);
+
+    fixture.componentInstance['onMileageUpdated']({
+      ...vehicleDetail,
+      currentMileage: 46_000,
+    });
+    await fixture.whenStable();
+
+    expect(loadVehiclePage).toHaveBeenCalledTimes(2);
   });
 
   it('opens maintenance costs modal when maintenance costs button is clicked', async () => {
@@ -202,6 +375,7 @@ describe('VehicleDetailPageComponent with upcoming maintenance', () => {
                 uncompletedRecalls: [],
                 completedRecalls: [],
                 miscMaintenanceCosts: [],
+                vehicleWarranty: null,
               }),
             ),
           },
@@ -298,6 +472,7 @@ describe('VehicleDetailPageComponent with owners manual', () => {
                 uncompletedRecalls: [],
                 completedRecalls: [],
                 miscMaintenanceCosts: [],
+                vehicleWarranty: null,
               }),
             ),
           },

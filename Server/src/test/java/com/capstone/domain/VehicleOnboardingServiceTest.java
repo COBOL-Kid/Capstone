@@ -11,10 +11,13 @@ import com.capstone.integration.RepairEstimatesResponse;
 import com.capstone.integration.VehicleDataProviderClient;
 import com.capstone.integration.VehiclePhotosResponse;
 import com.capstone.integration.VehicleRecallsResponse;
+import com.capstone.integration.VehicleWarrantyResponse;
 import com.capstone.integration.VinDecodeResponse;
 import com.capstone.models.*;
 import com.capstone.models.dto.AddVinRequest;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +45,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     VehicleDataMapper mapper = new VehicleDataMapper();
     TransactionTemplate transactionTemplate = transactionTemplate();
@@ -57,9 +62,11 @@ class VehicleOnboardingServiceTest {
     when(userVinRepository.save(any(UserVin.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(photosResponse());
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(true);
 
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -67,10 +74,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             mapper,
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     var response = service.addVinToUser(user, new AddVinRequest("jtenu5jr6m5962554", 45000));
 
@@ -94,6 +101,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -108,8 +117,11 @@ class VehicleOnboardingServiceTest {
     when(userVinRepository.findByUserUserIdAndVinVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(existingAssociation));
 
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(true);
+
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -117,10 +129,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     var response = service.addVinToUser(user, new AddVinRequest(" JTENU5JR6M5962554 ", 45000));
 
@@ -145,6 +157,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -163,9 +177,16 @@ class VehicleOnboardingServiceTest {
     when(userVinRepository.save(any(UserVin.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(photosResponse());
+    when(vehicleWarrantyRepository.existsById(
+            new VehicleWarrantyId("2022", "Chevrolet", "Silverado 1500")))
+        .thenReturn(false);
+    when(providerClient.getVehicleWarranty("2022", "Chevrolet", "Silverado 1500"))
+        .thenReturn(vehicleWarrantyResponse());
+    when(vehicleWarrantyRepository.save(any(VehicleWarranty.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -173,10 +194,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     var response = service.addVinToUser(user, new AddVinRequest("jtenu5jr6m5962554", 45000));
 
@@ -186,6 +207,8 @@ class VehicleOnboardingServiceTest {
     assertFalse(response.createdVehicleType());
     assertTrue(response.createdAssociation());
     assertEquals(PHOTO_1, response.selectedImageUrl());
+    verify(providerClient).getVehicleWarranty("2022", "Chevrolet", "Silverado 1500");
+    verify(vehicleWarrantyRepository).save(any(VehicleWarranty.class));
     verify(providerClient, never()).getOwnerManual(any());
     verify(providerClient, never()).getRepairEstimates(any());
     verify(providerClient, never()).getRepairCosts(any());
@@ -206,6 +229,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -226,6 +251,12 @@ class VehicleOnboardingServiceTest {
                 "success",
                 new VehicleRecallsResponse.VehicleRecallsData(
                     "JTENU5JR6M5962554", "2021", "Toyota", "4RUNNER", List.of())));
+    when(providerClient.getVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenReturn(vehicleWarrantyResponse());
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(false);
+    when(vehicleWarrantyRepository.save(any(VehicleWarranty.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     when(vehicleTypeRepository.save(any(VehicleType.class)))
         .thenAnswer(
             invocation -> {
@@ -240,7 +271,7 @@ class VehicleOnboardingServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -248,10 +279,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     var response = service.addVinToUser(user, new AddVinRequest("jtenu5jr6m5962554", 45000));
 
@@ -263,10 +294,12 @@ class VehicleOnboardingServiceTest {
     verify(maintMileageRepository).saveAll(any());
     verify(miscMaintCostRepository).saveAll(any());
     verify(recallRepository).saveAll(any());
+    verify(vehicleWarrantyRepository).save(any(VehicleWarranty.class));
     verify(providerClient).getOwnerManual("JTENU5JR6M5962554");
     verify(providerClient).getRepairEstimates("JTENU5JR6M5962554");
     verify(providerClient).getRepairCosts("JTENU5JR6M5962554");
     verify(providerClient).getRecalls("JTENU5JR6M5962554");
+    verify(providerClient).getVehicleWarranty("2021", "Toyota", "4RUNNER");
   }
 
   @Test
@@ -279,9 +312,11 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -289,10 +324,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate(),
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate());
 
     assertEquals(
         "Authenticated user is required",
@@ -325,6 +360,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -338,9 +375,11 @@ class VehicleOnboardingServiceTest {
     when(userVinRepository.save(any(UserVin.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(providerClient.getPhotos("JTENU5JR6M5962554")).thenReturn(new VehiclePhotosResponse(null));
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(true);
 
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -348,10 +387,10 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     var response = service.addVinToUser(user, new AddVinRequest("JTENU5JR6M5962554", 45000));
 
@@ -370,6 +409,8 @@ class VehicleOnboardingServiceTest {
     MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository =
         mock(MaintMileageSummaryRepositoryJPA.class);
     MiscMaintCostRepositoryJPA miscMaintCostRepository = mock(MiscMaintCostRepositoryJPA.class);
+    VehicleWarrantyRepositoryJPA vehicleWarrantyRepository =
+        mock(VehicleWarrantyRepositoryJPA.class);
     VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
     TransactionTemplate transactionTemplate = transactionTemplate();
     User user = user();
@@ -378,7 +419,7 @@ class VehicleOnboardingServiceTest {
     when(providerClient.decodeVin("JTENU5JR6M5962554")).thenReturn(invalidVinDecodeResponse());
 
     VehicleOnboardingService service =
-        new VehicleOnboardingService(
+        onboardingService(
             vinRepository,
             vehicleTypeRepository,
             userVinRepository,
@@ -386,16 +427,50 @@ class VehicleOnboardingServiceTest {
             maintMileageRepository,
             maintMileageSummaryRepository,
             miscMaintCostRepository,
+            vehicleWarrantyRepository,
             providerClient,
             new VehicleDataMapper(),
-            transactionTemplate,
-            TEST_VEHICLE_DATA_EXECUTOR);
+            transactionTemplate);
 
     assertThrows(
         VinNotFoundException.class,
         () -> service.addVinToUser(user, new AddVinRequest("JTENU5JR6M5962554", 45000)));
     verify(vehicleTypeRepository, never()).findByIdentity(any(), any(), any(), any(), any());
     verify(vinRepository, never()).save(any(Vin.class));
+  }
+
+  private VehicleOnboardingService onboardingService(
+      VinRepositoryJPA vinRepository,
+      VehicleTypeRepositoryJPA vehicleTypeRepository,
+      UserVinRepositoryJPA userVinRepository,
+      RecallRepositoryJPA recallRepository,
+      MaintMileageRepositoryJPA maintMileageRepository,
+      MaintMileageSummaryRepositoryJPA maintMileageSummaryRepository,
+      MiscMaintCostRepositoryJPA miscMaintCostRepository,
+      VehicleWarrantyRepositoryJPA vehicleWarrantyRepository,
+      VehicleDataProviderClient providerClient,
+      VehicleDataMapper mapper,
+      TransactionTemplate transactionTemplate) {
+    return new VehicleOnboardingService(
+        vinRepository,
+        vehicleTypeRepository,
+        userVinRepository,
+        recallRepository,
+        maintMileageRepository,
+        maintMileageSummaryRepository,
+        miscMaintCostRepository,
+        vehicleWarrantyRepository,
+        providerClient,
+        mapper,
+        transactionTemplate,
+        TEST_VEHICLE_DATA_EXECUTOR);
+  }
+
+  private VehicleWarrantyResponse vehicleWarrantyResponse() {
+    Map<String, String> warranty = new LinkedHashMap<>();
+    warranty.put("Warranty - Basic (months/miles)", "36/36,000");
+    return new VehicleWarrantyResponse(
+        "success", new VehicleWarrantyResponse.WarrantyData("2021", "Toyota", "4RUNNER", warranty));
   }
 
   private TransactionTemplate transactionTemplate() {

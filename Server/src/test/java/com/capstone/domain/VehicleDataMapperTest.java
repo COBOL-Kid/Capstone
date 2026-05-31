@@ -7,8 +7,11 @@ import com.capstone.models.MaintMileage;
 import com.capstone.models.MiscMaintCost;
 import com.capstone.models.Recall;
 import com.capstone.models.VehicleType;
+import com.capstone.models.VehicleWarranty;
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class VehicleDataMapperTest {
@@ -188,6 +191,53 @@ class VehicleDataMapperTest {
     assertEquals(1, scheduleImport.summaries().size());
     assertEquals(50000, scheduleImport.summaries().getFirst().getMileageDue());
     assertEquals(new BigDecimal("97.99"), scheduleImport.summaries().getFirst().getTotalCost());
+  }
+
+  @Test
+  void shouldMapVehicleWarrantyFromProviderResponse() {
+    Map<String, String> warranty = new LinkedHashMap<>();
+    warranty.put("Warranty - Basic (months/miles)", "36/36,000");
+    warranty.put("Warranty - Powertrain (months/miles)", "60/60,000");
+    VehicleWarrantyResponse response =
+        new VehicleWarrantyResponse(
+            "success", new VehicleWarrantyResponse.WarrantyData("2019", "Mazda", "CX 3", warranty));
+
+    VehicleWarranty vehicleWarranty =
+        mapper.toVehicleWarranty(response, "2019", "Mazda", "CX 3").orElseThrow();
+
+    assertEquals("2019", vehicleWarranty.getVehicleYear());
+    assertEquals("Mazda", vehicleWarranty.getVehicleMake());
+    assertEquals("CX 3", vehicleWarranty.getVehicleModel());
+    assertEquals(2, vehicleWarranty.getCoverages().size());
+    assertEquals(
+        "36/36,000", vehicleWarranty.getCoverages().get("Warranty - Basic (months/miles)"));
+  }
+
+  @Test
+  void shouldUseCanonicalYmmFromVinDecodeNotProviderWarrantyPayload() {
+    Map<String, String> warranty = new LinkedHashMap<>();
+    warranty.put("Warranty - Basic (months/miles)", "36/36,000");
+    VehicleWarrantyResponse response =
+        new VehicleWarrantyResponse(
+            "success",
+            new VehicleWarrantyResponse.WarrantyData("2099", "Other", "Model", warranty));
+
+    VehicleWarranty vehicleWarranty =
+        mapper.toVehicleWarranty(response, "2020", "Toyota", "Camry").orElseThrow();
+
+    assertEquals("2020", vehicleWarranty.getVehicleYear());
+    assertEquals("Toyota", vehicleWarranty.getVehicleMake());
+    assertEquals("Camry", vehicleWarranty.getVehicleModel());
+  }
+
+  @Test
+  void shouldReturnEmptyWhenVehicleWarrantyResponseHasNoCoverages() {
+    assertTrue(mapper.toVehicleWarranty(null, "2019", "Mazda", "CX 3").isEmpty());
+    assertTrue(
+        mapper
+            .toVehicleWarranty(
+                new VehicleWarrantyResponse("success", null), "2019", "Mazda", "CX 3")
+            .isEmpty());
   }
 
   @Test

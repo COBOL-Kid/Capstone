@@ -9,6 +9,7 @@ import com.capstone.data.read.VehicleReadDao.MiscMaintCostRow;
 import com.capstone.data.read.VehicleReadDao.UncompletedRecallRow;
 import com.capstone.data.read.VehicleReadDao.UpcomingMaintRootRow;
 import com.capstone.domain.VinNormalizer;
+import com.capstone.domain.WarrantyStatusCalculator;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
 import com.capstone.models.dto.CompletedRecallResponse;
 import com.capstone.models.dto.LaborCostResponse;
@@ -21,6 +22,12 @@ import com.capstone.models.dto.UpcomingMaintenanceItemResponse;
 import com.capstone.models.dto.UserVehicleResponse;
 import com.capstone.models.dto.VehicleDashboardResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
+import com.capstone.models.dto.VehicleWarrantyResponse;
+import com.capstone.models.dto.WarrantyCoverageResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class VehicleReadService {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final TypeReference<LinkedHashMap<String, String>> COVERAGES_MAP =
+      new TypeReference<>() {};
 
   private final VehicleReadDao vehicleReadDao;
 
@@ -79,6 +90,7 @@ public class VehicleReadService {
             .toList();
     List<MiscMaintenanceCostResponse> miscMaintenanceCosts =
         vehicleReadDao.findMiscCosts(vehicleTypeId).stream().map(this::toMiscCostResponse).toList();
+    VehicleWarrantyResponse vehicleWarranty = findVehicleWarranty(row);
 
     return Optional.of(
         new VehicleDashboardResponse(
@@ -87,7 +99,50 @@ public class VehicleReadService {
             completedMaintenance,
             uncompletedRecalls,
             completedRecalls,
-            miscMaintenanceCosts));
+            miscMaintenanceCosts,
+            vehicleWarranty));
+  }
+
+  private VehicleWarrantyResponse findVehicleWarranty(UserVinDetailRow row) {
+    return vehicleReadDao
+        .findVehicleWarranty(row.vehicleYear(), row.vehicleMake(), row.vehicleModel())
+        .map(
+            warrantyRow ->
+                new VehicleWarrantyResponse(
+                    warrantyRow.vehicleYear(),
+                    warrantyRow.vehicleMake(),
+                    warrantyRow.vehicleModel(),
+                    parseCoverages(
+                        warrantyRow.coverages(), row.vehicleYear(), row.currentMileage())))
+        .orElse(null);
+  }
+
+  private List<WarrantyCoverageResponse> parseCoverages(
+      String coveragesJson, String vehicleYear, int currentMileage) {
+    if (coveragesJson == null || coveragesJson.isBlank()) {
+      return List.of();
+    }
+    int modelYear = parseVehicleYear(vehicleYear);
+    LocalDate today = LocalDate.now();
+    try {
+      Map<String, String> coverages = OBJECT_MAPPER.readValue(coveragesJson, COVERAGES_MAP);
+      return coverages.entrySet().stream()
+          .map(
+              entry ->
+                  WarrantyStatusCalculator.compute(
+                      entry.getKey(), entry.getValue(), modelYear, currentMileage, today))
+          .toList();
+    } catch (JsonProcessingException ex) {
+      throw new IllegalStateException("Failed to deserialize warranty coverages", ex);
+    }
+  }
+
+  private static int parseVehicleYear(String vehicleYear) {
+    try {
+      return Integer.parseInt(vehicleYear.trim());
+    } catch (NumberFormatException ex) {
+      throw new IllegalStateException("Invalid vehicle year: " + vehicleYear, ex);
+    }
   }
 
   private List<UpcomingMaintenanceIntervalResponse> buildUpcomingMaintenance(

@@ -8,4 +8,5 @@ public record VehicleDashboardResponse(
     List<CompletedMaintenanceResponse> completedMaintenance,
     List<RecallResponse> uncompletedRecalls,
     List<CompletedRecallResponse> completedRecalls,
-    List<MiscMaintenanceCostResponse> miscMaintenanceCosts) {}
+    List<MiscMaintenanceCostResponse> miscMaintenanceCosts,
+    VehicleWarrantyResponse vehicleWarranty) {}

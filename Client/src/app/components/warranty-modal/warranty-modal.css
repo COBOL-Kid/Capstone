@@ -1,0 +1,45 @@
+.warranty-modal__dialog {
+  width: min(100%, 34rem);
+}
+
+.warranty-modal__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.warranty-modal__status {
+  display: block;
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.warranty-modal__list {
+  margin: 0;
+  max-height: min(55vh, 24rem);
+  overflow-y: auto;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.warranty-modal__item {
+  border: 1px solid rgba(230, 240, 251, 0.15);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.warranty-modal__item dt {
+  margin: 0 0 0.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.warranty-modal__item dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}

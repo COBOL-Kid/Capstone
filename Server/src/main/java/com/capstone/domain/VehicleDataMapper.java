@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -119,6 +120,33 @@ public class VehicleDataMapper {
       miscMaintCosts.add(miscMaintCost);
     }
     return miscMaintCosts;
+  }
+
+  public Optional<VehicleWarranty> toVehicleWarranty(
+      VehicleWarrantyResponse warrantyResponse, String year, String make, String model) {
+    if (warrantyResponse == null
+        || warrantyResponse.data() == null
+        || warrantyResponse.data().warranty() == null
+        || warrantyResponse.data().warranty().isEmpty()) {
+      return Optional.empty();
+    }
+    String canonicalYear = required(clean(year));
+    String canonicalMake = required(clean(make));
+    String canonicalModel = required(clean(model));
+    VehicleWarranty vehicleWarranty =
+        new VehicleWarranty(canonicalYear, canonicalMake, canonicalModel);
+    for (Map.Entry<String, String> entry : warrantyResponse.data().warranty().entrySet()) {
+      String coverageName = clean(entry.getKey());
+      String coverageValue = clean(entry.getValue());
+      if (coverageName == null || coverageValue == null) {
+        continue;
+      }
+      vehicleWarranty.addCoverage(coverageName, coverageValue);
+    }
+    if (vehicleWarranty.getCoverages().isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(vehicleWarranty);
   }
 
   public List<Recall> toRecalls(VehicleType vehicleType, VehicleRecallsResponse recallResponse) {

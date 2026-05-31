@@ -76,6 +76,12 @@
                   <dd>{{ v.driveType }}</dd>
                 </div>
               }
+              @for (coverage of warrantyCoveragesForDisplay(); track coverage.coverageName) {
+                <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
+                  <dt>{{ formatWarrantyCoverageLabel(coverage.coverageName) }}</dt>
+                  <dd>{{ formatWarrantyCoverageStatus(coverage) }}</dd>
+                </div>
+              }
             </dl>
             @if (v.origin || v.sourceVin) {
               <details class="vehicle-detail__more-specs">
@@ -106,6 +112,12 @@
               </button>
             }
           </div>
+
+          @if (vehicleWarranty(); as warranty) {
+            <button (click)="openWarrantyModal()" class="vehicle-detail__costs-btn" type="button">
+              Warranty information
+            </button>
+          }
 
           <button
             (click)="openMaintenanceCostsModal()"
@@ -355,6 +367,10 @@
       [currentMileage]="v.currentMileage"
       [vin]="v.vin"
     />
+  }
+
+  @if (isWarrantyModalOpen() && vehicleWarranty(); as warranty) {
+    <app-warranty-modal (close)="closeWarrantyModal()" [warranty]="warranty" />
   }
 
   @if (isMaintenanceCostsModalOpen() && vehicle(); as v) {

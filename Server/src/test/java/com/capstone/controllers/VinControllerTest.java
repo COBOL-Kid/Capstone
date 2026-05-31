@@ -70,7 +70,7 @@ class VinControllerTest {
     AuthenticatedUser user = user();
     VehicleDashboardResponse dashboard =
         new VehicleDashboardResponse(
-            vehicleDetailResponse(), List.of(), List.of(), List.of(), List.of(), List.of());
+            vehicleDetailResponse(), List.of(), List.of(), List.of(), List.of(), List.of(), null);
 
     when(dashboardService.findDashboardForUser(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(dashboard));

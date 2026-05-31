@@ -1,149 +1,155 @@
 .home__header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .home__title {
-    font-size: clamp(2rem, 5vw, 3rem);
-    margin: 0;
-    font-family: var(--font-heading), ui-monospace;
-    letter-spacing: 0.01em;
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 0;
+  font-family: var(--font-heading), ui-monospace;
+  letter-spacing: 0.01em;
 }
 
 .home__add-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background-color: var(--color-accent);
-    color: var(--color-text-on-dark);
-    font-size: 1.5rem;
-    font-weight: bold;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(47, 111, 180, 0.3);
-    transition: transform 150ms ease, background-color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: var(--color-text-on-dark);
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(47, 111, 180, 0.3);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease;
 }
 
 .home__add-button:hover {
-    background-color: var(--color-accent-strong);
-    transform: translateY(-2px);
+  background-color: var(--color-accent-strong);
+  transform: translateY(-2px);
 }
 
 .home__empty p {
-    margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .home__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
 }
 
 .vehicle-card {
-    position: relative;
-    border-radius: 1rem;
-    overflow: hidden;
-    transition: transform 200ms ease, box-shadow 200ms ease;
-    display: flex;
-    flex-direction: column;
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .vehicle-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-    border-color: rgba(230, 240, 251, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(230, 240, 251, 0.3);
 }
 
 .vehicle-card__link {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    color: inherit;
-    text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
 }
 
 .vehicle-card__image-container {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .vehicle-card__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .vehicle-card__placeholder {
-    color: var(--color-text-muted);
-    font-weight: 500;
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .vehicle-card__details {
-    padding: 1.25rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .vehicle-card__title {
-    margin: 0 0 0.25rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-text-on-dark);
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-on-dark);
 }
 
 .vehicle-card__subtitle {
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
-    color: var(--color-blue-100);
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: var(--color-blue-100);
 }
 
 .vehicle-card__mileage {
-    margin: auto 0 0;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  margin: auto 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .vehicle-card__delete {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 1.25rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 200ms ease, background 150ms ease;
-    z-index: 10;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    background 150ms ease;
+  z-index: 10;
 }
 
 .vehicle-card:hover .vehicle-card__delete,
 .vehicle-card:focus-within .vehicle-card__delete {
-    opacity: 1;
+  opacity: 1;
 }
 
 .vehicle-card__delete:hover {
-    background: #a92a2a;
-    border-color: #ff4d4d;
+  background: #a92a2a;
+  border-color: #ff4d4d;
 }

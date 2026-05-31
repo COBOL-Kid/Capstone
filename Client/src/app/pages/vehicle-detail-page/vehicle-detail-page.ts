@@ -27,7 +27,11 @@ import { UpdateMileageModalComponent } from '../../components/update-mileage-mod
 import { MaintenanceDetailModalComponent } from '../../components/maintenance-detail-modal/maintenance-detail-modal';
 import { MaintenanceCostsModalComponent } from '../../components/maintenance-costs-modal/maintenance-costs-modal';
 import { RecallDetailModalComponent } from '../../components/recall-detail-modal/recall-detail-modal';
-
+import { WarrantyModalComponent } from '../../components/warranty-modal/warranty-modal';
+import {
+  formatWarrantyCoverageLabel,
+  formatWarrantyCoverageStatus,
+} from '../../core/warranty/warranty-display';
 type ActiveSection = 'maintenance' | 'recalls';
 
 @Component({
@@ -40,6 +44,7 @@ type ActiveSection = 'maintenance' | 'recalls';
     MaintenanceDetailModalComponent,
     MaintenanceCostsModalComponent,
     RecallDetailModalComponent,
+    WarrantyModalComponent,
   ],
   templateUrl: './vehicle-detail-page.html',
   styleUrl: './vehicle-detail-page.css',
@@ -50,6 +55,7 @@ export class VehicleDetailPageComponent {
   protected readonly activeSection = signal<ActiveSection>('maintenance');
   protected readonly isMileageModalOpen = signal(false);
   protected readonly isMaintenanceCostsModalOpen = signal(false);
+  protected readonly isWarrantyModalOpen = signal(false);
   protected readonly selectedUpcomingMaintenance = signal<SelectedUpcomingMaintenance | null>(null);
   protected readonly selectedCompletedMaintenance = signal<CompletedMaintenanceResponse | null>(
     null,
@@ -92,6 +98,14 @@ export class VehicleDetailPageComponent {
   protected readonly miscMaintenanceCosts = computed(
     () => this.pageData()?.miscMaintenanceCosts ?? [],
   );
+  protected readonly vehicleWarranty = computed(() => this.pageData()?.vehicleWarranty ?? null);
+  protected readonly warrantyCoveragesForDisplay = computed(() => {
+    const warranty = this.vehicleWarranty();
+    if (!warranty) {
+      return [];
+    }
+    return warranty.coverages.filter((coverage) => coverage.estimatedExpirationDate != null);
+  });
   protected readonly isLoading = computed(() => {
     const status = this.pageResource.status();
     return status === 'loading' || status === 'reloading';
@@ -141,6 +155,14 @@ export class VehicleDetailPageComponent {
     this.isMileageModalOpen.set(false);
   }
 
+  protected openWarrantyModal(): void {
+    this.isWarrantyModalOpen.set(true);
+  }
+
+  protected closeWarrantyModal(): void {
+    this.isWarrantyModalOpen.set(false);
+  }
+
   protected openMaintenanceCostsModal(): void {
     this.isMaintenanceCostsModalOpen.set(true);
   }
@@ -156,8 +178,9 @@ export class VehicleDetailPageComponent {
     }
   }
 
-  protected onMileageUpdated(detail: VehicleDetailResponse): void {
-    this.pageData.update((current) => (current ? { ...current, detail } : current));
+  protected onMileageUpdated(_detail: VehicleDetailResponse): void {
+    this.closeMileageModal();
+    this.refreshPageData();
   }
 
   protected openUpcomingMaintenanceFromItem(
@@ -200,6 +223,9 @@ export class VehicleDetailPageComponent {
     return `Parts ${this.formatCurrency(total, currency)}`;
   }
 
+  protected formatWarrantyCoverageLabel = formatWarrantyCoverageLabel;
+  protected formatWarrantyCoverageStatus = formatWarrantyCoverageStatus;
+
   protected openCompletedMaintenance(item: CompletedMaintenanceResponse): void {
     this.selectedCompletedMaintenance.set(item);
     this.selectedUpcomingMaintenance.set(null);
@@ -237,6 +263,7 @@ export class VehicleDetailPageComponent {
     this.closeMaintenanceModal();
     this.closeRecallModal();
     this.closeMaintenanceCostsModal();
+    this.closeWarrantyModal();
   }
 
   /** Refetch dashboard after mutations; rxResource.reload() does not reliably sync pageData. */

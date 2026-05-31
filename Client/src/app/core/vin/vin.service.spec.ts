@@ -110,6 +110,8 @@ describe('VinService', () => {
       completedMaintenance: [],
       uncompletedRecalls: [],
       completedRecalls: [],
+      miscMaintenanceCosts: [],
+      vehicleWarranty: null,
     };
 
     service.getVehicleDashboard('JTENU5JR6M5962554').subscribe((response) => {

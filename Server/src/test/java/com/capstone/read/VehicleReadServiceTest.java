@@ -1,6 +1,7 @@
 package com.capstone.read;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -109,11 +110,14 @@ class VehicleReadServiceTest {
     when(vehicleReadDao.findUncompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findCompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findMiscCosts(7L)).thenReturn(List.of());
+    when(vehicleReadDao.findVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenReturn(Optional.empty());
 
     VehicleDashboardResponse dashboard =
         vehicleReadService.findDashboard(USER_ID, RAW_VIN).orElseThrow();
 
     verify(vehicleReadDao).findUserVinDetail(USER_ID, NORMALIZED_VIN);
+    assertNull(dashboard.vehicleWarranty());
     assertEquals(2, dashboard.upcomingMaintenance().size());
     assertEquals(30_000, dashboard.upcomingMaintenance().getFirst().mileageDue());
     assertEquals(45_000, dashboard.upcomingMaintenance().get(1).mileageDue());
@@ -143,6 +147,8 @@ class VehicleReadServiceTest {
     when(vehicleReadDao.findUncompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findCompletedRecalls(USER_ID, NORMALIZED_VIN)).thenReturn(List.of());
     when(vehicleReadDao.findMiscCosts(7L)).thenReturn(List.of());
+    when(vehicleReadDao.findVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenReturn(Optional.empty());
 
     var interval =
         vehicleReadService
@@ -290,6 +296,14 @@ class VehicleReadServiceTest {
             List.of(
                 new MiscMaintCostRow(
                     1L, "Oil Change", "Replace engine oil", 65, 95, 45, 110, 145, 85)));
+    when(vehicleReadDao.findVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenReturn(
+            Optional.of(
+                new VehicleReadDao.VehicleWarrantyRow(
+                    "2021",
+                    "Toyota",
+                    "4RUNNER",
+                    "{\"Warranty - Basic (months/miles)\":\"36/36,000\"}")));
 
     VehicleDashboardResponse dashboard =
         vehicleReadService.findDashboard(USER_ID, NORMALIZED_VIN).orElseThrow();
@@ -299,6 +313,15 @@ class VehicleReadServiceTest {
     assertEquals(1, dashboard.uncompletedRecalls().size());
     assertEquals(1, dashboard.completedRecalls().size());
     assertEquals("Oil Change", dashboard.miscMaintenanceCosts().getFirst().maintTitle());
+    assertEquals("2021", dashboard.vehicleWarranty().vehicleYear());
+    assertEquals(1, dashboard.vehicleWarranty().coverages().size());
+    var basicCoverage = dashboard.vehicleWarranty().coverages().getFirst();
+    assertEquals("Warranty - Basic (months/miles)", basicCoverage.coverageName());
+    assertEquals("36/36,000", basicCoverage.coverageValue());
+    assertEquals(java.time.LocalDate.of(2024, 1, 1), basicCoverage.estimatedExpirationDate());
+    assertTrue(basicCoverage.expired());
+    assertNull(basicCoverage.remainingMonths());
+    assertNull(basicCoverage.remainingMiles());
   }
 
   private UserVinDetailRow userVinDetailRow() {

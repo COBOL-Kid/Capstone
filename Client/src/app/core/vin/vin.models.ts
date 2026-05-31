@@ -37,6 +37,7 @@ import {
   UpcomingMaintenanceIntervalResponse,
 } from '../maintenance/maintenance.models';
 import { CompletedRecallResponse, RecallResponse } from '../recall/recall.models';
+import { VehicleWarrantyResponse } from '../warranty/warranty.models';
 
 export type VinErrorMessage = FieldErrorMessage;
 
@@ -71,4 +72,5 @@ export interface VehicleDashboardResponse {
   uncompletedRecalls: RecallResponse[];
   completedRecalls: CompletedRecallResponse[];
   miscMaintenanceCosts: MiscMaintenanceCostResponse[];
+  vehicleWarranty: VehicleWarrantyResponse | null;
 }

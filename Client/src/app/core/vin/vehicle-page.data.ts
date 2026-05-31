@@ -25,6 +25,7 @@ export class VehiclePageDataService {
       uncompletedRecalls: dashboard.uncompletedRecalls,
       completedRecalls: dashboard.completedRecalls,
       miscMaintenanceCosts: dashboard.miscMaintenanceCosts,
+      vehicleWarranty: dashboard.vehicleWarranty,
     };
   }
 }

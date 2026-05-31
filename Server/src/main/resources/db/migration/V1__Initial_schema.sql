@@ -87,6 +87,16 @@ CREATE TABLE misc_maint_cost
     CONSTRAINT fk_misc_maint_cost_vehicle_type FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_type (vehicle_type_id)
 );
 
+CREATE TABLE vehicle_warranty
+(
+    vehicle_year  CHAR(4)      NOT NULL,
+    vehicle_make  VARCHAR(60)  NOT NULL,
+    vehicle_model VARCHAR(80)  NOT NULL,
+    fetched_at    DATETIME(6)  NOT NULL,
+    coverages     JSON         NOT NULL,
+    PRIMARY KEY (vehicle_year, vehicle_make, vehicle_model)
+);
+
 CREATE TABLE maint_mileage_summary
 (
     maint_mileage_summary_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -251,6 +261,18 @@ VALUES (1, 1, 30000, 0.00, 34.00, 34.00, 'USD'),
        (2, 1, 45000, 48.00, 102.00, 150.00, 'USD'),
        (3, 2, 30000, 0.00, 67.50, 67.50, 'USD'),
        (4, 2, 80000, 520.00, 405.00, 925.00, 'USD');
+
+INSERT INTO vehicle_warranty (vehicle_year, vehicle_make, vehicle_model, fetched_at, coverages)
+VALUES ('2020', 'Toyota', 'Camry', CURRENT_TIMESTAMP(6),
+        JSON_OBJECT(
+                'Warranty - Basic (months/miles)', '36/36,000',
+                'Warranty - Corrosion perforation (months/miles)', '60/ unlimited',
+                'Warranty - Powertrain (months/miles)', '60/60,000',
+                'Warranty - Roadside assistance coverage (months/miles)', '36/36,000')),
+       ('2018', 'Honda', 'Civic', CURRENT_TIMESTAMP(6),
+        JSON_OBJECT(
+                'Warranty - Basic (months/miles)', '36/36,000',
+                'Warranty - Powertrain (months/miles)', '60/60,000'));
 
 INSERT INTO misc_maint_cost (misc_maint_cost_id, vehicle_type_id, maint_title, maint_desc, independent_avg,
                              independent_high, independent_low, dealer_avg, dealer_high, dealer_low)

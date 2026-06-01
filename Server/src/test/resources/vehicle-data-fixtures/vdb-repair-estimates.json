@@ -1,0 +1,36 @@
+{
+  "status": "success",
+  "data": {
+    "vin": "JTENU5JR6M5962554",
+    "year": 2021,
+    "make": "Toyota",
+    "model": "4RUNNER",
+    "trim": "SRS Prem",
+    "data": [
+      {
+        "mileage": "10000",
+        "items": [
+          {
+            "parts": [
+              {
+                "type": "Change - Engine oil",
+                "total_cost": 41.44,
+                "currency": "USD"
+              }
+            ],
+            "labor": [
+              {
+                "type": "Change - Engine oil",
+                "time_required_hours": 0.28,
+                "hourly_rate": 55,
+                "total_cost": 15.4,
+                "currency": "USD"
+              }
+            ],
+            "total": []
+          }
+        ]
+      }
+    ]
+  }
+}

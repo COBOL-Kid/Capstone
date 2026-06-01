@@ -7,6 +7,14 @@ export function formatWarrantyCoverageLabel(coverageName: string): string {
     .trim();
 }
 
+export function formatWarrantyCoverageLabelForSpecs(coverageName: string): string {
+  const label = formatWarrantyCoverageLabel(coverageName);
+  if (/warranty$/i.test(label)) {
+    return label;
+  }
+  return `${label} warranty`;
+}
+
 export function formatWarrantyCoverageStatus(coverage: WarrantyCoverageResponse): string {
   if (!coverage.estimatedExpirationDate) {
     return coverage.coverageValue;

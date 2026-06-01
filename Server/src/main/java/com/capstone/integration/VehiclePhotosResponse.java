@@ -13,5 +13,6 @@ public record VehiclePhotosResponse(PhotoData data) {
     return data.retail();
   }
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public record PhotoData(List<String> retail) {}
 }

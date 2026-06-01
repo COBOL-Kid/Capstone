@@ -9,6 +9,7 @@ import com.capstone.integration.OwnerManualResponse;
 import com.capstone.integration.RepairCostResponse;
 import com.capstone.integration.RepairEstimatesResponse;
 import com.capstone.integration.VehicleDataProviderClient;
+import com.capstone.integration.VehicleDataProviderRequestMetrics;
 import com.capstone.integration.VehiclePhotosResponse;
 import com.capstone.integration.VehicleRecallsResponse;
 import com.capstone.integration.VehicleWarrantyResponse;
@@ -451,6 +452,7 @@ class VehicleOnboardingServiceTest {
       VehicleDataProviderClient providerClient,
       VehicleDataMapper mapper,
       TransactionTemplate transactionTemplate) {
+    VehicleDataProviderRequestMetrics metrics = new VehicleDataProviderRequestMetrics();
     return new VehicleOnboardingService(
         vinRepository,
         vehicleTypeRepository,
@@ -462,6 +464,7 @@ class VehicleOnboardingServiceTest {
         vehicleWarrantyRepository,
         providerClient,
         mapper,
+        metrics,
         transactionTemplate,
         TEST_VEHICLE_DATA_EXECUTOR);
   }

@@ -62,8 +62,16 @@
     }
   </div>
 
-  @if (isAddModalOpen()) {
-    <app-add-vehicle-modal (added)="onVehicleAdded()" (close)="closeAddModal()" />
+  @if (isOnboardingVehicle()) {
+    <app-vehicle-onboarding-overlay />
+  }
+
+  @if (isAddModalOpen() || isOnboardingVehicle()) {
+    <app-add-vehicle-modal
+      (added)="onVehicleAdded($event)"
+      (close)="closeAddModal()"
+      (submittingChange)="onOnboardingChange($event)"
+    />
   }
 
   @if (vehicleToDelete(); as vin) {

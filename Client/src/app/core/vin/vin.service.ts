@@ -16,7 +16,8 @@ import { toFieldErrorMessage } from '../http/http-error.util';
 
 const vinNotFoundMessage =
   "We couldn't find a vehicle for that VIN. Check the number and try again.";
-const serverErrorMessage = 'Something went wrong on our end. Please try again later.';
+const onboardingUnavailableMessage =
+  "We couldn't load vehicle data for this vehicle right now. Please try again later.";
 const genericErrorMessage = 'Unable to add the vehicle. Please try again.';
 
 @Injectable({
@@ -69,7 +70,7 @@ export class VinService {
     }
 
     if (error.status >= 500) {
-      return { message: serverErrorMessage, fieldMessages: [] };
+      return { message: onboardingUnavailableMessage, fieldMessages: [] };
     }
 
     const fieldError = toFieldErrorMessage(error, genericErrorMessage);

@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "data": {
+    "year": "2021",
+    "make": "Toyota",
+    "model": "4RUNNER",
+    "warranty": {
+      "Warranty - Basic (months/miles)": "36/36,000",
+      "Warranty - Powertrain (months/miles)": "60/60,000"
+    }
+  }
+}

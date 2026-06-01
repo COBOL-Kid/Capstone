@@ -3,7 +3,6 @@ plugins {
     id("org.springframework.boot") version "4.0.6"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "8.4.0"
-    `maven-publish`
 }
 
 group = "com.capstone"
@@ -57,7 +56,9 @@ tasks.withType<Javadoc>().configureEach {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("live")
+    }
 }
 
 tasks.jar {
@@ -69,16 +70,5 @@ spotless {
         importOrder()
         removeUnusedImports()
         googleJavaFormat()
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("bootJava") {
-            artifact(tasks.named("bootJar"))
-            groupId = project.group.toString()
-            artifactId = project.name
-            version = project.version.toString()
-        }
     }
 }

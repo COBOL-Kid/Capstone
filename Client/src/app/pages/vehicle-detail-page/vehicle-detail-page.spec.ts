@@ -205,7 +205,7 @@ describe('VehicleDetailPageComponent', () => {
     fixture.detectChanges();
 
     const specs = fixture.nativeElement.querySelector('.vehicle-detail__specs');
-    expect(specs?.textContent).toContain('Basic');
+    expect(specs?.textContent).toContain('Basic warranty');
     expect(specs?.textContent).toContain('Active');
     expect(specs?.textContent).toContain('8,432 mi');
     expect(specs?.textContent).toContain('exp. 2024');

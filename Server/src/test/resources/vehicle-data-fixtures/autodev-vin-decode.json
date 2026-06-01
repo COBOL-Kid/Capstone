@@ -1,0 +1,32 @@
+{
+  "vin": "JTENU5JR6M5962554",
+  "vinValid": true,
+  "wmi": "JTE",
+  "origin": "Japan",
+  "squishVin": "JTENU5JRM5",
+  "checkDigit": "6",
+  "checksum": true,
+  "type": "Active",
+  "make": "Toyota",
+  "model": "4RUNNER",
+  "trim": "SRS Prem",
+  "style": "SUV",
+  "body": "SUV",
+  "engine": "4.0L V6 DOHC 24V",
+  "drive": "4WD",
+  "transmission": "Automatic",
+  "vehicle": {
+    "vin": "JTENU5JR6M5962554",
+    "year": 2021,
+    "make": "Toyota",
+    "model": "4RUNNER",
+    "manufacturer": "Toyota Motor Corporation"
+  },
+  "photos": {
+    "hasRetailPhotos": true,
+    "hasWholesalePhotos": false,
+    "hasHistoricalPhotos": true,
+    "retailPhotoCount": 2
+  },
+  "ambiguous": false
+}

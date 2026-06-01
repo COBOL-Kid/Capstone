@@ -2,7 +2,16 @@ package com.capstone.domain;
 
 import com.capstone.data.*;
 import com.capstone.domain.VehicleDataMapper.VehicleIdentity;
-import com.capstone.integration.*;
+import com.capstone.integration.OwnerManualResponse;
+import com.capstone.integration.RepairCostResponse;
+import com.capstone.integration.RepairEstimatesResponse;
+import com.capstone.integration.VehicleDataProviderClient;
+import com.capstone.integration.VehicleDataProviderPrefetchMetrics;
+import com.capstone.integration.VehicleDataProviderRequestMetrics;
+import com.capstone.integration.VehiclePhotosResponse;
+import com.capstone.integration.VehicleRecallsResponse;
+import com.capstone.integration.VehicleWarrantyResponse;
+import com.capstone.integration.VinDecodeResponse;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
@@ -16,12 +25,16 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class VehicleOnboardingService {
+
+  private static final Logger log = LoggerFactory.getLogger(VehicleOnboardingService.class);
 
   private final VinRepositoryJPA vinRepository;
   private final VehicleTypeRepositoryJPA vehicleTypeRepository;
@@ -33,6 +46,7 @@ public class VehicleOnboardingService {
   private final VehicleWarrantyRepositoryJPA vehicleWarrantyRepository;
   private final VehicleDataProviderClient vehicleDataProviderClient;
   private final VehicleDataMapper vehicleDataMapper;
+  private final VehicleDataProviderRequestMetrics vehicleDataProviderRequestMetrics;
   private final TransactionTemplate transactionTemplate;
   private final ExecutorService vehicleDataExecutor;
 
@@ -47,6 +61,7 @@ public class VehicleOnboardingService {
       VehicleWarrantyRepositoryJPA vehicleWarrantyRepository,
       VehicleDataProviderClient vehicleDataProviderClient,
       VehicleDataMapper vehicleDataMapper,
+      VehicleDataProviderRequestMetrics vehicleDataProviderRequestMetrics,
       TransactionTemplate transactionTemplate,
       @Qualifier("vehicleDataExecutor") ExecutorService vehicleDataExecutor) {
     this.vinRepository = vinRepository;
@@ -59,6 +74,7 @@ public class VehicleOnboardingService {
     this.vehicleWarrantyRepository = vehicleWarrantyRepository;
     this.vehicleDataProviderClient = vehicleDataProviderClient;
     this.vehicleDataMapper = vehicleDataMapper;
+    this.vehicleDataProviderRequestMetrics = vehicleDataProviderRequestMetrics;
     this.transactionTemplate = transactionTemplate;
     this.vehicleDataExecutor = vehicleDataExecutor;
   }
@@ -301,31 +317,71 @@ public class VehicleOnboardingService {
 
   private NewVehicleTypePrefetch fetchNewVehicleTypeData(
       String normalizedVin, VehicleIdentity identity) {
+    VehicleDataProviderPrefetchMetrics prefetchMetrics = new VehicleDataProviderPrefetchMetrics();
+    ScopedValue.Carrier prefetchScope =
+        vehicleDataProviderRequestMetrics.bindPrefetchMetrics(prefetchMetrics);
+    long prefetchStartNanos = System.nanoTime();
     Future<List<String>> photos =
-        vehicleDataExecutor.submit(() -> fetchVehiclePhotos(normalizedVin));
+        vehicleDataExecutor.submit(
+            () -> prefetchScope.call(() -> fetchVehiclePhotos(normalizedVin)));
     Future<OwnerManualResponse> ownerManual =
-        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getOwnerManual(normalizedVin));
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(() -> vehicleDataProviderClient.getOwnerManual(normalizedVin)));
     Future<RepairEstimatesResponse> repairEstimates =
         vehicleDataExecutor.submit(
-            () -> vehicleDataProviderClient.getRepairEstimates(normalizedVin));
+            () ->
+                prefetchScope.call(
+                    () -> vehicleDataProviderClient.getRepairEstimates(normalizedVin)));
     Future<RepairCostResponse> repairCosts =
-        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin));
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(() -> vehicleDataProviderClient.getRepairCosts(normalizedVin)));
     Future<VehicleRecallsResponse> recalls =
-        vehicleDataExecutor.submit(() -> vehicleDataProviderClient.getRecalls(normalizedVin));
+        vehicleDataExecutor.submit(
+            () -> prefetchScope.call(() -> vehicleDataProviderClient.getRecalls(normalizedVin)));
     Future<VehicleWarrantyResponse> vehicleWarranty =
         vehicleDataExecutor.submit(
             () ->
-                vehicleDataProviderClient.getVehicleWarranty(
-                    identity.year(), identity.make(), identity.model()));
+                prefetchScope.call(
+                    () ->
+                        vehicleDataProviderClient.getVehicleWarranty(
+                            identity.year(), identity.make(), identity.model())));
 
+    OwnerManualResponse ownerManualResponse = await(ownerManual);
+    RepairEstimatesResponse repairEstimatesResponse = await(repairEstimates);
+    RepairCostResponse repairCostResponse = await(repairCosts);
+    VehicleRecallsResponse recallsResponse = await(recalls);
+    VehicleWarrantyResponse warrantyResponse = await(vehicleWarranty);
+    List<String> photoUrls = await(photos);
+    long prefetchDurationMs = (System.nanoTime() - prefetchStartNanos) / 1_000_000L;
+    log.info(
+        "Vehicle data prefetch completed vin={} durationMs={} peakConcurrentRequests={} "
+            + "ownerManual={} repairEstimates={} repairCosts={} recalls={} warranty={} photos={}",
+        maskVin(normalizedVin),
+        prefetchDurationMs,
+        prefetchMetrics.maxInFlight(),
+        ownerManualResponse != null,
+        repairEstimatesResponse != null,
+        repairCostResponse != null,
+        recallsResponse != null,
+        warrantyResponse != null,
+        photoUrls != null && !photoUrls.isEmpty());
     SupplementalVehicleData supplemental =
         new SupplementalVehicleData(
-            await(ownerManual),
-            await(repairEstimates),
-            await(repairCosts),
-            await(recalls),
-            await(vehicleWarranty));
-    return new NewVehicleTypePrefetch(supplemental, await(photos));
+            ownerManualResponse,
+            repairEstimatesResponse,
+            repairCostResponse,
+            recallsResponse,
+            warrantyResponse);
+    return new NewVehicleTypePrefetch(supplemental, photoUrls);
+  }
+
+  private static String maskVin(String vin) {
+    if (vin == null || vin.length() <= 4) {
+      return "****";
+    }
+    return "****" + vin.substring(vin.length() - 4);
   }
 
   private <T> T await(Future<T> future) {

@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "vin": "JTENU5JR6M5962554",
+  "data": {
+    "year": "2021",
+    "make": "Toyota",
+    "model": "4runner",
+    "path": "https://example.com/manual.pdf"
+  }
+}

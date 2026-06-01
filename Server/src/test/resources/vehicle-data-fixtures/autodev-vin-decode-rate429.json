@@ -1,0 +1,16 @@
+{
+  "vin": "RATE4290000000001",
+  "vinValid": true,
+  "make": "Dodge",
+  "model": "Durango",
+  "trim": "R/T",
+  "style": "SUV",
+  "vehicle": {
+    "vin": "RATE4290000000001",
+    "year": 2014,
+    "make": "Dodge",
+    "model": "Durango",
+    "manufacturer": "FCA US LLC"
+  },
+  "ambiguous": false
+}

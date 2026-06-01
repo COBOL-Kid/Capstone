@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
@@ -62,11 +62,12 @@ describe('AddVehicleModalComponent', () => {
     );
   });
 
-  it('renders server errors returned from the service', () => {
+  it('renders onboarding-unavailable errors returned from the service', () => {
     const vinService = configure();
     vinService.addVehicle.mockReturnValue(
       throwError(() => ({
-        message: 'Something went wrong on our end. Please try again later.',
+        message:
+          "We couldn't load vehicle data for this vehicle right now. Please try again later.",
         fieldMessages: [],
       })),
     );
@@ -82,8 +83,90 @@ describe('AddVehicleModalComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Something went wrong on our end. Please try again later.',
+      "We couldn't load vehicle data for this vehicle right now. Please try again later.",
     );
+  });
+
+  it('emits submittingChange true then false on success', () => {
+    const vinService = configure();
+    const response: AddVinResponse = {
+      vin: 'JTENU5JR6M5962554',
+      currentMileage: 1000,
+      vehicleTypeId: 7,
+      make: 'Toyota',
+      model: '4RUNNER',
+      trim: 'SRS Prem',
+      year: '2021',
+      availableImageUrls: [],
+      selectedImageUrl: '',
+      createdVin: true,
+      createdVehicleType: false,
+      createdAssociation: true,
+    };
+    vinService.addVehicle.mockReturnValue(of(response));
+
+    const fixture = TestBed.createComponent(AddVehicleModalComponent);
+    const submittingStates: boolean[] = [];
+    fixture.componentInstance.submittingChange.subscribe((active) => submittingStates.push(active));
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'vin', 'JTENU5JR6M5962554');
+    setInputValue(fixture.nativeElement, 'currentMileage', '1000');
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(submittingStates).toEqual([true, false]);
+  });
+
+  it('does not emit submittingChange for invalid submissions', () => {
+    const vinService = configure();
+    const fixture = TestBed.createComponent(AddVehicleModalComponent);
+    const submittingStates: boolean[] = [];
+    fixture.componentInstance.submittingChange.subscribe((active) => submittingStates.push(active));
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'vin', 'too-short');
+    setInputValue(fixture.nativeElement, 'currentMileage', '1000');
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(submittingStates).toEqual([]);
+  });
+
+  it('does not close while submitting via escape, backdrop, or close button', () => {
+    const vinService = configure();
+    vinService.addVehicle.mockReturnValue(NEVER);
+
+    const fixture = TestBed.createComponent(AddVehicleModalComponent);
+    const closeEvents: void[] = [];
+    fixture.componentInstance.close.subscribe(() => closeEvents.push());
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'vin', 'JTENU5JR6M5962554');
+    setInputValue(fixture.nativeElement, 'currentMileage', '1000');
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    const backdrop = fixture.nativeElement.querySelector('.hc-overlay-backdrop') as HTMLElement;
+    backdrop.click();
+    fixture.detectChanges();
+
+    const closeButton = fixture.nativeElement.querySelector(
+      '.hc-dialog__close',
+    ) as HTMLButtonElement;
+    closeButton.click();
+    fixture.detectChanges();
+
+    expect(closeEvents).toEqual([]);
   });
 
   it('submits a valid request and emits the added vehicle', () => {

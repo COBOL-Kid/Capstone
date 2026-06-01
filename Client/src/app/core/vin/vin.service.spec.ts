@@ -45,10 +45,12 @@ describe('VinService', () => {
     request.flush('Vehicle not found for VIN', { status: 404, statusText: 'Not Found' });
   });
 
-  it('maps 500 plain string responses into a server error message', () => {
+  it('maps 500 plain string responses into an onboarding-unavailable message', () => {
     service.addVehicle({ vin: 'JTENU5JR6M5962554', currentMileage: 1000 }).subscribe({
       error: (error) => {
-        expect(error.message).toBe('Something went wrong on our end. Please try again later.');
+        expect(error.message).toBe(
+          "We couldn't load vehicle data for this vehicle right now. Please try again later.",
+        );
         expect(error.fieldMessages).toEqual([]);
       },
     });

@@ -29,7 +29,7 @@ import { MaintenanceCostsModalComponent } from '../../components/maintenance-cos
 import { RecallDetailModalComponent } from '../../components/recall-detail-modal/recall-detail-modal';
 import { WarrantyModalComponent } from '../../components/warranty-modal/warranty-modal';
 import {
-  formatWarrantyCoverageLabel,
+  formatWarrantyCoverageLabelForSpecs,
   formatWarrantyCoverageStatus,
 } from '../../core/warranty/warranty-display';
 type ActiveSection = 'maintenance' | 'recalls';
@@ -223,7 +223,7 @@ export class VehicleDetailPageComponent {
     return `Parts ${this.formatCurrency(total, currency)}`;
   }
 
-  protected formatWarrantyCoverageLabel = formatWarrantyCoverageLabel;
+  protected formatWarrantyCoverageLabelForSpecs = formatWarrantyCoverageLabelForSpecs;
   protected formatWarrantyCoverageStatus = formatWarrantyCoverageStatus;
 
   protected openCompletedMaintenance(item: CompletedMaintenanceResponse): void {

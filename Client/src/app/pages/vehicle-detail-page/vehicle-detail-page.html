@@ -78,30 +78,11 @@
               }
               @for (coverage of warrantyCoveragesForDisplay(); track coverage.coverageName) {
                 <div class="vehicle-detail__dl-row vehicle-detail__dl-row--full">
-                  <dt>{{ formatWarrantyCoverageLabel(coverage.coverageName) }}</dt>
+                  <dt>{{ formatWarrantyCoverageLabelForSpecs(coverage.coverageName) }}</dt>
                   <dd>{{ formatWarrantyCoverageStatus(coverage) }}</dd>
                 </div>
               }
             </dl>
-            @if (v.origin || v.sourceVin) {
-              <details class="vehicle-detail__more-specs">
-                <summary>More details</summary>
-                <dl class="vehicle-detail__dl">
-                  @if (v.origin) {
-                    <div>
-                      <dt>Origin</dt>
-                      <dd>{{ v.origin }}</dd>
-                    </div>
-                  }
-                  @if (v.sourceVin) {
-                    <div>
-                      <dt>Source VIN</dt>
-                      <dd>{{ v.sourceVin }}</dd>
-                    </div>
-                  }
-                </dl>
-              </details>
-            }
             @if (v.ownersManual) {
               <button
                 (click)="openOwnersManual(v.ownersManual)"

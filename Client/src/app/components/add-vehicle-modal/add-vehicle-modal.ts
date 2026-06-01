@@ -33,6 +33,7 @@ const vinValidationMessage = 'VIN must be 17 characters and cannot contain I, O,
 export class AddVehicleModalComponent implements AfterViewInit {
   readonly close = output<void>();
   readonly added = output<AddVinResponse>();
+  readonly submittingChange = output<boolean>();
 
   protected readonly vinValidationMessage = vinValidationMessage;
 
@@ -62,6 +63,9 @@ export class AddVehicleModalComponent implements AfterViewInit {
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
+    if (this.isSubmitting()) {
+      return;
+    }
     this.close.emit();
   }
 
@@ -78,6 +82,7 @@ export class AddVehicleModalComponent implements AfterViewInit {
     }
 
     this.isSubmitting.set(true);
+    this.submittingChange.emit(true);
 
     const value = this.form.getRawValue();
     this.vinService
@@ -86,7 +91,10 @@ export class AddVehicleModalComponent implements AfterViewInit {
         currentMileage: value.currentMileage,
       })
       .pipe(
-        finalize(() => this.isSubmitting.set(false)),
+        finalize(() => {
+          this.isSubmitting.set(false);
+          this.submittingChange.emit(false);
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({

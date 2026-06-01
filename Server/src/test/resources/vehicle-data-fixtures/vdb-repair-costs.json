@@ -1,0 +1,39 @@
+{
+  "status": "success",
+  "data": {
+    "vin": "JTENU5JR6M5962554",
+    "year": 2021,
+    "make": "Toyota",
+    "model": "4RUNNER",
+    "currency": "USD",
+    "repair": [
+      {
+        "title": "Oil Change",
+        "description": "N/A",
+        "costs": {
+          "independent": [],
+          "dealer": [
+            {
+              "name": "part",
+              "average": 50,
+              "high": 60,
+              "low": 40
+            },
+            {
+              "name": "labor",
+              "average": 80,
+              "high": 90,
+              "low": 70
+            },
+            {
+              "name": "total",
+              "average": 130,
+              "high": 150,
+              "low": 110
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

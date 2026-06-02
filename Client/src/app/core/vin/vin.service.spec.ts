@@ -31,11 +31,11 @@ describe('VinService', () => {
     });
   });
 
-  it('maps 404 responses into a VIN-not-found message', () => {
+  it('maps 404 responses into a VIN data unavailable message', () => {
     service.addVehicle({ vin: 'MISSINGVIN1234567', currentMileage: 1000 }).subscribe({
       error: (error) => {
         expect(error.message).toBe(
-          "We couldn't find a vehicle for that VIN. Check the number and try again.",
+          "We don't have vehicle information for this VIN in our system yet. Try a different VIN or check back later as we add more vehicles.",
         );
         expect(error.fieldMessages).toEqual([]);
       },
@@ -43,6 +43,23 @@ describe('VinService', () => {
 
     const request = httpTesting.expectOne(apiConfig.vinUrl);
     request.flush('Vehicle not found for VIN', { status: 404, statusText: 'Not Found' });
+  });
+
+  it('maps backend VIN-not-found strings on 400 into a VIN data unavailable message', () => {
+    service.addVehicle({ vin: 'MISSINGVIN1234567', currentMileage: 1000 }).subscribe({
+      error: (error) => {
+        expect(error.message).toBe(
+          "We don't have vehicle information for this VIN in our system yet. Try a different VIN or check back later as we add more vehicles.",
+        );
+        expect(error.fieldMessages).toEqual([]);
+      },
+    });
+
+    const request = httpTesting.expectOne(apiConfig.vinUrl);
+    request.flush('Vehicle data is not available for this VIN', {
+      status: 400,
+      statusText: 'Bad Request',
+    });
   });
 
   it('maps 500 plain string responses into an onboarding-unavailable message', () => {
@@ -160,6 +177,33 @@ describe('VinService', () => {
     expect(patchRequest.request.method).toBe('PATCH');
     expect(patchRequest.request.body).toEqual({ currentMileage: 52000 });
     patchRequest.flush({ ...detail, currentMileage: 52000 });
+  });
+
+  it('patches selected vehicle photo', () => {
+    const vehicle = {
+      vin: 'JTENU5JR6M5962554',
+      currentMileage: 45000,
+      vehicleTypeId: 7,
+      make: 'Toyota',
+      model: '4RUNNER',
+      trim: 'SRS Prem',
+      year: '2021',
+      availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+      selectedImageUrl: 'https://example.com/photo-2.jpg',
+    };
+
+    service
+      .updateSelectedPhoto('JTENU5JR6M5962554', {
+        selectedImageUrl: 'https://example.com/photo-2.jpg',
+      })
+      .subscribe((response) => {
+        expect(response).toEqual(vehicle);
+      });
+
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/photo`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ selectedImageUrl: 'https://example.com/photo-2.jpg' });
+    request.flush(vehicle);
   });
 
   it('maps plain string 400 responses into user-facing messages', () => {

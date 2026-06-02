@@ -13,6 +13,7 @@ import {
 } from './auth.models';
 import { apiConfig } from '../api/api.config';
 import { toFieldErrorMessage } from '../http/http-error.util';
+import { UserVehiclesStore } from '../vin/user-vehicles.store';
 
 const authTokenStorageKey = 'honest-car.access-token';
 
@@ -28,6 +29,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = apiConfig.authUrl;
   private readonly accountApiBaseUrl = apiConfig.accountUrl;
+  private readonly vehiclesStore = inject(UserVehiclesStore);
 
   register(request: RegisterRequest): Observable<AuthenticationResponse> {
     return this.http
@@ -81,6 +83,7 @@ export class AuthService {
 
   clearSession(): void {
     this.clearToken();
+    this.vehiclesStore.reset();
   }
 
   validateSession(): Observable<boolean> {

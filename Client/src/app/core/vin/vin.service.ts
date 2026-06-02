@@ -5,6 +5,7 @@ import {
   AddVinRequest,
   AddVinResponse,
   UpdateMileageRequest,
+  UpdateVehiclePhotoRequest,
   UserVehicleResponse,
   VehicleDashboardResponse,
   VehicleDetailResponse,
@@ -14,8 +15,12 @@ import { apiConfig } from '../api/api.config';
 import { normalizeListResponse } from '../http/normalize-list-response';
 import { toFieldErrorMessage } from '../http/http-error.util';
 
-const vinNotFoundMessage =
-  "We couldn't find a vehicle for that VIN. Check the number and try again.";
+const vinDataUnavailableMessage =
+  "We don't have vehicle information for this VIN in our system yet. Try a different VIN or check back later as we add more vehicles.";
+const vinNotFoundBackendMessages = new Set([
+  'Vehicle not found for VIN',
+  'Vehicle data is not available for this VIN',
+]);
 const onboardingUnavailableMessage =
   "We couldn't load vehicle data for this vehicle right now. Please try again later.";
 const genericErrorMessage = 'Unable to add the vehicle. Please try again.';
@@ -43,6 +48,13 @@ export class VinService {
     return this.http.patch<VehicleDetailResponse>(`${this.baseUrl}/${vin}/mileage`, request);
   }
 
+  updateSelectedPhoto(
+    vin: string,
+    request: UpdateVehiclePhotoRequest,
+  ): Observable<UserVehicleResponse> {
+    return this.http.patch<UserVehicleResponse>(`${this.baseUrl}/${vin}/photo`, request);
+  }
+
   addVehicle(request: AddVinRequest): Observable<AddVinResponse> {
     return this.http
       .post<AddVinResponse>(this.baseUrl, request)
@@ -65,8 +77,8 @@ export class VinService {
   }
 
   private toVinErrorMessage(error: HttpErrorResponse): VinErrorMessage {
-    if (error.status === 404) {
-      return { message: vinNotFoundMessage, fieldMessages: [] };
+    if (this.isVinDataUnavailableError(error)) {
+      return { message: vinDataUnavailableMessage, fieldMessages: [] };
     }
 
     if (error.status >= 500) {
@@ -79,5 +91,17 @@ export class VinService {
     }
 
     return { message: genericErrorMessage, fieldMessages: [] };
+  }
+
+  private isVinDataUnavailableError(error: HttpErrorResponse): boolean {
+    if (error.status === 404) {
+      return true;
+    }
+
+    if (typeof error.error !== 'string') {
+      return false;
+    }
+
+    return vinNotFoundBackendMessages.has(error.error.trim());
   }
 }

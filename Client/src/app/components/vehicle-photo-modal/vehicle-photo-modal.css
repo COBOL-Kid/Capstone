@@ -1,0 +1,113 @@
+.vehicle-photo-modal__dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 36rem);
+  max-height: calc(100dvh - 2 * var(--hc-overlay-host-padding));
+  overflow: hidden;
+}
+
+.vehicle-photo-modal__subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.vehicle-photo-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(55vh, 28rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  padding-inline-end: 0.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicle-photo-modal__status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.vehicle-photo-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.5rem), 1fr));
+  grid-auto-rows: auto;
+  align-items: start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.vehicle-photo-modal__tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  border: 2px solid rgba(230, 240, 251, 0.15);
+  border-radius: 0.65rem;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.vehicle-photo-modal__tile:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.vehicle-photo-modal__tile--selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.vehicle-photo-modal__tile--saving {
+  opacity: 0.75;
+}
+
+.vehicle-photo-modal__tile:disabled {
+  cursor: not-allowed;
+}
+
+.vehicle-photo-modal__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vehicle-photo-modal__check {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-text-on-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.vehicle-photo-modal__saving {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 20, 43, 0.55);
+  color: var(--color-text-on-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+}

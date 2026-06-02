@@ -2,28 +2,31 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, EMPTY, finalize, Subject, switchMap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { VinService } from '../../core/vin/vin.service';
-import { AddVinResponse, UserVehicleResponse } from '../../core/vin/vin.models';
+import {
+  AddVinRequest,
+  AddVinResponse,
+  UserVehicleResponse,
+  VinErrorMessage,
+} from '../../core/vin/vin.models';
+import { UserVehiclesStore } from '../../core/vin/user-vehicles.store';
 import { AddVehicleModalComponent } from '../../components/add-vehicle-modal/add-vehicle-modal';
 import { DeleteVehicleModalComponent } from '../../components/delete-vehicle-modal/delete-vehicle-modal';
-import { VehicleOnboardingOverlayComponent } from '../../components/vehicle-onboarding-overlay/vehicle-onboarding-overlay';
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [
-    AddVehicleModalComponent,
-    DeleteVehicleModalComponent,
-    RouterLink,
-    VehicleOnboardingOverlayComponent,
-  ],
+  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent, RouterLink],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +34,8 @@ import { VehicleOnboardingOverlayComponent } from '../../components/vehicle-onbo
 export class HomePageComponent {
   private readonly vinService = inject(VinService);
   private readonly router = inject(Router);
+  private readonly vehiclesStore = inject(UserVehiclesStore);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly vehiclesResource = rxResource({
     stream: () => this.vinService.getUserVehicles(),
@@ -38,10 +43,12 @@ export class HomePageComponent {
   });
 
   private vehicleAddSucceeded = false;
+  private readonly addVehicleRequests = new Subject<AddVinRequest>();
 
-  protected readonly vehicles = signal<UserVehicleResponse[]>([]);
+  protected readonly vehicles = this.vehiclesStore.vehicles;
   protected readonly isAddModalOpen = signal(false);
   protected readonly isOnboardingVehicle = signal(false);
+  protected readonly addVehicleError = signal<VinErrorMessage | null>(null);
   protected readonly vehicleToDelete = signal<string | null>(null);
   protected readonly isLoading = computed(() => this.vehiclesResource.isLoading());
   protected readonly error = computed(() => {
@@ -57,37 +64,70 @@ export class HomePageComponent {
       if (this.vehiclesResource.error()) {
         return;
       }
-      this.vehicles.set(this.vehiclesResource.value());
+      this.vehiclesStore.setVehicles(this.vehiclesResource.value());
     });
+
+    this.addVehicleRequests
+      .pipe(
+        switchMap((request) => {
+          this.vehicleAddSucceeded = false;
+          this.addVehicleError.set(null);
+          this.isOnboardingVehicle.set(true);
+
+          return this.vinService.addVehicle(request).pipe(
+            finalize(() => this.isOnboardingVehicle.set(false)),
+            catchError((error: VinErrorMessage) => {
+              this.isOnboardingVehicle.set(false);
+              this.addVehicleError.set(error);
+              if (!this.vehicleAddSucceeded) {
+                this.isAddModalOpen.set(true);
+              }
+              return EMPTY;
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (response) => this.onVehicleAdded(response),
+      });
   }
 
   protected openAddModal(): void {
+    if (this.isOnboardingVehicle()) {
+      return;
+    }
+    this.addVehicleError.set(null);
     this.isAddModalOpen.set(true);
   }
 
-  protected closeAddModal(): void {
-    this.isAddModalOpen.set(false);
+  protected clearAddVehicleError(): void {
+    this.addVehicleError.set(null);
   }
 
-  protected onOnboardingChange(active: boolean): void {
-    this.isOnboardingVehicle.set(active);
-    if (active) {
-      this.vehicleAddSucceeded = false;
-      this.closeAddModal();
+  protected closeAddModal(): void {
+    if (this.isOnboardingVehicle()) {
       return;
     }
-    if (!this.vehicleAddSucceeded) {
-      this.openAddModal();
-    }
+    this.isAddModalOpen.set(false);
+    this.addVehicleError.set(null);
+  }
+
+  protected onAddVehicleRequest(request: AddVinRequest): void {
+    this.addVehicleRequests.next(request);
   }
 
   protected onVehicleAdded(response: AddVinResponse): void {
     this.vehicleAddSucceeded = true;
-    this.closeAddModal();
+    this.isAddModalOpen.set(false);
+    this.addVehicleError.set(null);
     void this.router.navigate(['/vehicles', response.vin]);
   }
 
   protected openDeleteModal(vin: string): void {
+    if (this.isOnboardingVehicle()) {
+      return;
+    }
     this.vehicleToDelete.set(vin);
   }
 
@@ -96,6 +136,6 @@ export class HomePageComponent {
   }
 
   protected onVehicleDeleted(vin: string): void {
-    this.vehicles.update((vehicles) => vehicles.filter((v) => v.vin !== vin));
+    this.vehiclesStore.removeVehicle(vin);
   }
 }

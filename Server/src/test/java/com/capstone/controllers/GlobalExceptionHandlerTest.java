@@ -106,7 +106,7 @@ class GlobalExceptionHandlerTest {
     var response = handler.handleVinNotFoundException(new VinNotFoundException());
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("Vehicle not found for VIN", response.getBody());
+    assertEquals("Vehicle data is not available for this VIN", response.getBody());
   }
 
   @Test

@@ -65,6 +65,10 @@ export interface UpdateMileageRequest {
   currentMileage: number;
 }
 
+export interface UpdateVehiclePhotoRequest {
+  selectedImageUrl: string;
+}
+
 export interface VehicleDashboardResponse {
   detail: VehicleDetailResponse;
   upcomingMaintenance: UpcomingMaintenanceIntervalResponse[];

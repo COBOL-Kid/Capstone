@@ -28,8 +28,10 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.HttpStatusCodeException;
 
 @Service
 public class VehicleOnboardingService {
@@ -392,6 +394,13 @@ public class VehicleOnboardingService {
       throw new IllegalStateException("Interrupted while fetching vehicle data", ex);
     } catch (ExecutionException ex) {
       Throwable cause = ex.getCause();
+      if (cause instanceof VinNotFoundException vinNotFoundException) {
+        throw vinNotFoundException;
+      }
+      if (cause instanceof HttpStatusCodeException httpException
+          && httpException.getStatusCode().value() == HttpStatus.NOT_FOUND.value()) {
+        throw new VinNotFoundException();
+      }
       if (cause instanceof RuntimeException runtimeException) {
         throw runtimeException;
       }

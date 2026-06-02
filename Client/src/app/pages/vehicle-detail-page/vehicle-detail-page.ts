@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -16,6 +17,7 @@ import { EMPTY, filter, map } from 'rxjs';
 import { VehicleDetailResponse } from '../../core/vin/vin.models';
 import { VehiclePageData } from '../../core/vin/vehicle-page.models';
 import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
+import { UserVehiclesStore } from '../../core/vin/user-vehicles.store';
 import {
   CompletedMaintenanceResponse,
   LaborCostResponse,
@@ -28,6 +30,7 @@ import { MaintenanceDetailModalComponent } from '../../components/maintenance-de
 import { MaintenanceCostsModalComponent } from '../../components/maintenance-costs-modal/maintenance-costs-modal';
 import { RecallDetailModalComponent } from '../../components/recall-detail-modal/recall-detail-modal';
 import { WarrantyModalComponent } from '../../components/warranty-modal/warranty-modal';
+import { VehiclePhotoModalComponent } from '../../components/vehicle-photo-modal/vehicle-photo-modal';
 import {
   formatWarrantyCoverageLabelForSpecs,
   formatWarrantyCoverageStatus,
@@ -45,6 +48,7 @@ type ActiveSection = 'maintenance' | 'recalls';
     MaintenanceCostsModalComponent,
     RecallDetailModalComponent,
     WarrantyModalComponent,
+    VehiclePhotoModalComponent,
   ],
   templateUrl: './vehicle-detail-page.html',
   styleUrl: './vehicle-detail-page.css',
@@ -54,6 +58,7 @@ export class VehicleDetailPageComponent {
   protected readonly pageData = signal<VehiclePageData | null>(null);
   protected readonly activeSection = signal<ActiveSection>('maintenance');
   protected readonly isMileageModalOpen = signal(false);
+  protected readonly isPhotoModalOpen = signal(false);
   protected readonly isMaintenanceCostsModalOpen = signal(false);
   protected readonly isWarrantyModalOpen = signal(false);
   protected readonly selectedUpcomingMaintenance = signal<SelectedUpcomingMaintenance | null>(null);
@@ -66,6 +71,7 @@ export class VehicleDetailPageComponent {
 
   private readonly route = inject(ActivatedRoute);
   private readonly vehiclePageData = inject(VehiclePageDataService);
+  private readonly vehiclesStore = inject(UserVehiclesStore);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly routeVin = toSignal(
@@ -86,6 +92,7 @@ export class VehicleDetailPageComponent {
   });
 
   protected readonly vehicle = computed(() => this.pageData()?.detail ?? null);
+  protected readonly heroSelectedImageUrl = computed(() => this.vehicle()?.selectedImageUrl ?? '');
   protected readonly upcomingIntervals = computed(() => this.pageData()?.upcomingIntervals ?? []);
   protected readonly completedMaintenance = computed(
     () => this.pageData()?.completedMaintenance ?? [],
@@ -131,9 +138,32 @@ export class VehicleDetailPageComponent {
 
     effect(() => {
       const data = this.pageResource.value();
-      if (data) {
-        this.pageData.set(data);
+      if (!data) {
+        return;
       }
+
+      const current = untracked(() => this.pageData());
+      const vin = data.detail.vin;
+      const preserveSelectedImageUrl =
+        current?.detail.vin === vin &&
+        current.detail.selectedImageUrl !== data.detail.selectedImageUrl;
+
+      if (preserveSelectedImageUrl) {
+        this.pageData.set({
+          ...data,
+          detail: { ...data.detail, selectedImageUrl: current.detail.selectedImageUrl },
+        });
+        return;
+      }
+
+      if (
+        current?.detail.vin === data.detail.vin &&
+        current.detail.selectedImageUrl === data.detail.selectedImageUrl
+      ) {
+        return;
+      }
+
+      this.pageData.set(data);
     });
 
     effect(() => {
@@ -153,6 +183,14 @@ export class VehicleDetailPageComponent {
 
   protected closeMileageModal(): void {
     this.isMileageModalOpen.set(false);
+  }
+
+  protected openPhotoModal(): void {
+    this.isPhotoModalOpen.set(true);
+  }
+
+  protected closePhotoModal(): void {
+    this.isPhotoModalOpen.set(false);
   }
 
   protected openWarrantyModal(): void {
@@ -180,6 +218,25 @@ export class VehicleDetailPageComponent {
 
   protected onMileageUpdated(_detail: VehicleDetailResponse): void {
     this.closeMileageModal();
+    this.refreshPageData();
+  }
+
+  protected onPhotoUpdated(selectedImageUrl: string): void {
+    const data = this.pageData();
+    if (!data) {
+      return;
+    }
+
+    const vin = data.detail.vin;
+    this.pageData.set({
+      ...data,
+      detail: {
+        ...data.detail,
+        selectedImageUrl,
+      },
+    });
+    this.vehiclesStore.updateSelectedPhoto(vin, selectedImageUrl);
+    this.closePhotoModal();
     this.refreshPageData();
   }
 
@@ -264,6 +321,7 @@ export class VehicleDetailPageComponent {
     this.closeRecallModal();
     this.closeMaintenanceCostsModal();
     this.closeWarrantyModal();
+    this.closePhotoModal();
   }
 
   /** Refetch dashboard after mutations; rxResource.reload() does not reliably sync pageData. */
@@ -273,11 +331,28 @@ export class VehicleDetailPageComponent {
       return;
     }
 
+    const preservedSelectedImageUrl =
+      this.pageData()?.detail.vin === vin ? this.pageData()?.detail.selectedImageUrl : undefined;
+
     this.vehiclePageData
       .loadVehiclePage(vin)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => this.pageData.set(data),
+        next: (data) => {
+          if (
+            preservedSelectedImageUrl &&
+            data.detail.vin === vin &&
+            data.detail.selectedImageUrl !== preservedSelectedImageUrl
+          ) {
+            this.pageData.set({
+              ...data,
+              detail: { ...data.detail, selectedImageUrl: preservedSelectedImageUrl },
+            });
+            return;
+          }
+
+          this.pageData.set(data);
+        },
       });
   }
 }

@@ -5,6 +5,7 @@
       @if (vehicles().length > 0) {
         <button
           (click)="openAddModal()"
+          [disabled]="isOnboardingVehicle()"
           aria-label="Add new vehicle"
           class="home__add-button"
           type="button"
@@ -20,7 +21,13 @@
       <div class="home__error hc-state-message">{{ error() }}</div>
     } @else if (vehicles().length === 0) {
       <div class="home__empty hc-state-message">
-        <button (click)="openAddModal()" class="hc-btn hc-btn--primary">add a vehicle</button>
+        <button
+          (click)="openAddModal()"
+          [disabled]="isOnboardingVehicle()"
+          class="hc-btn hc-btn--primary"
+        >
+          add a vehicle
+        </button>
       </div>
     } @else {
       <div class="home__grid">
@@ -62,15 +69,13 @@
     }
   </div>
 
-  @if (isOnboardingVehicle()) {
-    <app-vehicle-onboarding-overlay />
-  }
-
-  @if (isAddModalOpen() || isOnboardingVehicle()) {
+  @if (isAddModalOpen()) {
     <app-add-vehicle-modal
-      (added)="onVehicleAdded($event)"
       (close)="closeAddModal()"
-      (submittingChange)="onOnboardingChange($event)"
+      (serverErrorClear)="clearAddVehicleError()"
+      (submitRequest)="onAddVehicleRequest($event)"
+      [isSubmitting]="isOnboardingVehicle()"
+      [serverError]="addVehicleError()"
     />
   }
 

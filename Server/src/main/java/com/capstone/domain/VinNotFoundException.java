@@ -3,6 +3,6 @@ package com.capstone.domain;
 public class VinNotFoundException extends RuntimeException {
 
   public VinNotFoundException() {
-    super("Vehicle not found for VIN");
+    super("Vehicle data is not available for this VIN");
   }
 }

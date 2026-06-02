@@ -15,14 +15,41 @@
 
       <div class="vehicle-detail__header">
         <div class="vehicle-detail__image-wrap hc-surface">
-          @if (v.selectedImageUrl) {
+          @if (heroSelectedImageUrl()) {
             <img
               [alt]="'Photo of ' + v.vehicleYear + ' ' + v.vehicleMake + ' ' + v.vehicleModel"
-              [src]="v.selectedImageUrl"
+              [src]="heroSelectedImageUrl()"
               class="vehicle-detail__image"
             />
           } @else {
             <div class="vehicle-detail__image-placeholder">No Image</div>
+          }
+          @if (v.availableImageUrls.length > 0) {
+            <button
+              (click)="openPhotoModal()"
+              aria-label="Change vehicle photo"
+              class="vehicle-detail__photo-btn"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="vehicle-detail__photo-icon"
+                fill="none"
+                height="20"
+                viewBox="0 0 24 24"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 7a2 2 0 0 1 2-2h2l1-2h6l1 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.75"
+                />
+                <circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="1.75" />
+              </svg>
+            </button>
           }
         </div>
         <div class="vehicle-detail__details-column">
@@ -346,6 +373,16 @@
       (close)="closeMileageModal()"
       (updated)="onMileageUpdated($event)"
       [currentMileage]="v.currentMileage"
+      [vin]="v.vin"
+    />
+  }
+
+  @if (isPhotoModalOpen() && vehicle(); as v) {
+    <app-vehicle-photo-modal
+      (close)="closePhotoModal()"
+      (updated)="onPhotoUpdated($event)"
+      [availableImageUrls]="v.availableImageUrls"
+      [selectedImageUrl]="v.selectedImageUrl"
       [vin]="v.vin"
     />
   }

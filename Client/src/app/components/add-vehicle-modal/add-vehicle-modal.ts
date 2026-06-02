@@ -3,19 +3,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  effect,
   ElementRef,
   HostListener,
   inject,
+  input,
+  OnInit,
   output,
-  signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
 
-import { VinService } from '../../core/vin/vin.service';
-import { AddVinResponse, VinErrorMessage } from '../../core/vin/vin.models';
+import { AddVinRequest, VinErrorMessage } from '../../core/vin/vin.models';
 
 const vinPattern = /^[A-HJ-NPR-Z0-9]{17}$/i;
 const vinValidationMessage = 'VIN must be 17 characters and cannot contain I, O, or Q';
@@ -30,18 +30,18 @@ const vinValidationMessage = 'VIN must be 17 characters and cannot contain I, O,
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AddVehicleModalComponent implements AfterViewInit {
+export class AddVehicleModalComponent implements OnInit, AfterViewInit {
   readonly close = output<void>();
-  readonly added = output<AddVinResponse>();
-  readonly submittingChange = output<boolean>();
+  readonly submitRequest = output<AddVinRequest>();
+  readonly serverErrorClear = output<void>();
+  readonly isSubmitting = input(false);
+  readonly serverError = input<VinErrorMessage | null>(null);
 
   protected readonly vinValidationMessage = vinValidationMessage;
 
-  protected readonly isSubmitting = signal(false);
-  protected readonly serverError = signal<VinErrorMessage | null>(null);
-
   private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly form = this.fb.group({
     vin: [
       '',
@@ -54,8 +54,24 @@ export class AddVehicleModalComponent implements AfterViewInit {
     ],
     currentMileage: [0, [Validators.required, Validators.min(0)]],
   });
-  private readonly vinService = inject(VinService);
-  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    effect(() => {
+      if (this.isSubmitting()) {
+        this.form.disable({ emitEvent: false });
+        return;
+      }
+      this.form.enable({ emitEvent: false });
+    });
+  }
+
+  ngOnInit(): void {
+    this.form.controls.vin.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.serverError()) {
+        this.serverErrorClear.emit();
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this.dialog()?.nativeElement.focus();
@@ -74,37 +90,15 @@ export class AddVehicleModalComponent implements AfterViewInit {
       return;
     }
 
-    this.serverError.set(null);
-
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.isSubmitting.set(true);
-    this.submittingChange.emit(true);
-
     const value = this.form.getRawValue();
-    this.vinService
-      .addVehicle({
-        vin: value.vin.trim().toUpperCase(),
-        currentMileage: value.currentMileage,
-      })
-      .pipe(
-        finalize(() => {
-          this.isSubmitting.set(false);
-          this.submittingChange.emit(false);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (response) => {
-          this.added.emit(response);
-          this.close.emit();
-        },
-        error: (error: VinErrorMessage) => {
-          this.serverError.set(error);
-        },
-      });
+    this.submitRequest.emit({
+      vin: value.vin.trim().toUpperCase(),
+      currentMileage: value.currentMileage,
+    });
   }
 }

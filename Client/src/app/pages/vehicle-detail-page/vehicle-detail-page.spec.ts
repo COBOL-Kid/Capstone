@@ -1,13 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { VehicleDetailPageComponent } from './vehicle-detail-page';
+import { VehiclePhotoModalComponent } from '../../components/vehicle-photo-modal/vehicle-photo-modal';
 import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
+import { UserVehiclesStore } from '../../core/vin/user-vehicles.store';
+import { VinService } from '../../core/vin/vin.service';
 
 describe('VehicleDetailPageComponent', () => {
   let fixture: ComponentFixture<VehicleDetailPageComponent>;
+  let vehiclesStore: UserVehiclesStore;
+  let loadVehiclePage: ReturnType<typeof vi.fn>;
 
   const vehicleDetail = {
     vin: 'JTENU5JR6M5962554',
@@ -25,8 +31,8 @@ describe('VehicleDetailPageComponent', () => {
     driveType: null,
     ownersManual: null,
     currentMileage: 45000,
-    availableImageUrls: ['https://example.com/photo.jpg'],
-    selectedImageUrl: 'https://example.com/photo.jpg',
+    availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+    selectedImageUrl: 'https://example.com/photo-1.jpg',
   };
 
   const emptyPageData = {
@@ -68,6 +74,8 @@ describe('VehicleDetailPageComponent', () => {
   };
 
   beforeEach(async () => {
+    loadVehiclePage = vi.fn(() => of(emptyPageData));
+
     await TestBed.configureTestingModule({
       imports: [VehicleDetailPageComponent],
       providers: [
@@ -81,11 +89,48 @@ describe('VehicleDetailPageComponent', () => {
         {
           provide: VehiclePageDataService,
           useValue: {
-            loadVehiclePage: vi.fn(() => of(emptyPageData)),
+            loadVehiclePage,
+          },
+        },
+        {
+          provide: VinService,
+          useValue: {
+            updateSelectedPhoto: vi.fn(() =>
+              of({
+                vin: 'JTENU5JR6M5962554',
+                currentMileage: 45000,
+                vehicleTypeId: 7,
+                make: 'Toyota',
+                model: '4RUNNER',
+                trim: 'SRS Prem',
+                year: '2021',
+                availableImageUrls: [
+                  'https://example.com/photo-1.jpg',
+                  'https://example.com/photo-2.jpg',
+                ],
+                selectedImageUrl: 'https://example.com/photo-2.jpg',
+              }),
+            ),
           },
         },
       ],
     }).compileComponents();
+
+    vehiclesStore = TestBed.inject(UserVehiclesStore);
+    vehiclesStore.reset();
+    vehiclesStore.setVehicles([
+      {
+        vin: 'JTENU5JR6M5962554',
+        currentMileage: 45000,
+        vehicleTypeId: 7,
+        make: 'Toyota',
+        model: '4RUNNER',
+        trim: 'SRS Prem',
+        year: '2021',
+        availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+        selectedImageUrl: 'https://example.com/photo-1.jpg',
+      },
+    ]);
 
     fixture = TestBed.createComponent(VehicleDetailPageComponent);
   });
@@ -114,7 +159,7 @@ describe('VehicleDetailPageComponent', () => {
     recallsButton!.click();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('No open recalls.');
+    expect(fixture.nativeElement.textContent).toContain('No open recalls');
     expect(fixture.nativeElement.textContent).not.toContain('Upcoming maintenance');
   });
 
@@ -290,6 +335,158 @@ describe('VehicleDetailPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-maintenance-costs-modal')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Search');
   });
+
+  it('shows camera button when vehicle photos are available', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const photoButton = fixture.nativeElement.querySelector(
+      '.vehicle-detail__photo-btn',
+    ) as HTMLButtonElement;
+
+    expect(photoButton).not.toBeNull();
+    expect(photoButton.getAttribute('aria-label')).toBe('Change vehicle photo');
+  });
+
+  it('does not show camera button when no photos are available', async () => {
+    const loadVehiclePage = vi.fn(() =>
+      of({
+        ...emptyPageData,
+        detail: {
+          ...vehicleDetail,
+          availableImageUrls: [],
+          selectedImageUrl: '',
+        },
+      }),
+    );
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.vehicle-detail__photo-btn')).toBeNull();
+  });
+
+  it('opens vehicle photo modal when camera button is clicked', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const photoButton = fixture.nativeElement.querySelector(
+      '.vehicle-detail__photo-btn',
+    ) as HTMLButtonElement;
+    photoButton.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-vehicle-photo-modal')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Vehicle photos');
+  });
+
+  it('updates hero image when photo selection changes', async () => {
+    loadVehiclePage.mockReturnValue(
+      of({
+        ...emptyPageData,
+        detail: {
+          ...vehicleDetail,
+          selectedImageUrl: 'https://example.com/photo-2.jpg',
+        },
+      }),
+    );
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentInstance['onPhotoUpdated']('https://example.com/photo-2.jpg');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const heroImage = fixture.nativeElement.querySelector(
+      '.vehicle-detail__image',
+    ) as HTMLImageElement;
+    expect(heroImage.src).toBe('https://example.com/photo-2.jpg');
+    expect(fixture.nativeElement.querySelector('app-vehicle-photo-modal')).toBeNull();
+    expect(vehiclesStore.vehicles()[0].selectedImageUrl).toBe('https://example.com/photo-2.jpg');
+  });
+
+  it('updates hero image when a photo is selected in the modal', async () => {
+    const vinService = TestBed.inject(VinService);
+    const updateSelectedPhoto = vi.mocked(vinService.updateSelectedPhoto);
+    updateSelectedPhoto.mockReturnValue(
+      of({
+        vin: 'JTENU5JR6M5962554',
+        currentMileage: 45000,
+        vehicleTypeId: 7,
+        make: 'Toyota',
+        model: '4RUNNER',
+        trim: 'SRS Prem',
+        year: '2021',
+        availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+        selectedImageUrl: 'https://example.com/photo-2.jpg',
+      }),
+    );
+    loadVehiclePage.mockReturnValue(of(emptyPageData));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const heroBefore = fixture.nativeElement.querySelector(
+      '.vehicle-detail__image',
+    ) as HTMLImageElement;
+    expect(heroBefore.src).toBe('https://example.com/photo-1.jpg');
+
+    const photoButton = fixture.nativeElement.querySelector(
+      '.vehicle-detail__photo-btn',
+    ) as HTMLButtonElement;
+    photoButton.click();
+    fixture.detectChanges();
+
+    loadVehiclePage.mockReturnValue(
+      of({
+        ...emptyPageData,
+        detail: {
+          ...vehicleDetail,
+          selectedImageUrl: 'https://example.com/photo-2.jpg',
+        },
+      }),
+    );
+
+    const modal = fixture.debugElement.query(By.directive(VehiclePhotoModalComponent))
+      .componentInstance as VehiclePhotoModalComponent;
+    modal['selectPhoto']('https://example.com/photo-2.jpg');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const heroImage = fixture.nativeElement.querySelector(
+      '.vehicle-detail__image',
+    ) as HTMLImageElement;
+    expect(heroImage.src).toBe('https://example.com/photo-2.jpg');
+    expect(updateSelectedPhoto).toHaveBeenCalledWith('JTENU5JR6M5962554', {
+      selectedImageUrl: 'https://example.com/photo-2.jpg',
+    });
+    expect(fixture.nativeElement.querySelector('app-vehicle-photo-modal')).toBeNull();
+  });
 });
 
 describe('VehicleDetailPageComponent with upcoming maintenance', () => {
@@ -349,8 +546,8 @@ describe('VehicleDetailPageComponent with upcoming maintenance', () => {
     driveType: null,
     ownersManual: null,
     currentMileage: 45000,
-    availableImageUrls: ['https://example.com/photo.jpg'],
-    selectedImageUrl: 'https://example.com/photo.jpg',
+    availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+    selectedImageUrl: 'https://example.com/photo-1.jpg',
   };
 
   beforeEach(async () => {
@@ -394,12 +591,11 @@ describe('VehicleDetailPageComponent with upcoming maintenance', () => {
 
     expect(text).toContain('50,000 mi service');
     expect(text).toContain('Replace engine oil and filter');
-    expect(text).toContain('Engine oil and filter');
     expect(text).toContain('Inspect - Battery');
     expect(text).toContain('Inspection');
-    expect(text).toContain('Total parts');
-    expect(text).toContain('Total labor');
-    expect(text).toContain('Total cost');
+    expect(text).toContain('Parts$49.59');
+    expect(text).toContain('Labor$48.40');
+    expect(text).toContain('Total$97.99');
 
     const markCompleteButtons = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
@@ -446,8 +642,8 @@ describe('VehicleDetailPageComponent with owners manual', () => {
     driveType: null,
     ownersManual: 'https://example.com/manual.pdf',
     currentMileage: 45000,
-    availableImageUrls: ['https://example.com/photo.jpg'],
-    selectedImageUrl: 'https://example.com/photo.jpg',
+    availableImageUrls: ['https://example.com/photo-1.jpg', 'https://example.com/photo-2.jpg'],
+    selectedImageUrl: 'https://example.com/photo-1.jpg',
   };
 
   beforeEach(async () => {

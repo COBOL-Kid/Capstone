@@ -4,6 +4,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.capstone.domain.VehicleDatabasesPathNormalizer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.http.HttpHeaders;
@@ -104,7 +105,15 @@ public final class VehicleDataProviderMockSupport {
                 vdbRequestStarts,
                 "getRecalls"));
     server
-        .expect(requestTo(VDB_BASE + "/vehicle-warranty/" + year + "/" + make + "/" + model))
+        .expect(
+            requestTo(
+                VDB_BASE
+                    + "/vehicle-warranty/"
+                    + VehicleDatabasesPathNormalizer.normalizeYear(year)
+                    + "/"
+                    + VehicleDatabasesPathNormalizer.normalizeMake(make)
+                    + "/"
+                    + VehicleDatabasesPathNormalizer.normalizeModel(model)))
         .andRespond(
             delayedVdb(
                 VehicleDataFixtures.read("vdb-vehicle-warranty.json"),
@@ -129,19 +138,7 @@ public final class VehicleDataProviderMockSupport {
         .expect(requestTo(AUTO_DEV_BASE + "/photos/" + vin))
         .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
     server
-        .expect(requestTo(VDB_BASE + "/owner-manual/" + vin))
-        .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
-    server
         .expect(requestTo(VDB_BASE + "/repair-estimates/" + vin))
-        .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
-    server
-        .expect(requestTo(VDB_BASE + "/vehicle-repairs/v2/" + vin))
-        .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
-    server
-        .expect(requestTo(VDB_BASE + "/vehicle-recalls/" + vin))
-        .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
-    server
-        .expect(requestTo(VDB_BASE + "/vehicle-warranty/2014/Dodge/Durango"))
         .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).headers(rateLimitHeaders()));
   }
 

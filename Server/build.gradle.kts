@@ -61,6 +61,20 @@ tasks.test {
     }
 }
 
+tasks.register<Test>("liveTest") {
+    description = "Integration smoke tests against Auto.dev and Vehicle Databases APIs"
+    group = "verification"
+    testClassesDirs = tasks.test.get().testClassesDirs
+    classpath = tasks.test.get().classpath
+    useJUnitPlatform {
+        includeTags("live")
+    }
+    environment(
+        "RUN_VEHICLE_DATA_LIVE_TESTS",
+        System.getenv("RUN_VEHICLE_DATA_LIVE_TESTS") ?: "true",
+    )
+}
+
 tasks.jar {
     enabled = false
 }

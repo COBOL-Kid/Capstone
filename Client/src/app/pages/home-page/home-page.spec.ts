@@ -26,7 +26,11 @@ describe('HomePageComponent', () => {
     createdAssociation: true,
   };
 
-  function createFixture(addVehicle = vi.fn().mockReturnValue(of(sampleAddResponse))) {
+  function createFixture(
+    addVehicle = vi
+      .fn()
+      .mockReturnValue(of({ kind: 'completed' as const, response: sampleAddResponse })),
+  ) {
     const vinService = {
       getUserVehicles: vi.fn().mockReturnValue(of([])),
       addVehicle,
@@ -43,6 +47,37 @@ describe('HomePageComponent', () => {
     fixture.detectChanges();
     return { fixture, navigate, vinService };
   }
+
+  it('keeps the add modal open with trim context when trim selection is required', async () => {
+    const trimContext = {
+      requiresTrimSelection: true as const,
+      year: '2021',
+      make: 'Toyota',
+      model: '4RUNNER',
+    };
+    const addVehicle = vi
+      .fn()
+      .mockReturnValue(of({ kind: 'trimSelectionRequired' as const, context: trimContext }));
+    const { fixture, navigate } = createFixture(addVehicle);
+    fixture.componentInstance['openAddModal']();
+    fixture.detectChanges();
+
+    fixture.componentInstance['onAddVehicleRequest']({
+      vin: 'JTENU5JR6M5962554',
+      currentMileage: 1000,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['isAddModalOpen']()).toBe(true);
+    expect(fixture.componentInstance['isOnboardingVehicle']()).toBe(false);
+    expect(fixture.componentInstance['trimSelectionContext']()).toEqual(trimContext);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Full vehicle details may not be available',
+    );
+  });
 
   it('keeps the add modal open and marks onboarding in progress when a vehicle add starts', () => {
     const addVehicle = vi.fn().mockReturnValue(NEVER);
@@ -118,7 +153,7 @@ describe('HomePageComponent', () => {
           fieldMessages: [],
         })),
       )
-      .mockReturnValueOnce(of(sampleAddResponse));
+      .mockReturnValueOnce(of({ kind: 'completed' as const, response: sampleAddResponse }));
     const { fixture, navigate } = createFixture(addVehicle);
     fixture.componentInstance['openAddModal']();
     fixture.detectChanges();

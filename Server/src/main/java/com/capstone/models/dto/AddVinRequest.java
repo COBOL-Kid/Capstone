@@ -14,4 +14,10 @@ public record AddVinRequest(
         String vin,
     @NotNull(message = "Current mileage is required")
         @PositiveOrZero(message = "Current mileage cannot be negative")
-        Integer currentMileage) {}
+        Integer currentMileage,
+    String selectedTrim) {
+
+  public boolean hasSelectedTrim() {
+    return selectedTrim != null && !selectedTrim.isBlank();
+  }
+}

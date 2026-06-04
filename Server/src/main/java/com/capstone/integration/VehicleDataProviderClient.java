@@ -1,5 +1,6 @@
 package com.capstone.integration;
 
+import com.capstone.domain.VehicleDatabasesPathNormalizer;
 import com.capstone.domain.VinNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,90 @@ public class VehicleDataProviderClient {
         "getRepairEstimates", "/repair-estimates/{vin}", vin, RepairEstimatesResponse.class);
   }
 
+  public RepairEstimatesVinProbeResult probeRepairEstimatesByVin(String vin) {
+    vehicleDatabasesRateLimiter.acquire("getRepairEstimates");
+    String url =
+        UriComponentsBuilder.fromUriString(vehicleDatabasesBaseUrl)
+            .path("/repair-estimates/{vin}")
+            .buildAndExpand(vin)
+            .toUriString();
+    try {
+      RepairEstimatesResponse response =
+          executeGet(
+              "vehicle-databases",
+              "getRepairEstimates",
+              url,
+              RepairEstimatesResponse.class,
+              headers(vehicleDatabasesApiKey, vehicleDatabasesApiKeyHeader),
+              false,
+              false,
+              maskVin(vin));
+      return new RepairEstimatesVinProbeResult.Found(response);
+    } catch (HttpStatusCodeException ex) {
+      if (ex.getStatusCode().value() == HttpStatus.BAD_REQUEST.value()) {
+        return new RepairEstimatesVinProbeResult.TrimSelectionRequired();
+      }
+      throw ex;
+    }
+  }
+
+  public TrimOptionsResponse getTrimOptions(String year, String make, String model) {
+    String[] ymm = normalizeYmm(year, make, model);
+    return getVehicleDatabasesByPathSegments(
+        "getTrimOptions",
+        "/repair-estimates/options/trim/{year}/{make}/{model}",
+        TrimOptionsResponse.class,
+        ymm[0],
+        ymm[1],
+        ymm[2]);
+  }
+
+  public RepairEstimatesResponse getRepairEstimates(
+      String year, String make, String model, String trim) {
+    String[] ymmt = normalizeYmmt(year, make, model, trim);
+    return getVehicleDatabasesByPathSegmentsTolerant(
+        "getRepairEstimatesByYearMakeModelTrim",
+        "/repair-estimates/{year}/{make}/{model}/{trim}",
+        RepairEstimatesResponse.class,
+        ymmt[0],
+        ymmt[1],
+        ymmt[2],
+        ymmt[3]);
+  }
+
+  public OwnerManualResponse getOwnerManual(String year, String make, String model) {
+    String[] ymm = normalizeYmm(year, make, model);
+    return getVehicleDatabasesByPathSegmentsTolerant(
+        "getOwnerManualByYearMakeModel",
+        "/owner-manual/{year}/{make}/{model}",
+        OwnerManualResponse.class,
+        ymm[0],
+        ymm[1],
+        ymm[2]);
+  }
+
+  public RepairCostResponse getRepairCosts(String year, String make, String model) {
+    String[] ymm = normalizeYmm(year, make, model);
+    return getVehicleDatabasesByPathSegmentsTolerant(
+        "getRepairCostsByYearMakeModel",
+        "/vehicle-repairs/v2/{year}/{make}/{model}",
+        RepairCostResponse.class,
+        ymm[0],
+        ymm[1],
+        ymm[2]);
+  }
+
+  public VehicleRecallsResponse getRecalls(String year, String make, String model) {
+    String[] ymm = normalizeYmm(year, make, model);
+    return getVehicleDatabasesByPathSegmentsTolerant(
+        "getRecallsByYearMakeModel",
+        "/vehicle-recalls/{year}/{make}/{model}",
+        VehicleRecallsResponse.class,
+        ymm[0],
+        ymm[1],
+        ymm[2]);
+  }
+
   public RepairCostResponse getRepairCosts(String vin) {
     return getVehicleDatabases(
         "getRepairCosts", "/vehicle-repairs/v2/{vin}", vin, RepairCostResponse.class);
@@ -71,13 +156,14 @@ public class VehicleDataProviderClient {
   }
 
   public VehicleWarrantyResponse getVehicleWarranty(String year, String make, String model) {
-    return getVehicleDatabasesByYearMakeModel(
+    String[] ymm = normalizeYmm(year, make, model);
+    return getVehicleDatabasesByPathSegments(
         "getVehicleWarranty",
         "/vehicle-warranty/{year}/{make}/{model}",
-        year,
-        make,
-        model,
-        VehicleWarrantyResponse.class);
+        VehicleWarrantyResponse.class,
+        ymm[0],
+        ymm[1],
+        ymm[2]);
   }
 
   public VehiclePhotosResponse getPhotos(String vin) {
@@ -117,18 +203,13 @@ public class VehicleDataProviderClient {
         false);
   }
 
-  private <T> T getVehicleDatabasesByYearMakeModel(
-      String operation,
-      String path,
-      String year,
-      String make,
-      String model,
-      Class<T> responseType) {
+  private <T> T getVehicleDatabasesByPathSegments(
+      String operation, String path, Class<T> responseType, String... pathSegments) {
     vehicleDatabasesRateLimiter.acquire(operation);
     String url =
         UriComponentsBuilder.fromUriString(vehicleDatabasesBaseUrl)
             .path(path)
-            .buildAndExpand(year, make, model)
+            .buildAndExpand((Object[]) pathSegments)
             .toUriString();
     return executeGet(
         "vehicle-databases",
@@ -137,7 +218,27 @@ public class VehicleDataProviderClient {
         responseType,
         headers(vehicleDatabasesApiKey, vehicleDatabasesApiKeyHeader),
         false,
-        year + "/" + make + "/" + model);
+        false,
+        String.join("/", pathSegments));
+  }
+
+  private <T> T getVehicleDatabasesByPathSegmentsTolerant(
+      String operation, String path, Class<T> responseType, String... pathSegments) {
+    vehicleDatabasesRateLimiter.acquire(operation);
+    String url =
+        UriComponentsBuilder.fromUriString(vehicleDatabasesBaseUrl)
+            .path(path)
+            .buildAndExpand((Object[]) pathSegments)
+            .toUriString();
+    return executeGet(
+        "vehicle-databases",
+        operation,
+        url,
+        responseType,
+        headers(vehicleDatabasesApiKey, vehicleDatabasesApiKeyHeader),
+        false,
+        true,
+        String.join("/", pathSegments));
   }
 
   private <T> T get(
@@ -159,6 +260,7 @@ public class VehicleDataProviderClient {
         responseType,
         headers(apiKey, apiKeyHeader),
         notFoundMeansInvalidVin,
+        false,
         maskVin(vin));
   }
 
@@ -169,6 +271,7 @@ public class VehicleDataProviderClient {
       Class<T> responseType,
       HttpHeaders headers,
       boolean notFoundMeansInvalidVin,
+      boolean allowBadRequestAsEmpty,
       String target) {
     log.debug(
         "Vehicle data request starting provider={} operation={} target={}",
@@ -210,6 +313,16 @@ public class VehicleDataProviderClient {
         if (notFoundMeansInvalidVin) {
           throw new VinNotFoundException();
         }
+        return null;
+      }
+      if (allowBadRequestAsEmpty && status.value() == HttpStatus.BAD_REQUEST.value()) {
+        log.warn(
+            "Vehicle data bad request treated as empty provider={} operation={} target={} durationMs={} body={}",
+            provider,
+            operation,
+            target,
+            durationMs,
+            truncate(ex.getResponseBodyAsString()));
         return null;
       }
       if (status.value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
@@ -263,5 +376,22 @@ public class VehicleDataProviderClient {
       return body;
     }
     return body.substring(0, MAX_ERROR_BODY_LOG_CHARS) + "...";
+  }
+
+  private static String[] normalizeYmm(String year, String make, String model) {
+    return new String[] {
+      VehicleDatabasesPathNormalizer.normalizeYear(year),
+      VehicleDatabasesPathNormalizer.normalizeMake(make),
+      VehicleDatabasesPathNormalizer.normalizeModel(model)
+    };
+  }
+
+  private static String[] normalizeYmmt(String year, String make, String model, String trim) {
+    return new String[] {
+      VehicleDatabasesPathNormalizer.normalizeYear(year),
+      VehicleDatabasesPathNormalizer.normalizeMake(make),
+      VehicleDatabasesPathNormalizer.normalizeModel(model),
+      VehicleDatabasesPathNormalizer.normalizeTrim(trim)
+    };
   }
 }

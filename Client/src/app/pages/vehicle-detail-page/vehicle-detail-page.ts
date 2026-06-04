@@ -105,7 +105,17 @@ export class VehicleDetailPageComponent {
   protected readonly miscMaintenanceCosts = computed(
     () => this.pageData()?.miscMaintenanceCosts ?? [],
   );
+  protected readonly hasMaintenanceCostEstimates = computed(
+    () => this.miscMaintenanceCosts().length > 0,
+  );
   protected readonly vehicleWarranty = computed(() => this.pageData()?.vehicleWarranty ?? null);
+  protected readonly hasWarrantyInformation = computed(() => this.vehicleWarranty() !== null);
+  protected readonly hasOwnersManual = computed(() => {
+    const url = this.vehicle()?.ownersManual;
+    return url != null && url !== '';
+  });
+  protected readonly informationUnavailableMessage =
+    'information not yet available for this vehicle';
   protected readonly warrantyCoveragesForDisplay = computed(() => {
     const warranty = this.vehicleWarranty();
     if (!warranty) {
@@ -194,6 +204,9 @@ export class VehicleDetailPageComponent {
   }
 
   protected openWarrantyModal(): void {
+    if (!this.hasWarrantyInformation()) {
+      return;
+    }
     this.isWarrantyModalOpen.set(true);
   }
 
@@ -202,6 +215,9 @@ export class VehicleDetailPageComponent {
   }
 
   protected openMaintenanceCostsModal(): void {
+    if (!this.hasMaintenanceCostEstimates()) {
+      return;
+    }
     this.isMaintenanceCostsModalOpen.set(true);
   }
 
@@ -209,7 +225,11 @@ export class VehicleDetailPageComponent {
     this.isMaintenanceCostsModalOpen.set(false);
   }
 
-  protected openOwnersManual(url: string): void {
+  protected openOwnersManual(): void {
+    const url = this.vehicle()?.ownersManual;
+    if (!url) {
+      return;
+    }
     const tab = window.open(url, '_blank');
     if (tab) {
       tab.opener = null;

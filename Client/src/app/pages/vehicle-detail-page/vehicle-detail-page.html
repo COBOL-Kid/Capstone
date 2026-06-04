@@ -110,30 +110,51 @@
                 </div>
               }
             </dl>
-            @if (v.ownersManual) {
+            <span
+              class="vehicle-detail__manual-btn-wrap"
+              [attr.title]="!hasOwnersManual() ? informationUnavailableMessage : null"
+            >
               <button
-                (click)="openOwnersManual(v.ownersManual)"
+                (click)="openOwnersManual()"
+                [class.vehicle-detail__manual-btn--unavailable]="!hasOwnersManual()"
+                [disabled]="!hasOwnersManual()"
                 class="vehicle-detail__manual-btn"
                 type="button"
               >
                 Owner's manual
               </button>
-            }
+            </span>
           </div>
 
-          @if (vehicleWarranty(); as warranty) {
-            <button (click)="openWarrantyModal()" class="vehicle-detail__costs-btn" type="button">
+          <span
+            class="vehicle-detail__costs-btn-wrap"
+            [attr.title]="!hasWarrantyInformation() ? informationUnavailableMessage : null"
+          >
+            <button
+              (click)="openWarrantyModal()"
+              [class.vehicle-detail__costs-btn--unavailable]="!hasWarrantyInformation()"
+              [disabled]="!hasWarrantyInformation()"
+              class="vehicle-detail__costs-btn"
+              type="button"
+            >
               Warranty information
             </button>
-          }
+          </span>
 
-          <button
-            (click)="openMaintenanceCostsModal()"
-            class="vehicle-detail__costs-btn"
-            type="button"
+          <span
+            class="vehicle-detail__costs-btn-wrap"
+            [attr.title]="!hasMaintenanceCostEstimates() ? informationUnavailableMessage : null"
           >
-            Maintenance costs
-          </button>
+            <button
+              (click)="openMaintenanceCostsModal()"
+              [class.vehicle-detail__costs-btn--unavailable]="!hasMaintenanceCostEstimates()"
+              [disabled]="!hasMaintenanceCostEstimates()"
+              class="vehicle-detail__costs-btn"
+              type="button"
+            >
+              Maintenance costs
+            </button>
+          </span>
 
           <div class="vehicle-detail__toggle" role="tablist">
             <button

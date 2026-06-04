@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 class VehicleDataProviderClientHttpTest {
 
@@ -122,6 +123,29 @@ class VehicleDataProviderClientHttpTest {
     OwnerManualResponse response = client.getOwnerManual(VIN);
 
     assertEquals("success", response.status());
+  }
+
+  @Test
+  void shouldFetchTrimOptionsWithNormalizedModelOverHttp() {
+    String url =
+        UriComponentsBuilder.fromUriString(VehicleDataProviderMockSupport.VDB_BASE)
+            .path("/repair-estimates/options/trim/{year}/{make}/{model}")
+            .buildAndExpand("2019", "Mazda", "CX 3")
+            .encode()
+            .toUriString();
+    mockServer
+        .expect(requestTo(url))
+        .andRespond(
+            withSuccess(
+                """
+                {"status":"success","data":{"year":"2019","make":"Mazda","model":"CX 3","trims":["Sport","Touring"]}}
+                """,
+                MediaType.APPLICATION_JSON));
+
+    TrimOptionsResponse response = client.getTrimOptions("2019", "Mazda", "CX-3");
+
+    assertEquals("success", response.status());
+    assertEquals(2, response.data().trims().size());
   }
 
   @Test

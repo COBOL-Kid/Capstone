@@ -29,13 +29,21 @@ public class VehicleDataMapper {
 
   public VehicleType toVehicleType(
       VinDecodeResponse vinDecodeResponse, OwnerManualResponse ownerManualResponse) {
+    return toVehicleType(vinDecodeResponse, ownerManualResponse, null);
+  }
+
+  public VehicleType toVehicleType(
+      VinDecodeResponse vinDecodeResponse,
+      OwnerManualResponse ownerManualResponse,
+      String trimOverride) {
     VinDecodeResponse response = requireResponse(vinDecodeResponse);
+    String trim =
+        trimOverride != null && !trimOverride.isBlank()
+            ? trimOverride.trim()
+            : required(response.trim());
     VehicleType vehicleType =
         new VehicleType(
-            required(make(response)),
-            required(model(response)),
-            required(response.trim()),
-            required(year(response)));
+            required(make(response)), required(model(response)), trim, required(year(response)));
     vehicleType.setVehicleStyle(required(response.style()));
     vehicleType.setSourceVin(clean(firstPresent(response.vin(), vehicleVin(response))));
     vehicleType.setOrigin(clean(response.origin()));

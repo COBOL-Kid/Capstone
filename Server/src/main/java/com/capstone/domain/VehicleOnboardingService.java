@@ -5,6 +5,8 @@ import com.capstone.domain.VehicleDataMapper.VehicleIdentity;
 import com.capstone.integration.OwnerManualResponse;
 import com.capstone.integration.RepairCostResponse;
 import com.capstone.integration.RepairEstimatesResponse;
+import com.capstone.integration.RepairEstimatesVinProbeResult;
+import com.capstone.integration.TrimOptionsResponse;
 import com.capstone.integration.VehicleDataProviderClient;
 import com.capstone.integration.VehicleDataProviderPrefetchMetrics;
 import com.capstone.integration.VehicleDataProviderRequestMetrics;
@@ -18,6 +20,7 @@ import com.capstone.models.VehicleType;
 import com.capstone.models.VehicleWarranty;
 import com.capstone.models.VehicleWarrantyId;
 import com.capstone.models.Vin;
+import com.capstone.models.dto.AddVinOutcome;
 import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
 import java.util.List;
@@ -81,7 +84,7 @@ public class VehicleOnboardingService {
     this.vehicleDataExecutor = vehicleDataExecutor;
   }
 
-  public AddVinResponse addVinToUser(User user, AddVinRequest request) {
+  public AddVinOutcome addVinToUser(User user, AddVinRequest request) {
     if (user == null || user.getUserId() == null) {
       throw new IllegalArgumentException("Authenticated user is required");
     }
@@ -99,7 +102,7 @@ public class VehicleOnboardingService {
 
     Vin existingVin = vinRepository.findById(normalizedVin).orElse(null);
     if (existingVin != null) {
-      return linkExistingVin(user, existingVin, currentMileage);
+      return new AddVinOutcome.Completed(linkExistingVin(user, existingVin, currentMileage));
     }
 
     VinDecodeResponse vinDecodeResponse = vehicleDataProviderClient.decodeVin(normalizedVin);
@@ -107,14 +110,21 @@ public class VehicleOnboardingService {
       throw new VinNotFoundException();
     }
     VehicleIdentity identity = vehicleDataMapper.toVehicleIdentity(vinDecodeResponse);
+    String selectedTrim = request.hasSelectedTrim() ? request.selectedTrim().trim() : null;
+    VehicleIdentity lookupIdentity =
+        selectedTrim != null
+            ? new VehicleIdentity(
+                identity.year(), identity.make(), identity.model(), selectedTrim, identity.style())
+            : identity;
+
     VehicleType existingVehicleType =
         vehicleTypeRepository
             .findByIdentity(
-                identity.year(),
-                identity.make(),
-                identity.model(),
-                identity.trim(),
-                identity.style())
+                lookupIdentity.year(),
+                lookupIdentity.make(),
+                lookupIdentity.model(),
+                lookupIdentity.trim(),
+                lookupIdentity.style())
             .orElse(null);
 
     if (existingVehicleType != null) {
@@ -122,22 +132,43 @@ public class VehicleOnboardingService {
           existingVehicleType.getVehicleYear(),
           existingVehicleType.getVehicleMake(),
           existingVehicleType.getVehicleModel());
-      return saveVinAndAssociation(user, normalizedVin, currentMileage, existingVehicleType);
+      return new AddVinOutcome.Completed(
+          saveVinAndAssociation(user, normalizedVin, currentMileage, existingVehicleType));
     }
 
-    NewVehicleTypePrefetch prefetch = fetchNewVehicleTypeData(normalizedVin, identity);
+    NewVehicleTypeFetchResult fetchResult =
+        fetchNewVehicleTypeData(normalizedVin, identity, selectedTrim != null, selectedTrim);
+    if (fetchResult instanceof NewVehicleTypeFetchResult.TrimSelectionRequired required) {
+      return new AddVinOutcome.TrimSelectionRequired(
+          required.year(), required.make(), required.model());
+    }
+
+    NewVehicleTypePrefetch prefetch = ((NewVehicleTypeFetchResult.Ready) fetchResult).prefetch();
+    String trimOverride = ((NewVehicleTypeFetchResult.Ready) fetchResult).trimOverride();
     VehicleType vehicleType =
-        vehicleDataMapper.toVehicleType(vinDecodeResponse, prefetch.supplemental().ownerManual());
-    return saveFullVehicleData(
-        user,
-        normalizedVin,
-        currentMileage,
-        vehicleType,
-        prefetch.supplemental().repairEstimates(),
-        prefetch.supplemental().repairCosts(),
-        prefetch.supplemental().recalls(),
-        prefetch.supplemental().vehicleWarranty(),
-        prefetch.photos());
+        vehicleDataMapper.toVehicleType(
+            vinDecodeResponse, prefetch.supplemental().ownerManual(), trimOverride);
+    return new AddVinOutcome.Completed(
+        saveFullVehicleData(
+            user,
+            normalizedVin,
+            currentMileage,
+            vehicleType,
+            prefetch.supplemental().repairEstimates(),
+            prefetch.supplemental().repairCosts(),
+            prefetch.supplemental().recalls(),
+            prefetch.supplemental().vehicleWarranty(),
+            prefetch.photos()));
+  }
+
+  public List<String> getTrimOptions(String year, String make, String model) {
+    TrimOptionsResponse response = vehicleDataProviderClient.getTrimOptions(year, make, model);
+    if (response == null || response.data() == null || response.data().trims() == null) {
+      return List.of();
+    }
+    return response.data().trims().stream()
+        .filter(trim -> trim != null && !trim.isBlank())
+        .toList();
   }
 
   protected AddVinResponse linkExistingVin(User user, Vin vin, int currentMileage) {
@@ -317,24 +348,40 @@ public class VehicleOnboardingService {
         .toList();
   }
 
-  private NewVehicleTypePrefetch fetchNewVehicleTypeData(
-      String normalizedVin, VehicleIdentity identity) {
+  private NewVehicleTypeFetchResult fetchNewVehicleTypeData(
+      String normalizedVin, VehicleIdentity identity, boolean useFallback, String selectedTrim) {
     VehicleDataProviderPrefetchMetrics prefetchMetrics = new VehicleDataProviderPrefetchMetrics();
     ScopedValue.Carrier prefetchScope =
         vehicleDataProviderRequestMetrics.bindPrefetchMetrics(prefetchMetrics);
     long prefetchStartNanos = System.nanoTime();
+
     Future<List<String>> photos =
         vehicleDataExecutor.submit(
             () -> prefetchScope.call(() -> fetchVehiclePhotos(normalizedVin)));
+
+    if (useFallback) {
+      NewVehicleTypePrefetch prefetch =
+          fetchFallbackVehicleData(identity, selectedTrim, photos, prefetchScope);
+      logPrefetchComplete(normalizedVin, prefetchStartNanos, prefetchMetrics, prefetch, true);
+      return new NewVehicleTypeFetchResult.Ready(prefetch, selectedTrim);
+    }
+
+    RepairEstimatesVinProbeResult probe =
+        prefetchScope.call(
+            () -> vehicleDataProviderClient.probeRepairEstimatesByVin(normalizedVin));
+    if (probe instanceof RepairEstimatesVinProbeResult.TrimSelectionRequired) {
+      awaitBackgroundTaskIgnoringFailures(photos);
+      return new NewVehicleTypeFetchResult.TrimSelectionRequired(
+          identity.year(), identity.make(), identity.model());
+    }
+
+    RepairEstimatesResponse repairEstimatesResponse =
+        probe instanceof RepairEstimatesVinProbeResult.Found found ? found.response() : null;
+
     Future<OwnerManualResponse> ownerManual =
         vehicleDataExecutor.submit(
             () ->
                 prefetchScope.call(() -> vehicleDataProviderClient.getOwnerManual(normalizedVin)));
-    Future<RepairEstimatesResponse> repairEstimates =
-        vehicleDataExecutor.submit(
-            () ->
-                prefetchScope.call(
-                    () -> vehicleDataProviderClient.getRepairEstimates(normalizedVin)));
     Future<RepairCostResponse> repairCosts =
         vehicleDataExecutor.submit(
             () ->
@@ -351,24 +398,11 @@ public class VehicleOnboardingService {
                             identity.year(), identity.make(), identity.model())));
 
     OwnerManualResponse ownerManualResponse = await(ownerManual);
-    RepairEstimatesResponse repairEstimatesResponse = await(repairEstimates);
     RepairCostResponse repairCostResponse = await(repairCosts);
     VehicleRecallsResponse recallsResponse = await(recalls);
     VehicleWarrantyResponse warrantyResponse = await(vehicleWarranty);
     List<String> photoUrls = await(photos);
-    long prefetchDurationMs = (System.nanoTime() - prefetchStartNanos) / 1_000_000L;
-    log.info(
-        "Vehicle data prefetch completed vin={} durationMs={} peakConcurrentRequests={} "
-            + "ownerManual={} repairEstimates={} repairCosts={} recalls={} warranty={} photos={}",
-        maskVin(normalizedVin),
-        prefetchDurationMs,
-        prefetchMetrics.maxInFlight(),
-        ownerManualResponse != null,
-        repairEstimatesResponse != null,
-        repairCostResponse != null,
-        recallsResponse != null,
-        warrantyResponse != null,
-        photoUrls != null && !photoUrls.isEmpty());
+
     SupplementalVehicleData supplemental =
         new SupplementalVehicleData(
             ownerManualResponse,
@@ -376,7 +410,79 @@ public class VehicleOnboardingService {
             repairCostResponse,
             recallsResponse,
             warrantyResponse);
+    NewVehicleTypePrefetch prefetch = new NewVehicleTypePrefetch(supplemental, photoUrls);
+    logPrefetchComplete(normalizedVin, prefetchStartNanos, prefetchMetrics, prefetch, false);
+    return new NewVehicleTypeFetchResult.Ready(prefetch, null);
+  }
+
+  private NewVehicleTypePrefetch fetchFallbackVehicleData(
+      VehicleIdentity identity,
+      String selectedTrim,
+      Future<List<String>> photos,
+      ScopedValue.Carrier prefetchScope) {
+    String year = identity.year();
+    String make = identity.make();
+    String model = identity.model();
+
+    Future<RepairEstimatesResponse> repairEstimates =
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(
+                    () ->
+                        vehicleDataProviderClient.getRepairEstimates(
+                            year, make, model, selectedTrim)));
+    Future<OwnerManualResponse> ownerManual =
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(
+                    () -> vehicleDataProviderClient.getOwnerManual(year, make, model)));
+    Future<RepairCostResponse> repairCosts =
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(
+                    () -> vehicleDataProviderClient.getRepairCosts(year, make, model)));
+    Future<VehicleRecallsResponse> recalls =
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(() -> vehicleDataProviderClient.getRecalls(year, make, model)));
+
+    RepairEstimatesResponse repairEstimatesResponse = await(repairEstimates);
+    OwnerManualResponse ownerManualResponse = await(ownerManual);
+    RepairCostResponse repairCostResponse = await(repairCosts);
+    VehicleRecallsResponse recallsResponse = await(recalls);
+    List<String> photoUrls = await(photos);
+
+    SupplementalVehicleData supplemental =
+        new SupplementalVehicleData(
+            ownerManualResponse,
+            repairEstimatesResponse,
+            repairCostResponse,
+            recallsResponse,
+            null);
     return new NewVehicleTypePrefetch(supplemental, photoUrls);
+  }
+
+  private void logPrefetchComplete(
+      String normalizedVin,
+      long prefetchStartNanos,
+      VehicleDataProviderPrefetchMetrics prefetchMetrics,
+      NewVehicleTypePrefetch prefetch,
+      boolean fallback) {
+    long prefetchDurationMs = (System.nanoTime() - prefetchStartNanos) / 1_000_000L;
+    SupplementalVehicleData supplemental = prefetch.supplemental();
+    log.info(
+        "Vehicle data prefetch completed vin={} fallback={} durationMs={} peakConcurrentRequests={} "
+            + "ownerManual={} repairEstimates={} repairCosts={} recalls={} warranty={} photos={}",
+        maskVin(normalizedVin),
+        fallback,
+        prefetchDurationMs,
+        prefetchMetrics.maxInFlight(),
+        supplemental.ownerManual() != null,
+        supplemental.repairEstimates() != null,
+        supplemental.repairCosts() != null,
+        supplemental.recalls() != null,
+        supplemental.vehicleWarranty() != null,
+        prefetch.photos() != null && !prefetch.photos().isEmpty());
   }
 
   private static String maskVin(String vin) {
@@ -384,6 +490,19 @@ public class VehicleOnboardingService {
       return "****";
     }
     return "****" + vin.substring(vin.length() - 4);
+  }
+
+  private void awaitBackgroundTaskIgnoringFailures(Future<?> future) {
+    try {
+      future.get();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      future.cancel(true);
+    } catch (ExecutionException ex) {
+      log.debug(
+          "Ignored background prefetch failure while resolving trim selection for VIN onboarding",
+          ex.getCause());
+    }
   }
 
   private <T> T await(Future<T> future) {
@@ -409,6 +528,14 @@ public class VehicleOnboardingService {
       }
       throw new IllegalStateException("Failed to fetch vehicle data", cause);
     }
+  }
+
+  private sealed interface NewVehicleTypeFetchResult {
+    record Ready(NewVehicleTypePrefetch prefetch, String trimOverride)
+        implements NewVehicleTypeFetchResult {}
+
+    record TrimSelectionRequired(String year, String make, String model)
+        implements NewVehicleTypeFetchResult {}
   }
 
   private record SupplementalVehicleData(

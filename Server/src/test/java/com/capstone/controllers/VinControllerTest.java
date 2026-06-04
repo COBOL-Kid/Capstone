@@ -1,6 +1,7 @@
 package com.capstone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 import com.capstone.authentication.AuthenticatedUser;
@@ -29,7 +30,9 @@ class VinControllerTest {
     assertEquals(HttpStatus.UNAUTHORIZED, controller.getCurrentUserVins(null).getStatusCode());
     assertEquals(
         HttpStatus.UNAUTHORIZED,
-        controller.addVin(null, new AddVinRequest("JTENU5JR6M5962554", 45000)).getStatusCode());
+        controller
+            .addVin(null, new AddVinRequest("JTENU5JR6M5962554", 45000, null))
+            .getStatusCode());
   }
 
   @Test
@@ -137,6 +140,74 @@ class VinControllerTest {
   }
 
   @Test
+  void shouldReturnTrimSelectionRequiredWhenOnboardingNeedsTrim() {
+    VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    VinController controller =
+        new VinController(
+            mock(VinService.class),
+            onboardingService,
+            mock(VehicleDashboardService.class),
+            userRepository);
+    AuthenticatedUser authUser = user();
+    User user = new User();
+    user.setUserId(1L);
+    AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000, null);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(onboardingService.addVinToUser(user, request))
+        .thenReturn(new AddVinOutcome.TrimSelectionRequired("2021", "Toyota", "4RUNNER"));
+
+    var response = controller.addVin(authUser, request);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertInstanceOf(AddVinTrimSelectionRequiredResponse.class, response.getBody());
+    assertEquals(
+        AddVinTrimSelectionRequiredResponse.of("2021", "Toyota", "4RUNNER"), response.getBody());
+    verify(onboardingService).addVinToUser(user, request);
+  }
+
+  @Test
+  void shouldReturnTrimOptionsForAuthenticatedUser() {
+    VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
+    VinController controller =
+        controller(mock(VinService.class), onboardingService, mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
+
+    when(onboardingService.getTrimOptions("2021", "Toyota", "4RUNNER"))
+        .thenReturn(List.of("SRS Prem", "Limited"));
+
+    var response = controller.getTrimOptions(user, "2021", "Toyota", "4RUNNER");
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(new TrimOptionsDto(List.of("SRS Prem", "Limited")), response.getBody());
+    verify(onboardingService).getTrimOptions("2021", "Toyota", "4RUNNER");
+  }
+
+  @Test
+  void shouldRequireYearMakeAndModelForTrimOptions() {
+    VinController controller =
+        controller(
+            mock(VinService.class),
+            mock(VehicleOnboardingService.class),
+            mock(VehicleDashboardService.class));
+    AuthenticatedUser user = user();
+
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        controller.getTrimOptions(user, "", "Toyota", "4RUNNER").getStatusCode());
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        controller.getTrimOptions(user, "2021", " ", "4RUNNER").getStatusCode());
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        controller.getTrimOptions(user, "2021", "Toyota", null).getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.getTrimOptions(null, "2021", "Toyota", "4RUNNER").getStatusCode());
+  }
+
+  @Test
   void shouldReturnCreatedOnlyWhenAddVinCreatesAssociation() {
     VehicleOnboardingService onboardingService = mock(VehicleOnboardingService.class);
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
@@ -149,7 +220,7 @@ class VinControllerTest {
     AuthenticatedUser authUser = user();
     User user = new User();
     user.setUserId(1L);
-    AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000);
+    AddVinRequest request = new AddVinRequest("JTENU5JR6M5962554", 45000, null);
     AddVinResponse created =
         new AddVinResponse(
             "JTENU5JR6M5962554",
@@ -180,7 +251,8 @@ class VinControllerTest {
             false);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-    when(onboardingService.addVinToUser(user, request)).thenReturn(created, existing);
+    when(onboardingService.addVinToUser(user, request))
+        .thenReturn(new AddVinOutcome.Completed(created), new AddVinOutcome.Completed(existing));
 
     var createdResponse = controller.addVin(authUser, request);
     var existingResponse = controller.addVin(authUser, request);

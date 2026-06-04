@@ -16,6 +16,7 @@ import { VinService } from '../../core/vin/vin.service';
 import {
   AddVinRequest,
   AddVinResponse,
+  AddVinTrimSelectionRequiredResponse,
   UserVehicleResponse,
   VinErrorMessage,
 } from '../../core/vin/vin.models';
@@ -49,6 +50,9 @@ export class HomePageComponent {
   protected readonly isAddModalOpen = signal(false);
   protected readonly isOnboardingVehicle = signal(false);
   protected readonly addVehicleError = signal<VinErrorMessage | null>(null);
+  protected readonly trimSelectionContext = signal<AddVinTrimSelectionRequiredResponse | null>(
+    null,
+  );
   protected readonly vehicleToDelete = signal<string | null>(null);
   protected readonly isLoading = computed(() => this.vehiclesResource.isLoading());
   protected readonly error = computed(() => {
@@ -89,7 +93,15 @@ export class HomePageComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (response) => this.onVehicleAdded(response),
+        next: (result) => {
+          if (result.kind === 'trimSelectionRequired') {
+            this.trimSelectionContext.set(result.context);
+            this.isAddModalOpen.set(true);
+            return;
+          }
+          this.trimSelectionContext.set(null);
+          this.onVehicleAdded(result.response);
+        },
       });
   }
 
@@ -98,6 +110,7 @@ export class HomePageComponent {
       return;
     }
     this.addVehicleError.set(null);
+    this.trimSelectionContext.set(null);
     this.isAddModalOpen.set(true);
   }
 
@@ -111,6 +124,7 @@ export class HomePageComponent {
     }
     this.isAddModalOpen.set(false);
     this.addVehicleError.set(null);
+    this.trimSelectionContext.set(null);
   }
 
   protected onAddVehicleRequest(request: AddVinRequest): void {
@@ -121,6 +135,7 @@ export class HomePageComponent {
     this.vehicleAddSucceeded = true;
     this.isAddModalOpen.set(false);
     this.addVehicleError.set(null);
+    this.trimSelectionContext.set(null);
     void this.router.navigate(['/vehicles', response.vin]);
   }
 

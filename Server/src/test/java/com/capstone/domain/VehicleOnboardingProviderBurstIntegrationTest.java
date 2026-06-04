@@ -7,6 +7,7 @@ import com.capstone.integration.testsupport.VehicleDataFixtures;
 import com.capstone.integration.testsupport.VehicleDataProviderMockSupport;
 import com.capstone.models.Role;
 import com.capstone.models.User;
+import com.capstone.models.dto.AddVinOutcome;
 import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
 import java.util.ArrayList;
@@ -87,8 +88,10 @@ class VehicleOnboardingProviderBurstIntegrationTest {
         vdbRequestStarts);
 
     long startMs = System.currentTimeMillis();
-    AddVinResponse response =
-        vehicleOnboardingService.addVinToUser(testUser(), new AddVinRequest(VIN, 45_000));
+    AddVinOutcome outcome =
+        vehicleOnboardingService.addVinToUser(testUser(), new AddVinRequest(VIN, 45_000, null));
+    assertInstanceOf(AddVinOutcome.Completed.class, outcome);
+    AddVinResponse response = ((AddVinOutcome.Completed) outcome).response();
     long durationMs = System.currentTimeMillis() - startMs;
 
     assertTrue(response.createdVehicleType());

@@ -98,14 +98,14 @@ class RequestValidationTest {
 
   @Test
   void shouldValidateAddVinRequests() {
-    assertTrue(validator.validate(new AddVinRequest(" jtenu5jr6m5962554 ", 0)).isEmpty());
+    assertTrue(validator.validate(new AddVinRequest(" jtenu5jr6m5962554 ", 0, null)).isEmpty());
 
-    Set<String> messages = messages(new AddVinRequest("too-short", -1));
+    Set<String> messages = messages(new AddVinRequest("too-short", -1, null));
 
     assertTrue(messages.contains(VinValidation.VIN_MESSAGE));
     assertTrue(messages.contains("Current mileage cannot be negative"));
     assertTrue(
-        messages(new AddVinRequest("JTENU5JR6M5962554", null))
+        messages(new AddVinRequest("JTENU5JR6M5962554", null, null))
             .contains("Current mileage is required"));
   }
 

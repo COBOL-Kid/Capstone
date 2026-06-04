@@ -124,8 +124,12 @@
   color: var(--color-accent);
 }
 
-.vehicle-detail__manual-btn {
+.vehicle-detail__manual-btn-wrap {
+  display: block;
   margin-top: 0.75rem;
+}
+
+.vehicle-detail__manual-btn {
   border: 1px solid rgba(230, 240, 251, 0.25);
   background: transparent;
   color: var(--color-text-on-dark);
@@ -135,9 +139,22 @@
   font-size: 0.8125rem;
 }
 
-.vehicle-detail__manual-btn:hover {
+.vehicle-detail__manual-btn:hover:not(:disabled) {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.vehicle-detail__manual-btn:disabled,
+.vehicle-detail__manual-btn--unavailable {
+  cursor: not-allowed;
+  color: var(--color-text-muted);
+  border-color: rgba(230, 240, 251, 0.15);
+  opacity: 0.65;
+}
+
+.vehicle-detail__costs-btn-wrap {
+  display: block;
+  width: 100%;
 }
 
 .vehicle-detail__costs-btn {
@@ -153,9 +170,17 @@
   flex-shrink: 0;
 }
 
-.vehicle-detail__costs-btn:hover {
+.vehicle-detail__costs-btn:hover:not(:disabled) {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.vehicle-detail__costs-btn:disabled,
+.vehicle-detail__costs-btn--unavailable {
+  cursor: not-allowed;
+  color: var(--color-text-muted);
+  border-color: rgba(230, 240, 251, 0.15);
+  opacity: 0.65;
 }
 
 .vehicle-detail__image-wrap {

@@ -288,6 +288,99 @@ class VehicleDataProviderClientTest {
   }
 
   @Test
+  void shouldNormalizeModelWhenFetchingTrimOptions() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    TrimOptionsResponse providerResponse =
+        new TrimOptionsResponse(
+            "success",
+            new TrimOptionsResponse.Data("2019", "Mazda", "CX 3", List.of("Sport", "Touring")));
+
+    VehicleDataProviderClient client = client(restTemplate);
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(TrimOptionsResponse.class)))
+        .thenReturn(ResponseEntity.ok(providerResponse));
+
+    client.getTrimOptions("2019", "Mazda", "CX-3");
+
+    ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+    verify(restTemplate)
+        .exchange(
+            urlCaptor.capture(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(TrimOptionsResponse.class));
+    String url = urlCaptor.getValue();
+    assertTrue(
+        url.contains("/trim/2019/Mazda/CX%203") || url.contains("/trim/2019/Mazda/CX 3"),
+        "expected normalized model in URL but was: " + url);
+  }
+
+  @Test
+  void shouldFetchTrimOptionsFromVehicleDatabasesEndpoint() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    TrimOptionsResponse providerResponse =
+        new TrimOptionsResponse(
+            "success",
+            new TrimOptionsResponse.Data(
+                "2021",
+                "Toyota",
+                "4RUNNER",
+                List.of("SRS Prem", "Limited 4dr SUV (2.7L 4cyl 4A)")));
+    String url =
+        "https://api.vehicledatabases.com/repair-estimates/options/trim/2021/Toyota/4RUNNER";
+
+    stubVehicleDatabases(restTemplate, url, TrimOptionsResponse.class, providerResponse);
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    TrimOptionsResponse response = client.getTrimOptions("2021", "Toyota", "4RUNNER");
+
+    assertSame(providerResponse, response);
+    verifyVehicleDatabasesAuth(restTemplate, url, TrimOptionsResponse.class);
+  }
+
+  @Test
+  void shouldReturnTrimSelectionRequiredWhenRepairEstimatesProbeReturns400() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    when(restTemplate.exchange(
+            eq("https://api.vehicledatabases.com/repair-estimates/JTENU5JR6M5962554"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(RepairEstimatesResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(
+                HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    RepairEstimatesVinProbeResult result = client.probeRepairEstimatesByVin("JTENU5JR6M5962554");
+
+    assertInstanceOf(RepairEstimatesVinProbeResult.TrimSelectionRequired.class, result);
+  }
+
+  @Test
+  void shouldReturnNullWhenFallbackEndpointReturns400() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    when(restTemplate.exchange(
+            eq("https://api.vehicledatabases.com/owner-manual/2021/Toyota/4RUNNER"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(OwnerManualResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(
+                HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    assertNull(client.getOwnerManual("2021", "Toyota", "4RUNNER"));
+  }
+
+  @Test
   void shouldReturnNullWhenVehicleDatabasesEndpointReturns404() {
     RestTemplate restTemplate = mock(RestTemplate.class);
 

@@ -57,7 +57,7 @@ class VehicleOnboardingProvider429IntegrationTest {
         RestClientResponseException.class,
         () ->
             vehicleOnboardingService.addVinToUser(
-                testUser(), new AddVinRequest(rateLimitedVin, 45_000)));
+                testUser(), new AddVinRequest(rateLimitedVin, 45_000, null)));
     assertTrue(vinRepository.findById(rateLimitedVin).isEmpty());
     mockServer.verify();
   }

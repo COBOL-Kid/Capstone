@@ -13,6 +13,28 @@ export interface UserVehicleResponse {
 export interface AddVinRequest {
   vin: string;
   currentMileage: number;
+  selectedTrim?: string;
+}
+
+export interface AddVinTrimSelectionRequiredResponse {
+  requiresTrimSelection: true;
+  year: string;
+  make: string;
+  model: string;
+}
+
+export interface TrimOptionsResponse {
+  trims: string[];
+}
+
+export type AddVehicleResult =
+  | { kind: 'completed'; response: AddVinResponse }
+  | { kind: 'trimSelectionRequired'; context: AddVinTrimSelectionRequiredResponse };
+
+export function isAddVinTrimSelectionRequiredResponse(
+  value: AddVinResponse | AddVinTrimSelectionRequiredResponse,
+): value is AddVinTrimSelectionRequiredResponse {
+  return 'requiresTrimSelection' in value && value.requiresTrimSelection === true;
 }
 
 export interface AddVinResponse {

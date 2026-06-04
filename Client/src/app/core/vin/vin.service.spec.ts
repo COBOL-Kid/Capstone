@@ -206,6 +206,43 @@ describe('VinService', () => {
     request.flush(vehicle);
   });
 
+  it('returns trim selection required without treating it as an error', () => {
+    service.addVehicle({ vin: 'JTENU5JR6M5962554', currentMileage: 1000 }).subscribe((result) => {
+      expect(result.kind).toBe('trimSelectionRequired');
+      if (result.kind === 'trimSelectionRequired') {
+        expect(result.context).toEqual({
+          requiresTrimSelection: true,
+          year: '2021',
+          make: 'Toyota',
+          model: '4RUNNER',
+        });
+      }
+    });
+
+    const request = httpTesting.expectOne(apiConfig.vinUrl);
+    request.flush({
+      requiresTrimSelection: true,
+      year: '2021',
+      make: 'Toyota',
+      model: '4RUNNER',
+    });
+  });
+
+  it('loads trim options', () => {
+    service.getTrimOptions('2021', 'Toyota', '4RUNNER').subscribe((trims) => {
+      expect(trims).toEqual(['SRS Prem', 'Limited']);
+    });
+
+    const request = httpTesting.expectOne(
+      (req) =>
+        req.url === `${apiConfig.vinUrl}/trim-options` &&
+        req.params.get('year') === '2021' &&
+        req.params.get('make') === 'Toyota' &&
+        req.params.get('model') === '4RUNNER',
+    );
+    request.flush({ trims: ['SRS Prem', 'Limited'] });
+  });
+
   it('maps plain string 400 responses into user-facing messages', () => {
     service.addVehicle({ vin: 'JTENU5JR6M5962554', currentMileage: 1000 }).subscribe({
       error: (error) => {

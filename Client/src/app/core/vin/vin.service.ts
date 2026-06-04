@@ -1,9 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import {
+  AddVehicleResult,
   AddVinRequest,
   AddVinResponse,
+  AddVinTrimSelectionRequiredResponse,
+  isAddVinTrimSelectionRequiredResponse,
+  TrimOptionsResponse,
   UpdateMileageRequest,
   UpdateVehiclePhotoRequest,
   UserVehicleResponse,
@@ -55,10 +59,25 @@ export class VinService {
     return this.http.patch<UserVehicleResponse>(`${this.baseUrl}/${vin}/photo`, request);
   }
 
-  addVehicle(request: AddVinRequest): Observable<AddVinResponse> {
+  getTrimOptions(year: string, make: string, model: string): Observable<string[]> {
+    const params = new HttpParams().set('year', year).set('make', make).set('model', model);
     return this.http
-      .post<AddVinResponse>(this.baseUrl, request)
-      .pipe(catchError((error) => this.handleAddVehicleError(error)));
+      .get<TrimOptionsResponse>(`${this.baseUrl}/trim-options`, { params })
+      .pipe(map((response) => response.trims ?? []));
+  }
+
+  addVehicle(request: AddVinRequest): Observable<AddVehicleResult> {
+    return this.http
+      .post<AddVinResponse | AddVinTrimSelectionRequiredResponse>(this.baseUrl, request)
+      .pipe(
+        map((body): AddVehicleResult => {
+          if (isAddVinTrimSelectionRequiredResponse(body)) {
+            return { kind: 'trimSelectionRequired', context: body };
+          }
+          return { kind: 'completed', response: body };
+        }),
+        catchError((error) => this.handleAddVehicleError(error)),
+      );
   }
 
   deleteVehicle(vin: string): Observable<void> {

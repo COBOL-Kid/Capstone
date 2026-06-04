@@ -9,8 +9,11 @@ import com.capstone.domain.VehicleDashboardService;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.models.User;
+import com.capstone.models.dto.AddVinOutcome;
 import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
+import com.capstone.models.dto.AddVinTrimSelectionRequiredResponse;
+import com.capstone.models.dto.TrimOptionsDto;
 import com.capstone.models.dto.UpdateMileageRequest;
 import com.capstone.models.dto.UpdateVehiclePhotoRequest;
 import jakarta.validation.Valid;
@@ -109,6 +112,28 @@ public class VinController {
         .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
+  @GetMapping("/trim-options")
+  public ResponseEntity<?> getTrimOptions(
+      @AuthenticationPrincipal AuthenticatedUser user,
+      @RequestParam("year") String year,
+      @RequestParam("make") String make,
+      @RequestParam("model") String model) {
+    if (user == null) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
+    if (year == null
+        || year.isBlank()
+        || make == null
+        || make.isBlank()
+        || model == null
+        || model.isBlank()) {
+      return new ResponseEntity<>("year, make, and model are required", HttpStatus.BAD_REQUEST);
+    }
+    return new ResponseEntity<>(
+        new TrimOptionsDto(vehicleOnboardingService.getTrimOptions(year, make, model)),
+        HttpStatus.OK);
+  }
+
   @PostMapping
   public ResponseEntity<?> addVin(
       @AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody AddVinRequest request) {
@@ -119,7 +144,14 @@ public class VinController {
         userRepository
             .findById(user.userId())
             .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
-    AddVinResponse response = vehicleOnboardingService.addVinToUser(entity, request);
+    AddVinOutcome outcome = vehicleOnboardingService.addVinToUser(entity, request);
+    if (outcome instanceof AddVinOutcome.TrimSelectionRequired required) {
+      return new ResponseEntity<>(
+          AddVinTrimSelectionRequiredResponse.of(
+              required.year(), required.make(), required.model()),
+          HttpStatus.OK);
+    }
+    AddVinResponse response = ((AddVinOutcome.Completed) outcome).response();
     return new ResponseEntity<>(
         response, response.createdAssociation() ? HttpStatus.CREATED : HttpStatus.OK);
   }

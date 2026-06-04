@@ -35,6 +35,22 @@ describe('VehicleDetailPageComponent', () => {
     selectedImageUrl: 'https://example.com/photo-1.jpg',
   };
 
+  const informationUnavailableMessage = 'information not yet available for this vehicle';
+
+  const sampleMiscMaintenanceCosts = [
+    {
+      miscMaintCostId: 1,
+      maintTitle: 'Oil Change',
+      maintDesc: 'Replace engine oil and filter',
+      independentAvg: 65,
+      independentHigh: 95,
+      independentLow: 45,
+      dealerAvg: 110,
+      dealerHigh: 145,
+      dealerLow: 85,
+    },
+  ];
+
   const emptyPageData = {
     detail: vehicleDetail,
     upcomingIntervals: [] as never[],
@@ -163,19 +179,30 @@ describe('VehicleDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Upcoming maintenance');
   });
 
-  it('does not show owner manual button when ownersManual is null', async () => {
+  it('disables owner manual button with tooltip when ownersManual is null', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
+    const openSpy = vi.spyOn(window, 'open');
     const manualButton = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((button) => button.textContent?.includes("Owner's manual"));
 
-    expect(manualButton).toBeUndefined();
+    expect(manualButton).toBeDefined();
+    expect(manualButton!.disabled).toBe(true);
+    expect(manualButton!.closest('.vehicle-detail__manual-btn-wrap')?.getAttribute('title')).toBe(
+      informationUnavailableMessage,
+    );
+
+    manualButton!.click();
+    fixture.detectChanges();
+
+    expect(openSpy).not.toHaveBeenCalled();
+    openSpy.mockRestore();
   });
 
-  it('does not show warranty button when vehicleWarranty is null', async () => {
+  it('disables warranty button with tooltip when vehicleWarranty is null', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -184,7 +211,16 @@ describe('VehicleDetailPageComponent', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((button) => button.textContent?.includes('Warranty information'));
 
-    expect(warrantyButton).toBeUndefined();
+    expect(warrantyButton).toBeDefined();
+    expect(warrantyButton!.disabled).toBe(true);
+    expect(warrantyButton!.closest('.vehicle-detail__costs-btn-wrap')?.getAttribute('title')).toBe(
+      informationUnavailableMessage,
+    );
+
+    warrantyButton!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-warranty-modal')).toBeNull();
   });
 
   it('opens warranty modal when warranty button is clicked', async () => {
@@ -320,6 +356,27 @@ describe('VehicleDetailPageComponent', () => {
   });
 
   it('opens maintenance costs modal when maintenance costs button is clicked', async () => {
+    const loadVehiclePage = vi.fn(() =>
+      of({ ...emptyPageData, miscMaintenanceCosts: sampleMiscMaintenanceCosts }),
+    );
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(VehicleDetailPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -329,11 +386,33 @@ describe('VehicleDetailPageComponent', () => {
     ).find((button) => button.textContent?.includes('Maintenance costs'));
 
     expect(costsButton).toBeDefined();
+    expect(costsButton!.disabled).toBe(false);
     costsButton!.click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('app-maintenance-costs-modal')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Search');
+  });
+
+  it('disables maintenance costs button with tooltip when miscMaintenanceCosts is empty', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const costsButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Maintenance costs'));
+
+    expect(costsButton).toBeDefined();
+    expect(costsButton!.disabled).toBe(true);
+    expect(costsButton!.closest('.vehicle-detail__costs-btn-wrap')?.getAttribute('title')).toBe(
+      informationUnavailableMessage,
+    );
+
+    costsButton!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-maintenance-costs-modal')).toBeNull();
   });
 
   it('shows camera button when vehicle photos are available', async () => {
@@ -690,6 +769,7 @@ describe('VehicleDetailPageComponent with owners manual', () => {
     ).find((button) => button.textContent?.includes("Owner's manual"));
 
     expect(manualButton).toBeDefined();
+    expect(manualButton!.disabled).toBe(false);
     manualButton!.click();
 
     expect(openSpy).toHaveBeenCalledWith('https://example.com/manual.pdf', '_blank');

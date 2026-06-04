@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
   @DisplayName("should return structured bad request response for validation errors")
   void shouldReturnStructuredBadRequestForValidationErrors() throws Exception {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
-    AddVinRequest request = new AddVinRequest("too-short", -1);
+    AddVinRequest request = new AddVinRequest("too-short", -1, null);
     BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
     bindingResult.addError(new FieldError("request", "vin", "VIN must be 17 characters"));
     MethodArgumentNotValidException exception =

@@ -5,7 +5,9 @@ import com.capstone.models.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -211,6 +213,8 @@ public class VehicleDataMapper {
     if (item.labor() == null) {
       return rows;
     }
+    Map<String, List<RepairEstimatesResponse.PartLine>> partsByType =
+        indexPartsByType(item.parts());
     for (RepairEstimatesResponse.LaborLine laborLine : item.labor()) {
       if (laborLine == null || clean(laborLine.type()) == null || laborLine.totalCost() == null) {
         continue;
@@ -225,25 +229,33 @@ public class VehicleDataMapper {
               laborLine.hourlyRate(),
               laborLine.totalCost(),
               laborLine.currency()));
-      if (item.parts() != null) {
-        for (RepairEstimatesResponse.PartLine partLine : item.parts()) {
-          if (partLine == null || partLine.totalCost() == null) {
-            continue;
-          }
-          String partType = clean(partLine.type());
-          if (partType == null || !type.equals(partType)) {
-            continue;
-          }
-          maintMileage
-              .getPartLines()
-              .add(
-                  new MaintPartLine(
-                      maintMileage, partType, partLine.totalCost(), partLine.currency()));
-        }
+      for (RepairEstimatesResponse.PartLine partLine : partsByType.getOrDefault(type, List.of())) {
+        maintMileage
+            .getPartLines()
+            .add(new MaintPartLine(maintMileage, type, partLine.totalCost(), partLine.currency()));
       }
       rows.add(maintMileage);
     }
     return rows;
+  }
+
+  private Map<String, List<RepairEstimatesResponse.PartLine>> indexPartsByType(
+      List<RepairEstimatesResponse.PartLine> parts) {
+    Map<String, List<RepairEstimatesResponse.PartLine>> partsByType = new HashMap<>();
+    if (parts == null) {
+      return partsByType;
+    }
+    for (RepairEstimatesResponse.PartLine partLine : parts) {
+      if (partLine == null || partLine.totalCost() == null) {
+        continue;
+      }
+      String partType = clean(partLine.type());
+      if (partType == null) {
+        continue;
+      }
+      partsByType.computeIfAbsent(partType, _ -> new ArrayList<>()).add(partLine);
+    }
+    return partsByType;
   }
 
   private boolean isInspectType(String type) {
@@ -344,10 +356,12 @@ public class VehicleDataMapper {
     if (costLines == null) {
       return null;
     }
-    return costLines.stream()
-        .filter(costLine -> costLine != null && "total".equalsIgnoreCase(clean(costLine.name())))
-        .findFirst()
-        .orElse(null);
+    for (RepairCostResponse.CostLine costLine : costLines) {
+      if (costLine != null && "total".equalsIgnoreCase(clean(costLine.name()))) {
+        return costLine;
+      }
+    }
+    return null;
   }
 
   private Optional<LocalDate> parseRecallDate(String recallDate) {
@@ -357,10 +371,10 @@ public class VehicleDataMapper {
     }
     try {
       return Optional.of(LocalDate.parse(cleanDate, RECALL_DATE_US));
-    } catch (Exception ignored) {
+    } catch (DateTimeParseException ignored) {
       try {
         return Optional.of(LocalDate.parse(cleanDate, RECALL_DATE_EU));
-      } catch (Exception ex) {
+      } catch (DateTimeParseException ex) {
         return Optional.empty();
       }
     }

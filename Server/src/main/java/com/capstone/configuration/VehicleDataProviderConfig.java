@@ -1,6 +1,6 @@
 package com.capstone.configuration;
 
-import com.capstone.integration.VehicleDataProviderLoggingInterceptor;
+import com.capstone.integration.VehicleDataProviderRequestMetricsInterceptor;
 import com.capstone.integration.VehicleDatabasesRateLimiter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,13 +27,14 @@ public class VehicleDataProviderConfig {
   }
 
   @Bean
-  public RestTemplate restTemplate(VehicleDataProviderLoggingInterceptor loggingInterceptor) {
+  public RestTemplate restTemplate(
+      VehicleDataProviderRequestMetricsInterceptor metricsInterceptor) {
     SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
     requestFactory.setConnectTimeout(connectTimeoutMs);
     requestFactory.setReadTimeout(readTimeoutMs);
     RestTemplate restTemplate =
         new RestTemplate(new BufferingClientHttpRequestFactory(requestFactory));
-    restTemplate.setInterceptors(List.of(loggingInterceptor));
+    restTemplate.setInterceptors(List.of(metricsInterceptor));
     return restTemplate;
   }
 }

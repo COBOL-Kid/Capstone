@@ -1,8 +1,13 @@
 package com.capstone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.domain.MaintenanceItemNotFoundException;
@@ -11,10 +16,21 @@ import com.capstone.models.Role;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.CompletedMaintenanceResponse;
 import java.time.LocalDate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class MaintenanceControllerTest {
+
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
 
   @Test
   void shouldRequireAuthentication() {
@@ -62,14 +78,39 @@ class MaintenanceControllerTest {
   }
 
   @Test
-  void shouldReturnNotFoundWhenUncompletingMissingMaintenance() {
+  void shouldPropagateNotFoundWhenUncompletingMissingMaintenance() {
     MaintenanceTrackingService service = mock(MaintenanceTrackingService.class);
     MaintenanceController controller = new MaintenanceController(service);
     AuthenticatedUser user = user();
 
     when(service.uncompleteMaintenance(1L, 99L)).thenThrow(new MaintenanceItemNotFoundException());
 
-    assertEquals(HttpStatus.NOT_FOUND, controller.uncompleteMaintenance(user, 99L).getStatusCode());
+    assertThrows(
+        MaintenanceItemNotFoundException.class, () -> controller.uncompleteMaintenance(user, 99L));
+  }
+
+  @Test
+  void shouldReturnNotFoundThroughMvcAdviceWhenUncompletingMissingMaintenance() throws Exception {
+    MaintenanceTrackingService service = mock(MaintenanceTrackingService.class);
+    MaintenanceController controller = new MaintenanceController(service);
+    AuthenticatedUser user = user();
+
+    doThrow(new MaintenanceItemNotFoundException()).when(service).uncompleteMaintenance(1L, 99L);
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+
+    mockMvc(controller)
+        .perform(delete("/api/maintenance/completed/99"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string("Maintenance item not found"));
+  }
+
+  private MockMvc mockMvc(MaintenanceController controller) {
+    return MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+        .build();
   }
 
   private AuthenticatedUser user() {

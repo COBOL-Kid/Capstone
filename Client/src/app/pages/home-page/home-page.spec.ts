@@ -95,6 +95,7 @@ describe('HomePageComponent', () => {
     expect(fixture.componentInstance['isOnboardingVehicle']()).toBe(true);
     expect(fixture.nativeElement.querySelector('app-add-vehicle-modal')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Adding vehicle');
+    expect(fixture.nativeElement.textContent).toContain('Patience is a virtue…');
     expect(
       fixture.nativeElement.querySelector('.hc-vehicle-onboarding-status__loader'),
     ).not.toBeNull();

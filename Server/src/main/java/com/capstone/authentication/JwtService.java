@@ -16,9 +16,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
   private final JwtProperties jwtProperties;
+  private volatile SecretKey signInKey;
 
   public JwtService(JwtProperties jwtProperties) {
     this.jwtProperties = jwtProperties;
+  }
+
+  public Claims parseClaims(String token) {
+    return Jwts.parser().verifyWith(signInKey()).build().parseSignedClaims(token).getPayload();
   }
 
   public String extractUserEmail(String token) {
@@ -38,8 +43,7 @@ public class JwtService {
   }
 
   public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-    final Claims claims = getClaimsFromToken(token);
-    return claimsResolver.apply(claims);
+    return claimsResolver.apply(parseClaims(token));
   }
 
   public String generateToken(Map<String, Object> extraClaims, UserDetails ownerDetails) {
@@ -48,41 +52,30 @@ public class JwtService {
         .subject(ownerDetails.getUsername())
         .issuedAt(new Date(System.currentTimeMillis()))
         .expiration(new Date(System.currentTimeMillis() + expirationMillis()))
-        .signWith(getSignInKey(), Jwts.SIG.HS256)
+        .signWith(signInKey(), Jwts.SIG.HS256)
         .compact();
   }
 
   public boolean validateToken(String token, UserDetails ownerDetails) {
-    final String userEmail = extractUserEmail(token);
-    if (!userEmail.equals(ownerDetails.getUsername()) || isTokenExpired(token)) {
+    return validateToken(parseClaims(token), ownerDetails);
+  }
+
+  public boolean validateToken(Claims claims, UserDetails ownerDetails) {
+    String userEmail = claims.getSubject();
+    if (userEmail == null
+        || !userEmail.equals(ownerDetails.getUsername())
+        || isExpired(claims.getExpiration())) {
       return false;
     }
     if (ownerDetails instanceof AuthenticatedUser authenticatedUser) {
-      Long tokenUserId = extractUserId(token);
-      return tokenUserId.equals(authenticatedUser.userId());
+      Number userId = claims.get("userId", Number.class);
+      return userId != null && userId.longValue() == authenticatedUser.userId();
     }
     return true;
   }
 
-  private boolean isTokenExpired(String token) {
-    return extractExpiration(token).before(new Date());
-  }
-
-  private Date extractExpiration(String token) {
-    return extractClaim(token, Claims::getExpiration);
-  }
-
-  private Claims getClaimsFromToken(String token) {
-    return Jwts.parser().verifyWith(getSignInKey()).build().parseSignedClaims(token).getPayload();
-  }
-
-  private SecretKey getSignInKey() {
-    String secretKey = jwtProperties.getSecret();
-    if (secretKey == null || secretKey.isBlank()) {
-      throw new IllegalStateException("JWT secret is required");
-    }
-    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-    return Keys.hmacShaKeyFor(keyBytes);
+  private static boolean isExpired(Date expiration) {
+    return expiration == null || expiration.before(new Date());
   }
 
   private long expirationMillis() {
@@ -90,5 +83,29 @@ public class JwtService {
       throw new IllegalStateException("JWT expiration must be positive");
     }
     return Duration.ofMinutes(jwtProperties.getExpirationMinutes()).toMillis();
+  }
+
+  private SecretKey signInKey() {
+    SecretKey cached = signInKey;
+    if (cached != null) {
+      return cached;
+    }
+    synchronized (this) {
+      cached = signInKey;
+      if (cached == null) {
+        cached = createSignInKey(jwtProperties);
+        signInKey = cached;
+      }
+      return cached;
+    }
+  }
+
+  private static SecretKey createSignInKey(JwtProperties jwtProperties) {
+    String secretKey = jwtProperties.getSecret();
+    if (secretKey == null || secretKey.isBlank()) {
+      throw new IllegalStateException("JWT secret is required");
+    }
+    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    return Keys.hmacShaKeyFor(keyBytes);
   }
 }

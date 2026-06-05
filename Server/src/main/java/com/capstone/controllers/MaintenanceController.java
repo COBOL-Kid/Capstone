@@ -1,7 +1,6 @@
 package com.capstone.controllers;
 
 import com.capstone.authentication.AuthenticatedUser;
-import com.capstone.domain.MaintenanceItemNotFoundException;
 import com.capstone.domain.MaintenanceTrackingService;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import jakarta.validation.Valid;
@@ -40,11 +39,7 @@ public class MaintenanceController {
     if (user == null) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
-    try {
-      maintenanceTrackingService.uncompleteMaintenance(user.userId(), completedMaintenanceId);
-      return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    } catch (MaintenanceItemNotFoundException ex) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
+    maintenanceTrackingService.uncompleteMaintenance(user.userId(), completedMaintenanceId);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

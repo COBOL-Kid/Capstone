@@ -201,6 +201,7 @@ describe('AddVehicleModalComponent', () => {
     expect(fixture.componentInstance['form'].disabled).toBe(true);
     expect(submitButton.disabled).toBe(true);
     expect(fixture.nativeElement.textContent).toContain('Adding vehicle');
+    expect(fixture.nativeElement.textContent).toContain('Patience is a virtue…');
     expect(
       fixture.nativeElement.querySelector('.hc-vehicle-onboarding-status__loader'),
     ).not.toBeNull();

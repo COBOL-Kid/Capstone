@@ -103,7 +103,7 @@ class GlobalExceptionHandlerTest {
   void shouldReturnNotFoundForVinNotFound() {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    var response = handler.handleVinNotFoundException(new VinNotFoundException());
+    var response = handler.handleNotFoundException(new VinNotFoundException());
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     assertEquals("Vehicle data is not available for this VIN", response.getBody());
@@ -123,8 +123,7 @@ class GlobalExceptionHandlerTest {
   void shouldReturnNotFoundForMaintenanceItemNotFound() {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    var response =
-        handler.handleMaintenanceItemNotFoundException(new MaintenanceItemNotFoundException());
+    var response = handler.handleNotFoundException(new MaintenanceItemNotFoundException());
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     assertEquals("Maintenance item not found", response.getBody());
@@ -134,7 +133,7 @@ class GlobalExceptionHandlerTest {
   void shouldReturnNotFoundForRecallNotFound() {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    var response = handler.handleRecallNotFoundException(new RecallNotFoundException());
+    var response = handler.handleNotFoundException(new RecallNotFoundException());
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     assertEquals("Recall not found", response.getBody());

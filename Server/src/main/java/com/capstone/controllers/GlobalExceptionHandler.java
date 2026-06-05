@@ -96,19 +96,12 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
   }
 
-  @ExceptionHandler(VinNotFoundException.class)
-  public ResponseEntity<String> handleVinNotFoundException(VinNotFoundException ex) {
-    return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-  }
-
-  @ExceptionHandler(MaintenanceItemNotFoundException.class)
-  public ResponseEntity<String> handleMaintenanceItemNotFoundException(
-      MaintenanceItemNotFoundException ex) {
-    return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-  }
-
-  @ExceptionHandler(RecallNotFoundException.class)
-  public ResponseEntity<String> handleRecallNotFoundException(RecallNotFoundException ex) {
+  @ExceptionHandler({
+    VinNotFoundException.class,
+    MaintenanceItemNotFoundException.class,
+    RecallNotFoundException.class
+  })
+  public ResponseEntity<String> handleNotFoundException(RuntimeException ex) {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
   }
 
@@ -136,6 +129,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleException(Exception ex) {
+    log.error("Unhandled exception", ex);
     return new ResponseEntity<>(
         "Sometimes things just don't go as planned.", HttpStatus.INTERNAL_SERVER_ERROR);
   }

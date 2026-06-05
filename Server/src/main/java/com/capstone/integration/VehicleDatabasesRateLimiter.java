@@ -3,6 +3,7 @@ package com.capstone.integration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,7 @@ public class VehicleDatabasesRateLimiter {
   private static final long WINDOW_MICROS = 1_000_000L;
 
   private final int maxPermits;
-  private final Object lock = new Object();
+  private final ReentrantLock lock = new ReentrantLock();
   private final Deque<Long> recentAcquireMicros = new ArrayDeque<>();
 
   public VehicleDatabasesRateLimiter(double maxRequestsPerSecond) {
@@ -29,7 +30,8 @@ public class VehicleDatabasesRateLimiter {
     }
     while (true) {
       long waitMicros = 0;
-      synchronized (lock) {
+      lock.lock();
+      try {
         long nowMicros = System.nanoTime() / 1000;
         pruneExpired(nowMicros);
         if (recentAcquireMicros.size() < maxPermits) {
@@ -38,6 +40,8 @@ public class VehicleDatabasesRateLimiter {
         }
         long oldestMicros = recentAcquireMicros.peekFirst();
         waitMicros = WINDOW_MICROS - (nowMicros - oldestMicros) + 1;
+      } finally {
+        lock.unlock();
       }
       if (waitMicros > 0) {
         log.debug(

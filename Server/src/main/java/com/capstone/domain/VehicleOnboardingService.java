@@ -175,6 +175,10 @@ public class VehicleOnboardingService {
     VehicleType vehicleType = vin.getVehicleType();
     ensureWarrantyForYearMakeModel(
         vehicleType.getVehicleYear(), vehicleType.getVehicleMake(), vehicleType.getVehicleModel());
+    List<String> photosForNewAssociation =
+        userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vin.getVin()).isEmpty()
+            ? fetchVehiclePhotos(vin.getVin())
+            : null;
     return transactionTemplate.execute(
         _ -> {
           UserVin userVin =
@@ -183,7 +187,11 @@ public class VehicleOnboardingService {
                   .orElse(null);
           boolean createdAssociation = false;
           if (userVin == null) {
-            userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
+            List<String> photos = photosForNewAssociation;
+            if (photos == null) {
+              photos = fetchVehiclePhotos(vin.getVin());
+            }
+            userVin = userVinRepository.save(newUserVin(user, vin, currentMileage, photos));
             createdAssociation = true;
           }
           return response(vin, userVin, false, false, createdAssociation);
@@ -192,6 +200,10 @@ public class VehicleOnboardingService {
 
   protected AddVinResponse saveVinAndAssociation(
       User user, String vinNumber, int currentMileage, VehicleType vehicleType) {
+    List<String> photosForNewAssociation =
+        userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).isEmpty()
+            ? fetchVehiclePhotos(vinNumber)
+            : null;
     return transactionTemplate.execute(
         _ -> {
           var existingVin = vinRepository.findById(vinNumber);
@@ -202,7 +214,11 @@ public class VehicleOnboardingService {
               userVinRepository.findByUserUserIdAndVinVin(user.getUserId(), vinNumber).orElse(null);
           boolean createdAssociation = false;
           if (userVin == null) {
-            userVin = userVinRepository.save(newUserVin(user, vin, currentMileage));
+            List<String> photos = photosForNewAssociation;
+            if (photos == null) {
+              photos = fetchVehiclePhotos(vinNumber);
+            }
+            userVin = userVinRepository.save(newUserVin(user, vin, currentMileage, photos));
             createdAssociation = true;
           }
           return response(vin, userVin, createdVin, false, createdAssociation);
@@ -301,14 +317,9 @@ public class VehicleOnboardingService {
     return vehicleWarrantyRepository.existsById(new VehicleWarrantyId(year, make, model));
   }
 
-  private UserVin newUserVin(User user, Vin vin, int currentMileage) {
-    return newUserVin(user, vin, currentMileage, null);
-  }
-
   private UserVin newUserVin(User user, Vin vin, int currentMileage, List<String> preloadedPhotos) {
     UserVin userVin = new UserVin(user, vin, currentMileage);
-    List<String> availableImageUrls =
-        preloadedPhotos != null ? preloadedPhotos : fetchVehiclePhotos(vin.getVin());
+    List<String> availableImageUrls = preloadedPhotos != null ? preloadedPhotos : List.of();
     userVin.setAvailableImageUrls(availableImageUrls);
     userVin.setSelectedImageUrl(
         availableImageUrls.isEmpty() ? null : availableImageUrls.getFirst());
@@ -370,7 +381,7 @@ public class VehicleOnboardingService {
         prefetchScope.call(
             () -> vehicleDataProviderClient.probeRepairEstimatesByVin(normalizedVin));
     if (probe instanceof RepairEstimatesVinProbeResult.TrimSelectionRequired) {
-      awaitBackgroundTaskIgnoringFailures(photos);
+      photos.cancel(true);
       return new NewVehicleTypeFetchResult.TrimSelectionRequired(
           identity.year(), identity.make(), identity.model());
     }
@@ -490,19 +501,6 @@ public class VehicleOnboardingService {
       return "****";
     }
     return "****" + vin.substring(vin.length() - 4);
-  }
-
-  private void awaitBackgroundTaskIgnoringFailures(Future<?> future) {
-    try {
-      future.get();
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-      future.cancel(true);
-    } catch (ExecutionException ex) {
-      log.debug(
-          "Ignored background prefetch failure while resolving trim selection for VIN onboarding",
-          ex.getCause());
-    }
   }
 
   private <T> T await(Future<T> future) {

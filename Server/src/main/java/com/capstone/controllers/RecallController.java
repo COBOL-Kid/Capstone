@@ -1,7 +1,6 @@
 package com.capstone.controllers;
 
 import com.capstone.authentication.AuthenticatedUser;
-import com.capstone.domain.RecallNotFoundException;
 import com.capstone.domain.RecallTrackingService;
 import com.capstone.models.dto.CompleteRecallRequest;
 import jakarta.validation.Valid;
@@ -40,11 +39,7 @@ public class RecallController {
     if (user == null) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
-    try {
-      recallTrackingService.uncompleteRecall(user.userId(), completedRecallId);
-      return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    } catch (RecallNotFoundException ex) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
+    recallTrackingService.uncompleteRecall(user.userId(), completedRecallId);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

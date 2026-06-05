@@ -1,6 +1,7 @@
 package com.capstone.authentication;
 
 import com.capstone.models.Role;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
@@ -42,10 +43,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     String jwtToken = authHeader.substring(7);
     try {
-      String userEmail = jwtService.extractUserEmail(jwtToken);
+      Claims claims = jwtService.parseClaims(jwtToken);
+      String userEmail = claims.getSubject();
       if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-        AuthenticatedUser userDetails = toAuthenticatedUser(jwtToken, userEmail);
-        if (jwtService.validateToken(jwtToken, userDetails)) {
+        AuthenticatedUser userDetails = toAuthenticatedUser(claims);
+        if (jwtService.validateToken(claims, userDetails)) {
           UsernamePasswordAuthenticationToken authToken =
               new UsernamePasswordAuthenticationToken(
                   userDetails, null, userDetails.getAuthorities());
@@ -59,13 +61,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-  private AuthenticatedUser toAuthenticatedUser(String jwtToken, String userEmail) {
-    Long userId = jwtService.extractUserId(jwtToken);
-    String roleName = jwtService.extractRole(jwtToken);
+  private static AuthenticatedUser toAuthenticatedUser(Claims claims) {
+    Number userId = claims.get("userId", Number.class);
+    if (userId == null) {
+      throw new IllegalArgumentException("JWT is missing userId claim");
+    }
+    String roleName = claims.get("role", String.class);
     if (roleName == null || roleName.isBlank()) {
       throw new IllegalArgumentException("JWT is missing role claim");
     }
     Role role = Role.valueOf(roleName);
-    return new AuthenticatedUser(userId, userEmail, role);
+    return new AuthenticatedUser(userId.longValue(), claims.getSubject(), role);
   }
 }

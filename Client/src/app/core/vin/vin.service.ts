@@ -28,6 +28,8 @@ const vinNotFoundBackendMessages = new Set([
 const onboardingUnavailableMessage =
   "We couldn't load vehicle data for this vehicle right now. Please try again later.";
 const genericErrorMessage = 'Unable to add the vehicle. Please try again.';
+const emailNotVerifiedMessage =
+  'Verify your email before adding vehicles. Use the banner on this page to enter your code.';
 
 @Injectable({
   providedIn: 'root',
@@ -96,6 +98,13 @@ export class VinService {
   }
 
   private toVinErrorMessage(error: HttpErrorResponse): VinErrorMessage {
+    if (error.status === 403 && typeof error.error === 'string') {
+      const message = error.error.trim();
+      if (message.includes('Email address must be verified')) {
+        return { message: emailNotVerifiedMessage, fieldMessages: [] };
+      }
+    }
+
     if (this.isVinDataUnavailableError(error)) {
       return { message: vinDataUnavailableMessage, fieldMessages: [] };
     }

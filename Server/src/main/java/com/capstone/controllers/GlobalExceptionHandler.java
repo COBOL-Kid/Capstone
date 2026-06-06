@@ -1,7 +1,10 @@
 package com.capstone.controllers;
 
+import com.capstone.authentication.ExpiredEmailVerificationCodeException;
+import com.capstone.authentication.InvalidEmailVerificationCodeException;
 import com.capstone.authentication.InvalidRefreshTokenException;
 import com.capstone.domain.*;
+import com.capstone.integration.EmailDeliveryException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
@@ -94,6 +97,27 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(VinNotAssociatedException.class)
   public ResponseEntity<String> handleVinNotAssociatedException(VinNotAssociatedException ex) {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+  }
+
+  @ExceptionHandler(EmailNotVerifiedException.class)
+  public ResponseEntity<String> handleEmailNotVerifiedException(EmailNotVerifiedException ex) {
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+  }
+
+  @ExceptionHandler({
+    InvalidEmailVerificationCodeException.class,
+    ExpiredEmailVerificationCodeException.class
+  })
+  public ResponseEntity<String> handleEmailVerificationCodeException(RuntimeException ex) {
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(EmailDeliveryException.class)
+  public ResponseEntity<String> handleEmailDeliveryException(EmailDeliveryException ex) {
+    log.warn("Email delivery failed: {}", ex.getMessage());
+    return new ResponseEntity<>(
+        "Unable to send verification email right now. Please try again later.",
+        HttpStatus.SERVICE_UNAVAILABLE);
   }
 
   @ExceptionHandler({

@@ -1,3 +1,63 @@
+.home__verification-banner {
+  margin-bottom: 1.5rem;
+}
+
+.home__verification-banner-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.home__verification-banner-content p {
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.home__verification-panel {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.home__verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.home__verification-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.home__verification-banner p {
+  margin: 0;
+}
+
+.home__verification-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.home__verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.home__add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
 .home__header {
   display: flex;
   align-items: center;
@@ -34,6 +94,18 @@
 .home__add-button:hover {
   background-color: var(--color-accent-strong);
   transform: translateY(-2px);
+}
+
+.home__add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.home__add-button:disabled:hover {
+  background-color: var(--color-accent);
+  transform: none;
 }
 
 .home__empty p {

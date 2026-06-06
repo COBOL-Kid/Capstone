@@ -9,10 +9,26 @@ CREATE TABLE user_detail
     role                  VARCHAR(20)  NOT NULL CHECK (role IN ('USER', 'ADMIN')),
     failed_login_attempts INTEGER      NOT NULL,
     lockout_end           TIMESTAMP(6),
+    email_verified        BOOLEAN      NOT NULL DEFAULT FALSE,
+    email_verified_at     DATETIME(6),
     created_at            DATETIME(6) NOT NULL,
     updated_at            DATETIME(6) NOT NULL,
     CONSTRAINT uk_user_detail_user_email UNIQUE (user_email)
 );
+
+CREATE TABLE email_verification_code
+(
+    id                     BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id                BIGINT       NOT NULL,
+    code_hash              VARCHAR(100) NOT NULL,
+    expires_at             DATETIME(6)  NOT NULL,
+    sign_in_challenge_hash VARCHAR(100),
+    created_at             DATETIME(6)  NOT NULL,
+    CONSTRAINT fk_email_verification_code_user FOREIGN KEY (user_id) REFERENCES user_detail (user_id)
+);
+
+CREATE INDEX idx_user_detail_unverified_created
+    ON user_detail (email_verified, created_at);
 
 CREATE TABLE refresh_token
 (
@@ -204,10 +220,11 @@ CREATE INDEX idx_recall_vehicle_type
 --   2HGFC2F59JH543210 — 2018 Honda Civic (78,500 mi): upcoming 30k/80k service, open recall, maintenance history
 
 INSERT INTO user_detail (user_id, user_email, first_name, last_name, user_sms, user_pw, role,
-                         failed_login_attempts, lockout_end, created_at, updated_at)
+                         failed_login_attempts, lockout_end, email_verified, email_verified_at,
+                         created_at, updated_at)
 VALUES (1, 'test.user@example.com', 'Test', 'User', '+15551234567',
-        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL,
-        CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6));
+        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL, TRUE,
+        CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6));
 
 INSERT INTO vehicle_type (vehicle_type_id, vehicle_make, vehicle_model, vehicle_trim, vehicle_year, vehicle_style,
                           source_vin, origin, body, engine_description, transmission_style, drive_type, owners_manual)

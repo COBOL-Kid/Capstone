@@ -2,13 +2,13 @@ package com.capstone.domain;
 
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.EmailNormalizer;
-import com.capstone.data.*;
+import com.capstone.authentication.EmailVerificationService;
+import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.User;
 import com.capstone.models.dto.AccountResponse;
 import com.capstone.models.dto.ChangePasswordRequest;
 import com.capstone.models.dto.DeleteAccountRequest;
 import com.capstone.models.dto.UpdateAccountRequest;
-import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,27 +19,18 @@ public class AccountService {
 
   private final UserRepositoryJPA userRepository;
   private final PasswordEncoder passwordEncoder;
-  private final RefreshTokenRepositoryJPA refreshTokenRepository;
-  private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
-  private final CompletedRecallRepositoryJPA completedRecallRepository;
-  private final UserVinRepositoryJPA userVinRepository;
-  private final VinRepositoryJPA vinRepository;
+  private final UserDeletionService userDeletionService;
+  private final EmailVerificationService emailVerificationService;
 
   public AccountService(
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
-      RefreshTokenRepositoryJPA refreshTokenRepository,
-      CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
-      CompletedRecallRepositoryJPA completedRecallRepository,
-      UserVinRepositoryJPA userVinRepository,
-      VinRepositoryJPA vinRepository) {
+      UserDeletionService userDeletionService,
+      EmailVerificationService emailVerificationService) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
-    this.refreshTokenRepository = refreshTokenRepository;
-    this.completedMaintenanceRepository = completedMaintenanceRepository;
-    this.completedRecallRepository = completedRecallRepository;
-    this.userVinRepository = userVinRepository;
-    this.vinRepository = vinRepository;
+    this.userDeletionService = userDeletionService;
+    this.emailVerificationService = emailVerificationService;
   }
 
   @Transactional(readOnly = true)
@@ -51,6 +42,7 @@ public class AccountService {
   public AccountResponse updateProfile(AuthenticatedUser principal, UpdateAccountRequest request) {
     User user = loadCurrentUser(principal);
     String normalizedEmail = EmailNormalizer.normalize(request.email());
+    boolean emailChanged = !normalizedEmail.equals(user.getUserEmail());
     userRepository
         .findByUserEmail(normalizedEmail)
         .filter(existingUser -> !existingUser.getUserId().equals(user.getUserId()))
@@ -62,8 +54,16 @@ public class AccountService {
     user.setLastName(cleanRequired(request.lastName(), "Last name is required"));
     user.setUserEmail(normalizedEmail);
     user.setUserSms(cleanOptional(request.userSms()));
+    if (emailChanged) {
+      user.setEmailVerified(false);
+      user.setEmailVerifiedAt(null);
+    }
     try {
-      return toResponse(userRepository.save(user));
+      User savedUser = userRepository.save(user);
+      if (emailChanged) {
+        emailVerificationService.sendRegistrationCode(savedUser);
+      }
+      return toResponse(savedUser);
     } catch (DataIntegrityViolationException ex) {
       throw new DuplicateEmailException();
     }
@@ -85,16 +85,7 @@ public class AccountService {
     if (!passwordEncoder.matches(request.password(), user.getUserPw())) {
       throw new InvalidAccountCredentialsException();
     }
-    Long userId = user.getUserId();
-    List<String> userVins = userVinRepository.findVinNumbersForUser(userId);
-    completedMaintenanceRepository.deleteAllForUserId(userId);
-    completedRecallRepository.deleteAllForUserId(userId);
-    userVinRepository.deleteAllForUserId(userId);
-    if (!userVins.isEmpty()) {
-      vinRepository.deleteOrphanedVins(userVins);
-    }
-    refreshTokenRepository.deleteByUser(user);
-    userRepository.delete(user);
+    userDeletionService.deleteUserAndRelatedData(user);
   }
 
   private User loadCurrentUser(AuthenticatedUser principal) {
@@ -113,6 +104,8 @@ public class AccountService {
         user.getFirstName(),
         user.getLastName(),
         user.getUserSms(),
+        user.isEmailVerified(),
+        user.getEmailVerifiedAt(),
         user.getCreatedAt(),
         user.getUpdatedAt());
   }

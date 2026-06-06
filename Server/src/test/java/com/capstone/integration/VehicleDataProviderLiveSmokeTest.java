@@ -34,10 +34,10 @@ class VehicleDataProviderLiveSmokeTest {
   @Autowired private VehicleOnboardingService vehicleOnboardingService;
   @Autowired private UserRepositoryJPA userRepository;
 
-  @Value("${vehicle-data.autodev.api-key:}")
+  @Value("${vehicle-data.autodev.api-key}")
   private String autoDevApiKey;
 
-  @Value("${vehicle-data.vehicle-databases.api-key:}")
+  @Value("${vehicle-data.vehicle-databases.api-key}")
   private String vehicleDatabasesApiKey;
 
   @Test

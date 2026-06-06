@@ -31,6 +31,21 @@ describe('VinService', () => {
     });
   });
 
+  it('maps unverified email 403 responses into a verification message', () => {
+    service.addVehicle({ vin: 'JTENU5JR6M5962554', currentMileage: 1000 }).subscribe({
+      error: (error) => {
+        expect(error.message).toContain('Verify your email before adding vehicles');
+        expect(error.fieldMessages).toEqual([]);
+      },
+    });
+
+    const request = httpTesting.expectOne(apiConfig.vinUrl);
+    request.flush('Email address must be verified before adding vehicles', {
+      status: 403,
+      statusText: 'Forbidden',
+    });
+  });
+
   it('maps 404 responses into a VIN data unavailable message', () => {
     service.addVehicle({ vin: 'MISSINGVIN1234567', currentMileage: 1000 }).subscribe({
       error: (error) => {

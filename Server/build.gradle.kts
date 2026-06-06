@@ -27,6 +27,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    
+    implementation("com.mailjet:mailjet-client:6.0.1")
 
     runtimeOnly("org.flywaydb:flyway-mysql:11.15.0")
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -69,10 +71,10 @@ tasks.register<Test>("liveTest") {
     useJUnitPlatform {
         includeTags("live")
     }
-    environment(
-        "RUN_VEHICLE_DATA_LIVE_TESTS",
-        System.getenv("RUN_VEHICLE_DATA_LIVE_TESTS") ?: "true",
-    )
+    environment("RUN_VEHICLE_DATA_LIVE_TESTS", "true")
+    System.getenv("RUN_MAILJET_LIVE_TESTS")?.let {
+        environment("RUN_MAILJET_LIVE_TESTS", it)
+    }
 }
 
 tasks.jar {

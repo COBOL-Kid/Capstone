@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,7 +27,7 @@ public class SecurityConfig {
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
 
-  @Value("${security.cors.allowed-origins:http://localhost:3000}")
+  @Value("${security.cors.allowed-origins}")
   private List<String> allowedOrigins;
 
   public SecurityConfig(
@@ -49,6 +50,11 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorizeRequests ->
                 authorizeRequests
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/auth/email-verification/resend",
+                        "/api/auth/email-verification/verify")
+                    .hasAuthority("USER")
                     .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers("/api/external/**")

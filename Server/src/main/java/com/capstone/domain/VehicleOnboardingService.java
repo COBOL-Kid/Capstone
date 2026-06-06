@@ -88,6 +88,9 @@ public class VehicleOnboardingService {
     if (user == null || user.getUserId() == null) {
       throw new IllegalArgumentException("Authenticated user is required");
     }
+    if (!user.isEmailVerified()) {
+      throw new EmailNotVerifiedException();
+    }
     if (request == null) {
       throw new IllegalArgumentException("Request is required");
     }

@@ -67,6 +67,7 @@ class VehicleOnboardingProvider429IntegrationTest {
     user.setUserId(1L);
     user.setUserEmail("driver@example.com");
     user.setRole(Role.USER);
+    user.setEmailVerified(true);
     return user;
   }
 }

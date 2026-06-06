@@ -13,15 +13,15 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class VehicleDataProviderConfig {
 
-  @Value("${vehicle-data.http.connect-timeout-ms:5000}")
+  @Value("${vehicle-data.http.connect-timeout-ms}")
   private int connectTimeoutMs;
 
-  @Value("${vehicle-data.http.read-timeout-ms:30000}")
+  @Value("${vehicle-data.http.read-timeout-ms}")
   private int readTimeoutMs;
 
   @Bean
   public VehicleDatabasesRateLimiter vehicleDatabasesRateLimiter(
-      @Value("${vehicle-data.vehicle-databases.max-requests-per-second:2}")
+      @Value("${vehicle-data.vehicle-databases.max-requests-per-second}")
           double maxRequestsPerSecond) {
     return new VehicleDatabasesRateLimiter(maxRequestsPerSecond);
   }

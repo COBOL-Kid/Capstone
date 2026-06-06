@@ -29,13 +29,12 @@ public class VehicleDataProviderClient {
   public VehicleDataProviderClient(
       RestTemplate restTemplate,
       VehicleDatabasesRateLimiter vehicleDatabasesRateLimiter,
-      @Value("${vehicle-data.autodev.base-url:https://api.auto.dev}") String autoDevBaseUrl,
-      @Value("${vehicle-data.autodev.api-key:}") String autoDevApiKey,
-      @Value("${vehicle-data.autodev.api-key-header:x-api-key}") String autoDevApiKeyHeader,
-      @Value("${vehicle-data.vehicle-databases.base-url:https://api.vehicledatabases.com}")
-          String vehicleDatabasesBaseUrl,
-      @Value("${vehicle-data.vehicle-databases.api-key:}") String vehicleDatabasesApiKey,
-      @Value("${vehicle-data.vehicle-databases.api-key-header:x-authkey}")
+      @Value("${vehicle-data.autodev.base-url}") String autoDevBaseUrl,
+      @Value("${vehicle-data.autodev.api-key}") String autoDevApiKey,
+      @Value("${vehicle-data.autodev.api-key-header}") String autoDevApiKeyHeader,
+      @Value("${vehicle-data.vehicle-databases.base-url}") String vehicleDatabasesBaseUrl,
+      @Value("${vehicle-data.vehicle-databases.api-key}") String vehicleDatabasesApiKey,
+      @Value("${vehicle-data.vehicle-databases.api-key-header}")
           String vehicleDatabasesApiKeyHeader) {
     this.restTemplate = restTemplate;
     this.vehicleDatabasesRateLimiter = vehicleDatabasesRateLimiter;

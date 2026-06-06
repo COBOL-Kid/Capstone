@@ -1,11 +1,79 @@
 <section aria-labelledby="home-title" class="home hc-page-shell">
   <div class="home__content hc-page-shell__inner">
+    @if (isEmailVerificationRequired()) {
+      <div class="home__verification-banner hc-alert hc-alert--warning" role="status">
+        <p>
+          Verify your email before adding vehicles. We sent a 6-digit code to your inbox that
+          expires in 5 minutes.
+        </p>
+        @if (!isVerificationPanelOpen()) {
+          <button (click)="openVerificationPanel()" class="hc-btn hc-btn--secondary" type="button">
+            Enter verification code
+          </button>
+        } @else {
+          <form
+            (ngSubmit)="submitVerificationCode()"
+            [formGroup]="verificationForm"
+            class="home__verification-form"
+            novalidate
+          >
+            @if (verificationError(); as error) {
+              <div class="hc-alert hc-alert--error" role="alert">
+                <p>{{ error.message }}</p>
+              </div>
+            }
+            <label class="hc-field">
+              <span>Verification code</span>
+              <input
+                autocomplete="one-time-code"
+                formControlName="code"
+                inputmode="numeric"
+                maxlength="6"
+                pattern="[0-9]*"
+                type="text"
+              />
+              @if (
+                verificationForm.controls.code.touched &&
+                verificationForm.controls.code.hasError('required')
+              ) {
+                <small>Verification code is required.</small>
+              } @else if (
+                verificationForm.controls.code.touched && verificationForm.controls.code.invalid
+              ) {
+                <small>Enter the 6-digit code from your email.</small>
+              }
+            </label>
+            <div class="home__verification-actions">
+              <button [disabled]="isVerifyingEmail()" class="hc-btn hc-btn--primary" type="submit">
+                {{ isVerifyingEmail() ? 'Verifying...' : 'Verify email' }}
+              </button>
+              <button
+                (click)="resendVerificationEmail()"
+                [disabled]="isResendingVerification()"
+                class="hc-btn hc-btn--secondary"
+                type="button"
+              >
+                {{ isResendingVerification() ? 'Sending...' : 'Resend code' }}
+              </button>
+              <button
+                (click)="closeVerificationPanel()"
+                class="hc-dialog-switch-button"
+                type="button"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    }
+
     <div class="home__header">
       <h1 class="home__title" id="home-title">My Vehicles</h1>
       @if (vehicles().length > 0) {
         <button
           (click)="openAddModal()"
-          [disabled]="isOnboardingVehicle()"
+          [disabled]="!canAddVehicle()"
           aria-label="Add new vehicle"
           class="home__add-button"
           type="button"
@@ -23,7 +91,7 @@
       <div class="home__empty hc-state-message">
         <button
           (click)="openAddModal()"
-          [disabled]="isOnboardingVehicle()"
+          [disabled]="!canAddVehicle()"
           class="hc-btn hc-btn--primary"
         >
           add a vehicle

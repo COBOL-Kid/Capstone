@@ -8,5 +8,7 @@ public record AccountResponse(
     String firstName,
     String lastName,
     String userSms,
+    boolean emailVerified,
+    Instant emailVerifiedAt,
     Instant createdAt,
     Instant updatedAt) {}

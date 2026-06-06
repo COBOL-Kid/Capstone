@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -5,6 +6,8 @@ import { NEVER, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AddVehicleModalComponent } from '../../components/add-vehicle-modal/add-vehicle-modal';
+import { AccountDetails } from '../../core/auth/auth.models';
+import { AuthService } from '../../core/auth/auth.service';
 import { HomePageComponent } from './home-page';
 import { VinService } from '../../core/vin/vin.service';
 import { AddVinResponse } from '../../core/vin/vin.models';
@@ -26,27 +29,116 @@ describe('HomePageComponent', () => {
     createdAssociation: true,
   };
 
+  function accountDetails(emailVerified: boolean): AccountDetails {
+    return {
+      userId: 1,
+      email: 'pat@example.com',
+      firstName: 'Pat',
+      lastName: 'Driver',
+      userSms: null,
+      emailVerified,
+      emailVerifiedAt: emailVerified ? '2026-01-02T03:04:00Z' : null,
+      createdAt: '2026-01-02T03:04:00Z',
+      updatedAt: '2026-02-03T04:05:00Z',
+    };
+  }
+
+  function createAuthService(emailVerified: boolean | null = true) {
+    const account = signal<AccountDetails | null>(
+      emailVerified === null ? null : accountDetails(emailVerified),
+    );
+
+    return {
+      account,
+      isEmailVerified: computed(() => account()?.emailVerified === true),
+      getCurrentAccount: vi
+        .fn()
+        .mockReturnValue(emailVerified === null ? NEVER : of(accountDetails(emailVerified))),
+      verifyEmailCode: vi.fn().mockReturnValue(of({ token: 'verified-token' })),
+      resendEmailVerification: vi.fn().mockReturnValue(of({ emailVerified: false })),
+    };
+  }
+
   function createFixture(
     addVehicle = vi
       .fn()
       .mockReturnValue(of({ kind: 'completed' as const, response: sampleAddResponse })),
+    emailVerified: boolean | null = true,
   ) {
     const vinService = {
       getUserVehicles: vi.fn().mockReturnValue(of([])),
       addVehicle,
     };
+    const authService = createAuthService(emailVerified);
 
     TestBed.configureTestingModule({
       imports: [HomePageComponent],
-      providers: [provideRouter([]), { provide: VinService, useValue: vinService }],
+      providers: [
+        provideRouter([]),
+        { provide: VinService, useValue: vinService },
+        { provide: AuthService, useValue: authService },
+      ],
     });
 
     TestBed.inject(UserVehiclesStore).reset();
     const fixture = TestBed.createComponent(HomePageComponent);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
-    return { fixture, navigate, vinService };
+    return { fixture, navigate, vinService, authService };
   }
+
+  it('shows a verification banner and disables add controls for unverified users', () => {
+    const { fixture } = createFixture(undefined, false);
+
+    expect(fixture.nativeElement.textContent).toContain('Verify your email before adding vehicles');
+    const addButton = fixture.nativeElement.querySelector('.home__add-button') as HTMLButtonElement;
+    const emptyAddButton = fixture.nativeElement.querySelector(
+      '.home__empty .hc-btn',
+    ) as HTMLButtonElement;
+    expect(addButton?.disabled ?? true).toBe(true);
+    expect(emptyAddButton?.disabled ?? true).toBe(true);
+  });
+
+  it('does not show the verification banner or disable add controls before account state loads', async () => {
+    const { fixture } = createFixture(undefined, null);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Verify your email before adding vehicles',
+    );
+    const emptyAddButton = fixture.nativeElement.querySelector(
+      '.home__empty .hc-btn',
+    ) as HTMLButtonElement;
+    expect(emptyAddButton.disabled).toBe(false);
+  });
+
+  it('does not open the add modal when email verification is missing', () => {
+    const { fixture } = createFixture(undefined, false);
+
+    fixture.componentInstance['openAddModal']();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['isAddModalOpen']()).toBe(false);
+  });
+
+  it('refreshes account state after successful email verification', async () => {
+    const { fixture, authService } = createFixture(undefined, false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['openVerificationPanel']();
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'code', '123456');
+    fixture.componentInstance['submitVerificationCode']();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(authService.verifyEmailCode).toHaveBeenCalledWith('123456');
+    expect(authService.getCurrentAccount).toHaveBeenCalledWith({ forceRefresh: true });
+    expect(fixture.componentInstance['isVerificationPanelOpen']()).toBe(false);
+  });
 
   it('keeps the add modal open with trim context when trim selection is required', async () => {
     const trimContext = {
@@ -95,7 +187,7 @@ describe('HomePageComponent', () => {
     expect(fixture.componentInstance['isOnboardingVehicle']()).toBe(true);
     expect(fixture.nativeElement.querySelector('app-add-vehicle-modal')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Adding vehicle');
-    expect(fixture.nativeElement.textContent).toContain('Patience is a virtue…');
+    expect(fixture.nativeElement.textContent).toContain('this may take a while…');
     expect(
       fixture.nativeElement.querySelector('.hc-vehicle-onboarding-status__loader'),
     ).not.toBeNull();
@@ -272,10 +364,16 @@ describe('HomePageComponent', () => {
       addVehicle: vi.fn().mockReturnValue(of(sampleAddResponse)),
     };
 
+    const authService = createAuthService(true);
+
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [HomePageComponent],
-      providers: [provideRouter([]), { provide: VinService, useValue: vinService }],
+      providers: [
+        provideRouter([]),
+        { provide: VinService, useValue: vinService },
+        { provide: AuthService, useValue: authService },
+      ],
     }).compileComponents();
 
     const store = TestBed.inject(UserVehiclesStore);

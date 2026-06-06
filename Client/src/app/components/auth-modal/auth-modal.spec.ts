@@ -7,7 +7,13 @@ import { AuthModalComponent } from './auth-modal';
 import { AuthService } from '../../core/auth/auth.service';
 
 describe('AuthModalComponent', () => {
-  function configure(authService = { register: vi.fn(), login: vi.fn() }) {
+  function configure(
+    authService = {
+      register: vi.fn(),
+      login: vi.fn(),
+      completeEmailVerificationSignIn: vi.fn(),
+    },
+  ) {
     TestBed.configureTestingModule({
       imports: [AuthModalComponent],
       providers: [provideRouter([]), { provide: AuthService, useValue: authService }],
@@ -76,6 +82,70 @@ describe('AuthModalComponent', () => {
 
     expect(authService.login).toHaveBeenCalledWith({ email: 'pat@example.com', password: 'wrong' });
     expect(fixture.nativeElement.textContent).toContain('Invalid account credentials');
+  });
+
+  it('switches to code entry when sign-in requires verification', () => {
+    const authService = configure();
+    authService.login.mockReturnValue(
+      of({
+        verificationRequired: true,
+        verificationChallenge: 'challenge-token',
+      }),
+    );
+
+    const fixture = TestBed.createComponent(AuthModalComponent);
+    fixture.componentRef.setInput('mode', 'sign-in');
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'email', 'pat@example.com');
+    setInputValue(fixture.nativeElement, 'password', 'Password1!');
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['step']()).toBe('verify-code');
+    expect(fixture.nativeElement.textContent).toContain('Verify your email');
+    expect(fixture.nativeElement.querySelector('[formControlName="code"]')).not.toBeNull();
+    expect(authService.login).toHaveBeenCalled();
+  });
+
+  it('completes sign-in verification and closes the modal', () => {
+    const authService = configure();
+    authService.login.mockReturnValue(
+      of({
+        verificationRequired: true,
+        verificationChallenge: 'challenge-token',
+      }),
+    );
+    authService.completeEmailVerificationSignIn.mockReturnValue(
+      of({ token: 'session-token', emailVerified: true }),
+    );
+
+    const fixture = TestBed.createComponent(AuthModalComponent);
+    const close = vi.fn();
+    fixture.componentRef.setInput('mode', 'sign-in');
+    fixture.componentInstance.close.subscribe(close);
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'email', 'pat@example.com');
+    setInputValue(fixture.nativeElement, 'password', 'Password1!');
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'code', '123456');
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
+    fixture.detectChanges();
+
+    expect(authService.completeEmailVerificationSignIn).toHaveBeenCalledWith(
+      'challenge-token',
+      '123456',
+    );
+    expect(close).toHaveBeenCalled();
   });
 
   it('keeps route links for landing page mode switching by default', () => {

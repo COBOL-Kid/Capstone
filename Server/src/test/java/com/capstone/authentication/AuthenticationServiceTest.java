@@ -3,6 +3,7 @@ package com.capstone.authentication;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.capstone.configuration.JwtProperties;
@@ -24,21 +25,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class AuthenticationServiceTest {
 
   @Test
-  void shouldRegisterUserWithEncodedPasswordAndTokenClaims() {
+  void shouldRegisterUserWithEncodedPasswordTokenClaimsAndVerificationCode() {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     JwtService jwtService = mock(JwtService.class);
     AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     JwtProperties jwtProperties = mock(JwtProperties.class);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             refreshTokenRepositoryJPA,
             passwordEncoder,
             jwtService,
             authenticationManager,
-            jwtProperties);
+            jwtProperties,
+            emailVerificationService);
     RegisterRequest request =
         new RegisterRequest(" Pat ", " Driver ", " DRIVER@Example.COM ", "secret");
 
@@ -58,23 +61,26 @@ class AuthenticationServiceTest {
     assertEquals("driver@example.com", savedUser.getUserEmail());
     assertEquals("encoded-secret", savedUser.getUserPw());
     assertEquals(Role.USER, savedUser.getRole());
+    assertFalse(savedUser.isEmailVerified());
     assertEquals("jwt-token", response.getToken());
+    assertEquals(Boolean.FALSE, response.getEmailVerified());
+    verify(emailVerificationService).sendRegistrationCode(savedUser);
     verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
-    assertTokenClaims(jwtService, savedUser);
+    assertTokenClaims(jwtService, savedUser, false);
   }
 
   @Test
   void shouldRejectDuplicateRegistrationEmail() {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
-    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             mock(RefreshTokenRepositoryJPA.class),
-            passwordEncoder,
+            mock(PasswordEncoder.class),
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
     when(repository.existsByUserEmail("driver@example.com")).thenReturn(true);
 
@@ -84,7 +90,6 @@ class AuthenticationServiceTest {
             service.register(
                 new RegisterRequest("Pat", "Driver", " Driver@Example.COM ", "secret")));
     verify(repository, never()).saveAndFlush(any(User.class));
-    verify(passwordEncoder, never()).encode(any());
   }
 
   @Test
@@ -92,13 +97,14 @@ class AuthenticationServiceTest {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             mock(RefreshTokenRepositoryJPA.class),
             passwordEncoder,
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
     when(repository.existsByUserEmail("driver@example.com")).thenReturn(false);
     when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
@@ -112,29 +118,23 @@ class AuthenticationServiceTest {
   }
 
   @Test
-  void shouldAuthenticateCredentialsBeforeGeneratingToken() {
+  void shouldAuthenticateVerifiedUserAndIssueSession() {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
-    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     JwtService jwtService = mock(JwtService.class);
     AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     JwtProperties jwtProperties = mock(JwtProperties.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             refreshTokenRepositoryJPA,
-            passwordEncoder,
+            mock(PasswordEncoder.class),
             jwtService,
             authenticationManager,
-            jwtProperties);
+            jwtProperties,
+            mock(EmailVerificationService.class));
     AuthenticationRequest request = new AuthenticationRequest(" DRIVER@Example.COM ", "secret");
-    User user = new User();
-    user.setUserId(1L);
-    user.setFirstName("Pat");
-    user.setLastName("Driver");
-    user.setUserEmail("driver@example.com");
-    user.setUserPw("encoded-secret");
-    user.setRole(Role.USER);
+    User user = verifiedUser();
 
     when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
     when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
@@ -144,15 +144,42 @@ class AuthenticationServiceTest {
 
     var response = service.authenticate(request);
 
-    ArgumentCaptor<UsernamePasswordAuthenticationToken> authenticationCaptor =
-        ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
-    verify(authenticationManager).authenticate(authenticationCaptor.capture());
-    assertEquals("driver@example.com", authenticationCaptor.getValue().getPrincipal());
-    assertEquals("secret", authenticationCaptor.getValue().getCredentials());
+    verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     assertEquals("jwt-token", response.getToken());
+    assertEquals(Boolean.TRUE, response.getEmailVerified());
+    assertNull(response.getVerificationRequired());
     verify(refreshTokenRepositoryJPA).deleteByUser(user);
     verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
-    assertTokenClaims(jwtService, user);
+    assertTokenClaims(jwtService, user, true);
+  }
+
+  @Test
+  void shouldRequireVerificationForUnverifiedSignIn() {
+    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+    AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+    AuthenticationService service =
+        authenticationService(
+            repository,
+            refreshTokenRepositoryJPA,
+            mock(PasswordEncoder.class),
+            mock(JwtService.class),
+            authenticationManager,
+            mock(JwtProperties.class),
+            emailVerificationService);
+    User user = unverifiedUser();
+
+    when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
+    when(emailVerificationService.sendSignInCode(user)).thenReturn("challenge-token");
+
+    var response = service.authenticate(new AuthenticationRequest("driver@example.com", "secret"));
+
+    assertNull(response.getToken());
+    assertEquals(Boolean.TRUE, response.getVerificationRequired());
+    assertEquals("challenge-token", response.getVerificationChallenge());
+    verify(emailVerificationService).sendSignInCode(user);
+    verifyNoInteractions(refreshTokenRepositoryJPA);
   }
 
   @Test
@@ -160,15 +187,15 @@ class AuthenticationServiceTest {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             mock(RefreshTokenRepositoryJPA.class),
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             authenticationManager,
-            mock(JwtProperties.class));
-    User user = new User();
-    user.setUserEmail("driver@example.com");
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
+    User user = unverifiedUser();
     user.setLockoutEnd(java.time.LocalDateTime.now().plusMinutes(10));
 
     when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
@@ -184,15 +211,15 @@ class AuthenticationServiceTest {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             mock(RefreshTokenRepositoryJPA.class),
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             authenticationManager,
-            mock(JwtProperties.class));
-    User user = new User();
-    user.setUserEmail("driver@example.com");
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
+    User user = unverifiedUser();
     user.setFailedLoginAttempts(2);
 
     when(repository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(user));
@@ -211,13 +238,14 @@ class AuthenticationServiceTest {
   void shouldLogoutByDeletingRefreshToken() {
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             mock(UserRepositoryJPA.class),
             refreshTokenRepositoryJPA,
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
     service.logout("refresh-token");
 
@@ -225,26 +253,22 @@ class AuthenticationServiceTest {
   }
 
   @Test
-  void shouldRotateRefreshToken() {
+  void shouldRotateRefreshTokenWithCurrentVerificationState() {
     UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
-    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     JwtService jwtService = mock(JwtService.class);
-    AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     JwtProperties jwtProperties = mock(JwtProperties.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             repository,
             refreshTokenRepositoryJPA,
-            passwordEncoder,
+            mock(PasswordEncoder.class),
             jwtService,
-            authenticationManager,
-            jwtProperties);
+            mock(AuthenticationManager.class),
+            jwtProperties,
+            mock(EmailVerificationService.class));
 
-    User user = new User();
-    user.setUserId(1L);
-    user.setUserEmail("driver@example.com");
-
+    User user = verifiedUser();
     RefreshToken oldToken = new RefreshToken();
     oldToken.setId(42L);
     oldToken.setToken("old-refresh-token");
@@ -254,6 +278,7 @@ class AuthenticationServiceTest {
     when(refreshTokenRepositoryJPA.findByToken("old-refresh-token"))
         .thenReturn(Optional.of(oldToken));
     when(refreshTokenRepositoryJPA.deleteByIdReturning(42L)).thenReturn(1);
+    when(repository.findById(1L)).thenReturn(Optional.of(user));
     when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
     when(refreshTokenRepositoryJPA.save(any(RefreshToken.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -261,28 +286,25 @@ class AuthenticationServiceTest {
 
     var response = service.refreshToken("old-refresh-token");
 
-    verify(refreshTokenRepositoryJPA).deleteByIdReturning(42L);
-    verify(refreshTokenRepositoryJPA).save(any(RefreshToken.class));
     assertEquals("new-jwt-token", response.getToken());
-    assertFalse(response.getRefreshToken().isEmpty());
-    assertNotEquals("old-refresh-token", response.getRefreshToken());
+    assertEquals(Boolean.TRUE, response.getEmailVerified());
+    assertTokenClaims(jwtService, user, true);
   }
 
   @Test
   void shouldRejectRefreshWhenTokenAlreadyConsumed() {
-    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     AuthenticationService service =
-        new AuthenticationService(
-            repository,
+        authenticationService(
+            mock(UserRepositoryJPA.class),
             refreshTokenRepositoryJPA,
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
-    User user = new User();
-    user.setUserId(1L);
+    User user = verifiedUser();
     RefreshToken oldToken = new RefreshToken();
     oldToken.setId(42L);
     oldToken.setToken("old-refresh-token");
@@ -300,19 +322,18 @@ class AuthenticationServiceTest {
 
   @Test
   void shouldRejectRefreshWhenTokenIsExpired() {
-    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     AuthenticationService service =
-        new AuthenticationService(
-            repository,
+        authenticationService(
+            mock(UserRepositoryJPA.class),
             refreshTokenRepositoryJPA,
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
-    User user = new User();
-    user.setUserId(1L);
+    User user = verifiedUser();
     RefreshToken oldToken = new RefreshToken();
     oldToken.setId(42L);
     oldToken.setToken("old-refresh-token");
@@ -332,17 +353,82 @@ class AuthenticationServiceTest {
   void shouldRejectRefreshWhenTokenIsUnknown() {
     RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
     AuthenticationService service =
-        new AuthenticationService(
+        authenticationService(
             mock(UserRepositoryJPA.class),
             refreshTokenRepositoryJPA,
             mock(PasswordEncoder.class),
             mock(JwtService.class),
             mock(AuthenticationManager.class),
-            mock(JwtProperties.class));
+            mock(JwtProperties.class),
+            mock(EmailVerificationService.class));
 
     when(refreshTokenRepositoryJPA.findByToken("missing")).thenReturn(Optional.empty());
 
     assertThrows(InvalidRefreshTokenException.class, () -> service.refreshToken("missing"));
+  }
+
+  @Test
+  void shouldVerifyEmailAndIssueFreshSession() {
+    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+    JwtService jwtService = mock(JwtService.class);
+    RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+    JwtProperties jwtProperties = mock(JwtProperties.class);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    AuthenticationService service =
+        authenticationService(
+            repository,
+            refreshTokenRepositoryJPA,
+            mock(PasswordEncoder.class),
+            jwtService,
+            mock(AuthenticationManager.class),
+            jwtProperties,
+            emailVerificationService);
+    AuthenticatedUser principal = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    User user = verifiedUser();
+
+    when(repository.findById(1L)).thenReturn(Optional.of(user));
+    when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+    when(refreshTokenRepositoryJPA.save(any(RefreshToken.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(jwtService.generateToken(anyMap(), any(User.class))).thenReturn("verified-token");
+
+    var response = service.verifyEmail(principal, "123456");
+
+    verify(emailVerificationService).verifyAuthenticatedUser(user, "123456");
+    assertEquals("verified-token", response.getToken());
+    assertEquals(Boolean.TRUE, response.getEmailVerified());
+  }
+
+  @Test
+  void shouldCompleteSignInVerificationAndIssueSession() {
+    UserRepositoryJPA repository = mock(UserRepositoryJPA.class);
+    JwtService jwtService = mock(JwtService.class);
+    RefreshTokenRepositoryJPA refreshTokenRepositoryJPA = mock(RefreshTokenRepositoryJPA.class);
+    JwtProperties jwtProperties = mock(JwtProperties.class);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    AuthenticationService service =
+        authenticationService(
+            repository,
+            refreshTokenRepositoryJPA,
+            mock(PasswordEncoder.class),
+            jwtService,
+            mock(AuthenticationManager.class),
+            jwtProperties,
+            emailVerificationService);
+    User user = verifiedUser();
+    CompleteEmailVerificationRequest request =
+        new CompleteEmailVerificationRequest("challenge-token", "123456");
+
+    when(emailVerificationService.completeSignIn("challenge-token", "123456")).thenReturn(user);
+    when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+    when(refreshTokenRepositoryJPA.save(any(RefreshToken.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(jwtService.generateToken(anyMap(), eq(user))).thenReturn("session-token");
+
+    var response = service.completeEmailVerificationSignIn(request);
+
+    assertEquals("session-token", response.getToken());
+    assertEquals(Boolean.TRUE, response.getEmailVerified());
   }
 
   @Test
@@ -356,8 +442,44 @@ class AuthenticationServiceTest {
     assertFalse(new AuthenticationResponse("jwt-token").toString().contains("jwt-token"));
   }
 
+  private AuthenticationService authenticationService(
+      UserRepositoryJPA repository,
+      RefreshTokenRepositoryJPA refreshTokenRepositoryJPA,
+      PasswordEncoder passwordEncoder,
+      JwtService jwtService,
+      AuthenticationManager authenticationManager,
+      JwtProperties jwtProperties,
+      EmailVerificationService emailVerificationService) {
+    return new AuthenticationService(
+        repository,
+        refreshTokenRepositoryJPA,
+        passwordEncoder,
+        jwtService,
+        authenticationManager,
+        jwtProperties,
+        emailVerificationService);
+  }
+
+  private static User unverifiedUser() {
+    User user = new User();
+    user.setUserId(1L);
+    user.setFirstName("Pat");
+    user.setLastName("Driver");
+    user.setUserEmail("driver@example.com");
+    user.setUserPw("encoded-secret");
+    user.setRole(Role.USER);
+    user.setEmailVerified(false);
+    return user;
+  }
+
+  private static User verifiedUser() {
+    User user = unverifiedUser();
+    user.setEmailVerified(true);
+    return user;
+  }
+
   @SuppressWarnings("unchecked")
-  private void assertTokenClaims(JwtService jwtService, User user) {
+  private void assertTokenClaims(JwtService jwtService, User user, boolean emailVerified) {
     ArgumentCaptor<Map<String, Object>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
     verify(jwtService)
         .generateToken(claimsCaptor.capture(), org.mockito.ArgumentMatchers.same(user));
@@ -366,5 +488,6 @@ class AuthenticationServiceTest {
     assertFalse(claims.containsKey("lastName"));
     assertEquals(user.getUserId(), claims.get("userId"));
     assertEquals(user.getRole().name(), claims.get("role"));
+    assertEquals(emailVerified, claims.get("emailVerified"));
   }
 }

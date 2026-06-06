@@ -49,6 +49,12 @@ public class User implements UserDetails {
   @Column(name = "lockout_end")
   private LocalDateTime lockoutEnd;
 
+  @Column(name = "email_verified", nullable = false)
+  private boolean emailVerified = false;
+
+  @Column(name = "email_verified_at")
+  private Instant emailVerifiedAt;
+
   @JsonIgnore
   @OneToMany(
       mappedBy = "user",
@@ -134,6 +140,22 @@ public class User implements UserDetails {
 
   public void setLockoutEnd(LocalDateTime lockoutEnd) {
     this.lockoutEnd = lockoutEnd;
+  }
+
+  public boolean isEmailVerified() {
+    return emailVerified;
+  }
+
+  public void setEmailVerified(boolean emailVerified) {
+    this.emailVerified = emailVerified;
+  }
+
+  public Instant getEmailVerifiedAt() {
+    return emailVerifiedAt;
+  }
+
+  public void setEmailVerifiedAt(Instant emailVerifiedAt) {
+    this.emailVerifiedAt = emailVerifiedAt;
   }
 
   public Set<UserVin> getUserVins() {

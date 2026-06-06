@@ -888,11 +888,39 @@ class VehicleOnboardingServiceTest {
     return transactionTemplate;
   }
 
+  @Test
+  void shouldRejectUnverifiedUserBeforeCallingVehicleDataProvider() {
+    VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
+    VehicleDataProviderClient providerClient = mock(VehicleDataProviderClient.class);
+    User user = user();
+    user.setEmailVerified(false);
+
+    VehicleOnboardingService service =
+        onboardingService(
+            vinRepository,
+            mock(VehicleTypeRepositoryJPA.class),
+            mock(UserVinRepositoryJPA.class),
+            mock(RecallRepositoryJPA.class),
+            mock(MaintMileageRepositoryJPA.class),
+            mock(MaintMileageSummaryRepositoryJPA.class),
+            mock(MiscMaintCostRepositoryJPA.class),
+            mock(VehicleWarrantyRepositoryJPA.class),
+            providerClient,
+            new VehicleDataMapper(),
+            transactionTemplate());
+
+    assertThrows(
+        EmailNotVerifiedException.class,
+        () -> service.addVinToUser(user, new AddVinRequest("JTENU5JR6M5962554", 45000, null)));
+    verify(providerClient, never()).decodeVin(any());
+  }
+
   private User user() {
     User user = new User();
     user.setUserId(1L);
     user.setUserEmail("driver@example.com");
     user.setRole(Role.USER);
+    user.setEmailVerified(true);
     return user;
   }
 

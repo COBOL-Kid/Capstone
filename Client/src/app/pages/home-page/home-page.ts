@@ -11,7 +11,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, finalize, Subject, switchMap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AuthService } from '../../core/auth/auth.service';
+import { AuthErrorMessage } from '../../core/auth/auth.models';
 import { VinService } from '../../core/vin/vin.service';
 import {
   AddVinRequest,
@@ -27,16 +30,18 @@ import { DeleteVehicleModalComponent } from '../../components/delete-vehicle-mod
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent, RouterLink],
+  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent, ReactiveFormsModule, RouterLink],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePageComponent {
   private readonly vinService = inject(VinService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly vehiclesStore = inject(UserVehiclesStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(NonNullableFormBuilder);
 
   private readonly vehiclesResource = rxResource({
     stream: () => this.vinService.getUserVehicles(),
@@ -54,6 +59,19 @@ export class HomePageComponent {
     null,
   );
   protected readonly vehicleToDelete = signal<string | null>(null);
+  protected readonly isVerificationPanelOpen = signal(false);
+  protected readonly isVerifyingEmail = signal(false);
+  protected readonly isResendingVerification = signal(false);
+  protected readonly verificationError = signal<AuthErrorMessage | null>(null);
+  protected readonly verificationForm = this.fb.group({
+    code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+  });
+  protected readonly isEmailVerificationRequired = computed(
+    () => this.authService.account()?.emailVerified === false,
+  );
+  protected readonly canAddVehicle = computed(
+    () => !this.isEmailVerificationRequired() && !this.isOnboardingVehicle(),
+  );
   protected readonly isLoading = computed(() => this.vehiclesResource.isLoading());
   protected readonly error = computed(() => {
     const err = this.vehiclesResource.error();
@@ -64,6 +82,11 @@ export class HomePageComponent {
   });
 
   constructor() {
+    this.authService
+      .getCurrentAccount()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ error: () => undefined });
+
     effect(() => {
       if (this.vehiclesResource.error()) {
         return;
@@ -105,8 +128,64 @@ export class HomePageComponent {
       });
   }
 
+  protected openVerificationPanel(): void {
+    this.verificationError.set(null);
+    this.isVerificationPanelOpen.set(true);
+  }
+
+  protected closeVerificationPanel(): void {
+    this.isVerificationPanelOpen.set(false);
+    this.verificationError.set(null);
+    this.verificationForm.reset();
+  }
+
+  protected resendVerificationEmail(): void {
+    if (this.isResendingVerification()) {
+      return;
+    }
+
+    this.verificationError.set(null);
+    this.isResendingVerification.set(true);
+    this.authService
+      .resendEmailVerification()
+      .pipe(
+        finalize(() => this.isResendingVerification.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        error: (error: AuthErrorMessage) => this.verificationError.set(error),
+      });
+  }
+
+  protected submitVerificationCode(): void {
+    if (this.isVerifyingEmail()) {
+      return;
+    }
+
+    if (this.verificationForm.invalid) {
+      this.verificationForm.markAllAsTouched();
+      return;
+    }
+
+    this.verificationError.set(null);
+    this.isVerifyingEmail.set(true);
+    this.authService
+      .verifyEmailCode(this.verificationForm.controls.code.value)
+      .pipe(
+        switchMap(() => this.authService.getCurrentAccount({ forceRefresh: true })),
+        finalize(() => this.isVerifyingEmail.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.closeVerificationPanel();
+        },
+        error: (error: AuthErrorMessage) => this.verificationError.set(error),
+      });
+  }
+
   protected openAddModal(): void {
-    if (this.isOnboardingVehicle()) {
+    if (!this.canAddVehicle()) {
       return;
     }
     this.addVehicleError.set(null);

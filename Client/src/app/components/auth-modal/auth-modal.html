@@ -35,45 +35,83 @@
         }
       </div>
     }
-    @if (isSignup()) {
+
+    @if (isVerifyCodeStep()) {
+      <p class="hc-dialog__instructions">
+        We sent a 6-digit verification code to your email. Enter it below to finish signing in. The
+        code expires in 5 minutes.
+      </p>
+
       <label class="hc-field">
-        <span>First name</span>
-        <input autocomplete="given-name" formControlName="firstname" type="text" />
-        @if (form.controls.firstname.touched && form.controls.firstname.hasError('required')) {
-          <small>First name is required.</small>
+        <span>Verification code</span>
+        <input
+          autocomplete="one-time-code"
+          formControlName="code"
+          inputmode="numeric"
+          maxlength="6"
+          pattern="[0-9]*"
+          type="text"
+        />
+        @if (form.controls.code.touched && form.controls.code.hasError('required')) {
+          <small>Verification code is required.</small>
+        } @else if (form.controls.code.touched && form.controls.code.invalid) {
+          <small>Enter the 6-digit code from your email.</small>
+        }
+      </label>
+
+      <button
+        (click)="resendVerificationCode()"
+        [disabled]="isSubmitting()"
+        class="hc-dialog-switch-button"
+        type="button"
+      >
+        Resend code
+      </button>
+
+      <button (click)="backToCredentials()" class="hc-dialog-switch-button" type="button">
+        Back to sign in
+      </button>
+    } @else {
+      @if (isSignup()) {
+        <label class="hc-field">
+          <span>First name</span>
+          <input autocomplete="given-name" formControlName="firstname" type="text" />
+          @if (form.controls.firstname.touched && form.controls.firstname.hasError('required')) {
+            <small>First name is required.</small>
+          }
+        </label>
+
+        <label class="hc-field">
+          <span>Last name</span>
+          <input autocomplete="family-name" formControlName="lastname" type="text" />
+          @if (form.controls.lastname.touched && form.controls.lastname.hasError('required')) {
+            <small>Last name is required.</small>
+          }
+        </label>
+      }
+
+      <label class="hc-field">
+        <span>Email</span>
+        <input autocomplete="email" formControlName="email" type="email" />
+        @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+          <small>Email is required.</small>
+        } @else if (form.controls.email.touched && form.controls.email.invalid) {
+          <small>Enter a valid email address.</small>
         }
       </label>
 
       <label class="hc-field">
-        <span>Last name</span>
-        <input autocomplete="family-name" formControlName="lastname" type="text" />
-        @if (form.controls.lastname.touched && form.controls.lastname.hasError('required')) {
-          <small>Last name is required.</small>
+        <span>Password</span>
+        <input
+          [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
+          formControlName="password"
+          type="password"
+        />
+        @for (error of passwordErrors(); track error) {
+          <small>{{ error }}</small>
         }
       </label>
     }
-
-    <label class="hc-field">
-      <span>Email</span>
-      <input autocomplete="email" formControlName="email" type="email" />
-      @if (form.controls.email.touched && form.controls.email.hasError('required')) {
-        <small>Email is required.</small>
-      } @else if (form.controls.email.touched && form.controls.email.invalid) {
-        <small>Enter a valid email address.</small>
-      }
-    </label>
-
-    <label class="hc-field">
-      <span>Password</span>
-      <input
-        [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
-        formControlName="password"
-        type="password"
-      />
-      @for (error of passwordErrors(); track error) {
-        <small>{{ error }}</small>
-      }
-    </label>
 
     <button
       [disabled]="isSubmitting()"
@@ -84,14 +122,16 @@
     </button>
   </form>
 
-  <p class="hc-dialog-switch">
-    {{ alternatePrompt() }}
-    @if (useRoutingLinks()) {
-      <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
-    } @else {
-      <button (click)="switchMode()" class="hc-dialog-switch-button" type="button">
-        {{ alternateLabel() }}
-      </button>
-    }
-  </p>
+  @if (!isVerifyCodeStep()) {
+    <p class="hc-dialog-switch">
+      {{ alternatePrompt() }}
+      @if (useRoutingLinks()) {
+        <a [routerLink]="alternatePath()">{{ alternateLabel() }}</a>
+      } @else {
+        <button (click)="switchMode()" class="hc-dialog-switch-button" type="button">
+          {{ alternateLabel() }}
+        </button>
+      }
+    </p>
+  }
 </section>

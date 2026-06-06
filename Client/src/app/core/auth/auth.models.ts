@@ -13,7 +13,19 @@ export interface AuthenticationRequest {
 }
 
 export interface AuthenticationResponse {
-  token: string;
+  token?: string;
+  emailVerified?: boolean;
+  verificationRequired?: boolean;
+  verificationChallenge?: string;
+}
+
+export interface VerifyEmailRequest {
+  code: string;
+}
+
+export interface CompleteEmailVerificationRequest {
+  verificationChallenge: string;
+  code: string;
 }
 
 export interface AccountDetails {
@@ -22,6 +34,8 @@ export interface AccountDetails {
   firstName: string;
   lastName: string;
   userSms: string | null;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

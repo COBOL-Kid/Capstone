@@ -96,6 +96,8 @@ class AccountControllerTest {
         "Pat",
         "Driver",
         "+15551234567",
+        true,
+        Instant.parse("2026-01-02T03:04:00Z"),
         Instant.parse("2026-01-02T03:04:00Z"),
         Instant.parse("2026-02-03T04:05:00Z"));
   }

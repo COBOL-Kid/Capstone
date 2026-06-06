@@ -22,6 +22,8 @@ import { AuthErrorMessage, AuthModalMode } from '../../core/auth/auth.models';
 
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/;
 
+type AuthModalStep = 'credentials' | 'verify-code';
+
 @Component({
   selector: 'app-auth-modal',
   imports: [ReactiveFormsModule, RouterLink],
@@ -36,14 +38,22 @@ export class AuthModalComponent implements AfterViewInit {
   readonly useRoutingLinks = input(true);
   readonly close = output<void>();
   readonly modeChange = output<AuthModalMode>();
+  protected readonly step = signal<AuthModalStep>('credentials');
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<AuthErrorMessage | null>(null);
-  protected readonly title = computed(() =>
-    this.mode() === 'sign-up' ? 'Create your account' : 'Welcome back',
-  );
-  protected readonly submitLabel = computed(() =>
-    this.mode() === 'sign-up' ? 'Sign Up' : 'Sign In',
-  );
+  protected readonly verificationChallenge = signal<string | null>(null);
+  protected readonly title = computed(() => {
+    if (this.step() === 'verify-code') {
+      return 'Verify your email';
+    }
+    return this.mode() === 'sign-up' ? 'Create your account' : 'Welcome back';
+  });
+  protected readonly submitLabel = computed(() => {
+    if (this.step() === 'verify-code') {
+      return 'Verify and continue';
+    }
+    return this.mode() === 'sign-up' ? 'Sign Up' : 'Sign In';
+  });
   protected readonly alternateMode = computed<AuthModalMode>(() =>
     this.mode() === 'sign-up' ? 'sign-in' : 'sign-up',
   );
@@ -63,6 +73,7 @@ export class AuthModalComponent implements AfterViewInit {
     lastname: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     password: ['', [Validators.required, Validators.maxLength(72)]],
+    code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
   });
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -78,6 +89,10 @@ export class AuthModalComponent implements AfterViewInit {
 
   protected isSignup(): boolean {
     return this.mode() === 'sign-up';
+  }
+
+  protected isVerifyCodeStep(): boolean {
+    return this.step() === 'verify-code';
   }
 
   protected passwordErrors(): string[] {
@@ -114,12 +129,17 @@ export class AuthModalComponent implements AfterViewInit {
       return;
     }
 
-    this.applyModeValidators();
     this.serverError.set(null);
+
+    if (this.isVerifyCodeStep()) {
+      this.submitVerificationCode();
+      return;
+    }
+
+    this.applyModeValidators();
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-
       return;
     }
 
@@ -144,6 +164,75 @@ export class AuthModalComponent implements AfterViewInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
+        next: (response) => {
+          if (response.verificationRequired && response.verificationChallenge) {
+            this.verificationChallenge.set(response.verificationChallenge);
+            this.step.set('verify-code');
+            this.form.controls.code.reset();
+            return;
+          }
+          this.close.emit();
+        },
+        error: (error: AuthErrorMessage) => this.serverError.set(error),
+      });
+  }
+
+  protected resendVerificationCode(): void {
+    if (this.isSubmitting() || !this.isVerifyCodeStep()) {
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.authService
+      .login({
+        email: this.form.controls.email.value.trim(),
+        password: this.form.controls.password.value,
+      })
+      .pipe(
+        finalize(() => this.isSubmitting.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.verificationChallenge) {
+            this.verificationChallenge.set(response.verificationChallenge);
+            this.form.controls.code.reset();
+            this.serverError.set(null);
+          }
+        },
+        error: (error: AuthErrorMessage) => this.serverError.set(error),
+      });
+  }
+
+  protected backToCredentials(): void {
+    this.step.set('credentials');
+    this.verificationChallenge.set(null);
+    this.serverError.set(null);
+    this.form.controls.code.reset();
+  }
+
+  private submitVerificationCode(): void {
+    const challenge = this.verificationChallenge();
+    if (!challenge) {
+      return;
+    }
+
+    this.form.controls.code.setValidators([Validators.required, Validators.pattern(/^\d{6}$/)]);
+    this.form.controls.code.updateValueAndValidity({ emitEvent: false });
+
+    if (this.form.controls.code.invalid) {
+      this.form.controls.code.markAsTouched();
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.authService
+      .completeEmailVerificationSignIn(challenge, this.form.controls.code.value)
+      .pipe(
+        finalize(() => this.isSubmitting.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
         next: () => this.close.emit(),
         error: (error: AuthErrorMessage) => this.serverError.set(error),
       });
@@ -160,14 +249,18 @@ export class AuthModalComponent implements AfterViewInit {
     this.form.controls.firstname.setValidators(nameValidators);
     this.form.controls.lastname.setValidators(nameValidators);
     this.form.controls.password.setValidators(passwordValidators);
+    this.form.controls.code.clearValidators();
 
     this.form.controls.firstname.updateValueAndValidity({ emitEvent: false });
     this.form.controls.lastname.updateValueAndValidity({ emitEvent: false });
     this.form.controls.password.updateValueAndValidity({ emitEvent: false });
+    this.form.controls.code.updateValueAndValidity({ emitEvent: false });
   }
 
   protected switchMode(): void {
     this.serverError.set(null);
+    this.step.set('credentials');
+    this.verificationChallenge.set(null);
     this.form.reset();
     this.modeChange.emit(this.alternateMode());
   }

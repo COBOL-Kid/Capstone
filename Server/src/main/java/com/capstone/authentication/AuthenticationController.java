@@ -4,8 +4,10 @@ import com.capstone.configuration.JwtProperties;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,19 +25,38 @@ public class AuthenticationController {
   @PostMapping("/register")
   public ResponseEntity<AuthenticationResponse> register(
       @Valid @RequestBody RegisterRequest request) {
-    AuthenticationResponse response = service.register(request);
-    return ResponseEntity.ok()
-        .headers(createCookieHeader(response.getRefreshToken()))
-        .body(response);
+    return sessionResponse(service.register(request));
   }
 
   @PostMapping("/authenticate")
   public ResponseEntity<AuthenticationResponse> authenticate(
       @Valid @RequestBody AuthenticationRequest request) {
-    AuthenticationResponse response = service.authenticate(request);
-    return ResponseEntity.ok()
-        .headers(createCookieHeader(response.getRefreshToken()))
-        .body(response);
+    return sessionResponse(service.authenticate(request));
+  }
+
+  @PostMapping("/email-verification/resend")
+  public ResponseEntity<AuthenticationResponse> resendEmailVerification(
+      @AuthenticationPrincipal AuthenticatedUser user) {
+    if (user == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return sessionResponse(service.resendVerificationEmail(user));
+  }
+
+  @PostMapping("/email-verification/verify")
+  public ResponseEntity<AuthenticationResponse> verifyEmail(
+      @AuthenticationPrincipal AuthenticatedUser user,
+      @Valid @RequestBody VerifyEmailRequest request) {
+    if (user == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return sessionResponse(service.verifyEmail(user, request.code()));
+  }
+
+  @PostMapping("/email-verification/complete-sign-in")
+  public ResponseEntity<AuthenticationResponse> completeEmailVerificationSignIn(
+      @Valid @RequestBody CompleteEmailVerificationRequest request) {
+    return sessionResponse(service.completeEmailVerificationSignIn(request));
   }
 
   @PostMapping("/refresh")
@@ -44,10 +65,7 @@ public class AuthenticationController {
     if (refreshToken == null || refreshToken.isEmpty()) {
       throw new InvalidRefreshTokenException("Missing refresh token cookie");
     }
-    AuthenticationResponse response = service.refreshToken(refreshToken);
-    return ResponseEntity.ok()
-        .headers(createCookieHeader(response.getRefreshToken()))
-        .body(response);
+    return sessionResponse(service.refreshToken(refreshToken));
   }
 
   @PostMapping("/logout")
@@ -57,6 +75,15 @@ public class AuthenticationController {
       service.logout(refreshToken);
     }
     return ResponseEntity.ok().headers(createCleanCookieHeader()).build();
+  }
+
+  private ResponseEntity<AuthenticationResponse> sessionResponse(AuthenticationResponse response) {
+    if (response.hasRefreshToken()) {
+      return ResponseEntity.ok()
+          .headers(createCookieHeader(response.getRefreshToken()))
+          .body(response);
+    }
+    return ResponseEntity.ok().body(response);
   }
 
   private HttpHeaders createCookieHeader(String refreshToken) {

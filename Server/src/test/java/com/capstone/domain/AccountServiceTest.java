@@ -4,14 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.capstone.authentication.AuthenticatedUser;
-import com.capstone.data.*;
+import com.capstone.authentication.EmailVerificationService;
+import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.Role;
 import com.capstone.models.User;
 import com.capstone.models.dto.ChangePasswordRequest;
 import com.capstone.models.dto.DeleteAccountRequest;
 import com.capstone.models.dto.UpdateAccountRequest;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -36,14 +36,18 @@ class AccountServiceTest {
     assertEquals("Pat", response.firstName());
     assertEquals("Driver", response.lastName());
     assertEquals("+15551234567", response.userSms());
+    assertTrue(response.emailVerified());
+    assertEquals(storedUser.getEmailVerifiedAt(), response.emailVerifiedAt());
     assertEquals(storedUser.getCreatedAt(), response.createdAt());
     assertEquals(storedUser.getUpdatedAt(), response.updatedAt());
+    assertTrue(response.emailVerified());
   }
 
   @Test
   void shouldUpdateProfileWithTrimmedValues() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    AccountService service = service(userRepository);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    AccountService service = service(userRepository, emailVerificationService);
     User storedUser = storedUser();
     UpdateAccountRequest request =
         new UpdateAccountRequest(" Patricia ", " Driver-Smith ", " DRIVER@Example.COM ", "   ");
@@ -61,6 +65,31 @@ class AccountServiceTest {
     assertEquals("Patricia", response.firstName());
     assertEquals("driver@example.com", response.email());
     verify(userRepository).save(storedUser);
+    verifyNoInteractions(emailVerificationService);
+  }
+
+  @Test
+  void shouldResetVerificationAndSendCodeWhenEmailChanges() {
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
+    AccountService service = service(userRepository, emailVerificationService);
+    User storedUser = storedUser();
+    storedUser.setEmailVerified(true);
+    storedUser.setEmailVerifiedAt(Instant.parse("2026-01-02T03:04:00Z"));
+    UpdateAccountRequest request =
+        new UpdateAccountRequest("Pat", "Driver", " NEW.Driver@Example.COM ", null);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+    when(userRepository.findByUserEmail("new.driver@example.com")).thenReturn(Optional.empty());
+    when(userRepository.save(storedUser)).thenReturn(storedUser);
+
+    var response = service.updateProfile(authenticatedPrincipal(), request);
+
+    assertEquals("new.driver@example.com", storedUser.getUserEmail());
+    assertFalse(storedUser.isEmailVerified());
+    assertNull(storedUser.getEmailVerifiedAt());
+    assertFalse(response.emailVerified());
+    verify(emailVerificationService).sendRegistrationCode(storedUser);
   }
 
   @Test
@@ -124,15 +153,7 @@ class AccountServiceTest {
   void shouldChangePasswordWhenCurrentPasswordMatches() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    AccountService service =
-        service(
-            userRepository,
-            passwordEncoder,
-            mock(RefreshTokenRepositoryJPA.class),
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class),
-            mock(UserVinRepositoryJPA.class),
-            mock(VinRepositoryJPA.class));
+    AccountService service = service(userRepository, passwordEncoder);
     User storedUser = storedUser();
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
@@ -169,15 +190,8 @@ class AccountServiceTest {
   void shouldRejectAccountDeletionWhenPasswordDoesNotMatch() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    AccountService service =
-        service(
-            userRepository,
-            passwordEncoder,
-            mock(RefreshTokenRepositoryJPA.class),
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class),
-            mock(UserVinRepositoryJPA.class),
-            mock(VinRepositoryJPA.class));
+    UserDeletionService userDeletionService = mock(UserDeletionService.class);
+    AccountService service = service(userRepository, passwordEncoder, userDeletionService);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser()));
     when(passwordEncoder.matches("wrong", "encoded-old")).thenReturn(false);
@@ -185,22 +199,14 @@ class AccountServiceTest {
     assertThrows(
         InvalidAccountCredentialsException.class,
         () -> service.deleteAccount(authenticatedPrincipal(), new DeleteAccountRequest("wrong")));
-    verify(userRepository, never()).delete(any(User.class));
+    verify(userDeletionService, never()).deleteUserAndRelatedData(any());
   }
 
   @Test
   void shouldRejectPasswordChangeWhenCurrentPasswordDoesNotMatch() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    AccountService service =
-        service(
-            userRepository,
-            passwordEncoder,
-            mock(RefreshTokenRepositoryJPA.class),
-            mock(CompletedMaintenanceRepositoryJPA.class),
-            mock(CompletedRecallRepositoryJPA.class),
-            mock(UserVinRepositoryJPA.class),
-            mock(VinRepositoryJPA.class));
+    AccountService service = service(userRepository, passwordEncoder);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser()));
     when(passwordEncoder.matches("wrong", "encoded-old")).thenReturn(false);
@@ -213,77 +219,47 @@ class AccountServiceTest {
   }
 
   @Test
-  void shouldPurgeUserOwnedDataBeforeDeletingAccount() {
+  void shouldDelegateAccountDeletionToUserDeletionService() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    CompletedMaintenanceRepositoryJPA completedMaintenanceRepository =
-        mock(CompletedMaintenanceRepositoryJPA.class);
-    CompletedRecallRepositoryJPA completedRecallRepository =
-        mock(CompletedRecallRepositoryJPA.class);
-    UserVinRepositoryJPA userVinRepository = mock(UserVinRepositoryJPA.class);
-    VinRepositoryJPA vinRepository = mock(VinRepositoryJPA.class);
-    RefreshTokenRepositoryJPA refreshTokenRepository = mock(RefreshTokenRepositoryJPA.class);
-    AccountService service =
-        service(
-            userRepository,
-            passwordEncoder,
-            refreshTokenRepository,
-            completedMaintenanceRepository,
-            completedRecallRepository,
-            userVinRepository,
-            vinRepository);
+    UserDeletionService userDeletionService = mock(UserDeletionService.class);
+    AccountService service = service(userRepository, passwordEncoder, userDeletionService);
     User storedUser = storedUser();
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
     when(passwordEncoder.matches("secret", "encoded-old")).thenReturn(true);
-    when(userVinRepository.findVinNumbersForUser(1L)).thenReturn(List.of("JTENU5JR6M5962554"));
 
     service.deleteAccount(authenticatedPrincipal(), new DeleteAccountRequest("secret"));
 
-    InOrder inOrder =
-        inOrder(
-            completedMaintenanceRepository,
-            completedRecallRepository,
-            userVinRepository,
-            vinRepository,
-            refreshTokenRepository,
-            userRepository);
-    inOrder.verify(userVinRepository).findVinNumbersForUser(1L);
-    inOrder.verify(completedMaintenanceRepository).deleteAllForUserId(1L);
-    inOrder.verify(completedRecallRepository).deleteAllForUserId(1L);
-    inOrder.verify(userVinRepository).deleteAllForUserId(1L);
-    inOrder.verify(vinRepository).deleteOrphanedVins(List.of("JTENU5JR6M5962554"));
-    inOrder.verify(refreshTokenRepository).deleteByUser(storedUser);
-    inOrder.verify(userRepository).delete(storedUser);
+    InOrder inOrder = inOrder(userDeletionService);
+    inOrder.verify(userDeletionService).deleteUserAndRelatedData(storedUser);
+    verify(userRepository, never()).delete(any(User.class));
   }
 
   private AccountService service(UserRepositoryJPA userRepository) {
-    return service(
+    return service(userRepository, mock(PasswordEncoder.class));
+  }
+
+  private AccountService service(
+      UserRepositoryJPA userRepository, PasswordEncoder passwordEncoder) {
+    return service(userRepository, passwordEncoder, mock(UserDeletionService.class));
+  }
+
+  private AccountService service(
+      UserRepositoryJPA userRepository, EmailVerificationService emailVerificationService) {
+    return new AccountService(
         userRepository,
         mock(PasswordEncoder.class),
-        mock(RefreshTokenRepositoryJPA.class),
-        mock(CompletedMaintenanceRepositoryJPA.class),
-        mock(CompletedRecallRepositoryJPA.class),
-        mock(UserVinRepositoryJPA.class),
-        mock(VinRepositoryJPA.class));
+        mock(UserDeletionService.class),
+        emailVerificationService);
   }
 
   private AccountService service(
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
-      RefreshTokenRepositoryJPA refreshTokenRepository,
-      CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
-      CompletedRecallRepositoryJPA completedRecallRepository,
-      UserVinRepositoryJPA userVinRepository,
-      VinRepositoryJPA vinRepository) {
+      UserDeletionService userDeletionService) {
     return new AccountService(
-        userRepository,
-        passwordEncoder,
-        refreshTokenRepository,
-        completedMaintenanceRepository,
-        completedRecallRepository,
-        userVinRepository,
-        vinRepository);
+        userRepository, passwordEncoder, userDeletionService, mock(EmailVerificationService.class));
   }
 
   private AuthenticatedUser authenticatedPrincipal() {
@@ -298,6 +274,8 @@ class AccountServiceTest {
     user.setLastName("Driver");
     user.setUserSms("+15551234567");
     user.setUserPw("encoded-old");
+    user.setEmailVerified(true);
+    user.setEmailVerifiedAt(Instant.parse("2026-01-02T03:04:00Z"));
     user.setCreatedAt(Instant.parse("2026-01-02T03:04:00Z"));
     user.setUpdatedAt(Instant.parse("2026-02-03T04:05:00Z"));
     return user;

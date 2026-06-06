@@ -38,6 +38,7 @@ public class AuthenticationService {
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
   private final JwtProperties jwtProperties;
+  private final EmailVerificationService emailVerificationService;
 
   public AuthenticationService(
       UserRepositoryJPA repository,
@@ -45,13 +46,15 @@ public class AuthenticationService {
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
       AuthenticationManager authenticationManager,
-      JwtProperties jwtProperties) {
+      JwtProperties jwtProperties,
+      EmailVerificationService emailVerificationService) {
     this.repository = repository;
     this.refreshTokenRepositoryJPA = refreshTokenRepositoryJPA;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.authenticationManager = authenticationManager;
     this.jwtProperties = jwtProperties;
+    this.emailVerificationService = emailVerificationService;
   }
 
   @Transactional
@@ -66,6 +69,7 @@ public class AuthenticationService {
     user.setUserEmail(email);
     user.setUserPw(passwordEncoder.encode(request.getPassword()));
     user.setRole(Role.USER);
+    user.setEmailVerified(false);
 
     try {
       repository.saveAndFlush(user);
@@ -73,14 +77,14 @@ public class AuthenticationService {
       throw new DuplicateEmailException();
     }
 
-    Map<String, Object> extraClaims = buildExtraClaims(user);
+    emailVerificationService.sendRegistrationCode(user);
 
-    String jwtToken = jwtService.generateToken(extraClaims, user);
+    String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
     RefreshToken refreshToken = createRefreshToken(user);
 
     log.info("Audit - User registered successfully: {}", email);
 
-    return new AuthenticationResponse(jwtToken, refreshToken.getToken());
+    return AuthenticationResponse.unverifiedSession(jwtToken, refreshToken.getToken());
   }
 
   @Transactional
@@ -122,22 +126,70 @@ public class AuthenticationService {
     user.setLockoutEnd(null);
     repository.save(user);
 
+    if (!user.isEmailVerified()) {
+      String challenge = emailVerificationService.sendSignInCode(user);
+      log.info("Audit - Login requires email verification for user: {}", email);
+      return AuthenticationResponse.verificationRequired(challenge);
+    }
+
     log.info("Audit - Login successful for user: {}", email);
+    return issueSession(user);
+  }
 
-    Map<String, Object> extraClaims = buildExtraClaims(user);
+  @Transactional
+  public AuthenticationResponse verifyEmail(AuthenticatedUser principal, String code) {
+    User user = loadUser(principal);
+    emailVerificationService.verifyAuthenticatedUser(user, code);
+    repository.flush();
+    user = repository.findById(user.getUserId()).orElseThrow();
+    return issueSession(user);
+  }
 
-    String jwtToken = jwtService.generateToken(extraClaims, user);
+  @Transactional
+  public AuthenticationResponse resendVerificationEmail(AuthenticatedUser principal) {
+    User user = loadUser(principal);
+    if (user.isEmailVerified()) {
+      return issueSession(user);
+    }
+    emailVerificationService.resendCode(user);
+    AuthenticationResponse response = new AuthenticationResponse();
+    response.setEmailVerified(false);
+    return response;
+  }
 
+  @Transactional
+  public AuthenticationResponse completeEmailVerificationSignIn(
+      CompleteEmailVerificationRequest request) {
+    User user =
+        emailVerificationService.completeSignIn(request.verificationChallenge(), request.code());
+    log.info("Audit - Email verification sign-in completed for user: {}", user.getUserEmail());
+    return issueSession(user);
+  }
+
+  private AuthenticationResponse issueSession(User user) {
     refreshTokenRepositoryJPA.deleteByUser(user);
     RefreshToken refreshToken = createRefreshToken(user);
+    String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
+    if (user.isEmailVerified()) {
+      return AuthenticationResponse.verifiedSession(jwtToken, refreshToken.getToken());
+    }
+    return AuthenticationResponse.unverifiedSession(jwtToken, refreshToken.getToken());
+  }
 
-    return new AuthenticationResponse(jwtToken, refreshToken.getToken());
+  private User loadUser(AuthenticatedUser principal) {
+    if (principal == null || principal.userId() == null) {
+      throw new UsernameNotFoundException("User not found");
+    }
+    return repository
+        .findById(principal.userId())
+        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
   }
 
   private Map<String, Object> buildExtraClaims(User user) {
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("userId", user.getUserId());
     extraClaims.put("role", user.getRole().name());
+    extraClaims.put("emailVerified", user.isEmailVerified());
     return extraClaims;
   }
 
@@ -174,9 +226,8 @@ public class AuthenticationService {
       throw new InvalidRefreshTokenException("Refresh token already consumed");
     }
     User user = oldToken.getUser();
-    RefreshToken newRefreshToken = createRefreshToken(user);
-    String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
-    return new AuthenticationResponse(jwtToken, newRefreshToken.getToken());
+    user = repository.findById(user.getUserId()).orElseThrow();
+    return issueSession(user);
   }
 
   @Transactional

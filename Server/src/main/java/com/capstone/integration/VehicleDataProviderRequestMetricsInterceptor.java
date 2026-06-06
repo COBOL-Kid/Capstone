@@ -24,7 +24,7 @@ public class VehicleDataProviderRequestMetricsInterceptor implements ClientHttpR
 
   public VehicleDataProviderRequestMetricsInterceptor(
       VehicleDataProviderRequestMetrics metrics,
-      @Value("${vehicle-data.http.slow-request-threshold-ms:10000}") long slowRequestThresholdMs) {
+      @Value("${vehicle-data.http.slow-request-threshold-ms}") long slowRequestThresholdMs) {
     this.metrics = metrics;
     this.slowRequestThresholdMs = slowRequestThresholdMs;
   }

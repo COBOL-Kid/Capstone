@@ -219,6 +219,7 @@ class AccountChangeServiceTest {
     User user = storedUser();
     AccountChangeRequest pending = pendingRequest(user, AccountChangeType.PASSWORD);
     pending.setNewPasswordHash("encoded-new-password");
+    pending.setCreatedAt(Instant.now().minusSeconds(120));
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(changeRequestRepository.findByUser(user)).thenReturn(Optional.of(pending));
@@ -246,7 +247,7 @@ class AccountChangeServiceTest {
   }
 
   private AuthenticatedUser authenticatedPrincipal() {
-    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
   }
 
   private User storedUser() {

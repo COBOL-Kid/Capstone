@@ -384,7 +384,7 @@ class AuthenticationServiceTest {
             mock(AuthenticationManager.class),
             jwtProperties,
             emailVerificationService);
-    AuthenticatedUser principal = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    AuthenticatedUser principal = new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
     User user = verifiedUser();
 
     when(repository.findById(1L)).thenReturn(Optional.of(user));

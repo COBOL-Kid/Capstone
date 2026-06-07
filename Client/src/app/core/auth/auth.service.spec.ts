@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { apiConfig } from '../api/api.config';
+import { credentialsInterceptor } from '../http/credentials.interceptor';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -10,10 +11,11 @@ describe('AuthService', () => {
   let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.clear();
-
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(withInterceptors([credentialsInterceptor])),
+        provideHttpClientTesting(),
+      ],
     });
 
     service = TestBed.inject(AuthService);
@@ -22,14 +24,13 @@ describe('AuthService', () => {
 
   afterEach(() => {
     httpTesting.verify();
-    localStorage.clear();
   });
 
   it('reports email verification as unknown before account details load', () => {
     expect(service.isEmailVerified()).toBeNull();
   });
 
-  it('posts registration requests with credentials and stores the returned token', () => {
+  it('posts registration requests with credentials and activates the session', () => {
     const request = {
       firstname: 'Pat',
       lastname: 'Driver',
@@ -38,7 +39,6 @@ describe('AuthService', () => {
     };
 
     service.register(request).subscribe((response) => {
-      expect(response.token).toBe('jwt-token');
       expect(response.emailVerified).toBe(false);
     });
 
@@ -46,13 +46,12 @@ describe('AuthService', () => {
     expect(authRequest.request.method).toBe('POST');
     expect(authRequest.request.withCredentials).toBe(true);
 
-    authRequest.flush({ token: 'jwt-token', emailVerified: false });
+    authRequest.flush({ emailVerified: false });
 
-    expect(service.token()).toBe('jwt-token');
-    expect(localStorage.getItem('honest-car.access-token')).toBe('jwt-token');
+    expect(service.isSignedIn()).toBe(true);
   });
 
-  it('does not store a token when login requires email verification', () => {
+  it('does not activate a session when login requires email verification', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe((response) => {
       expect(response.verificationRequired).toBe(true);
       expect(response.verificationChallenge).toBe('challenge-token');
@@ -64,24 +63,22 @@ describe('AuthService', () => {
       verificationChallenge: 'challenge-token',
     });
 
-    expect(service.token()).toBeNull();
+    expect(service.isSignedIn()).toBe(false);
   });
 
-  it('stores a token when login returns a session', () => {
+  it('activates a session when login returns a session', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
 
-    httpTesting
-      .expectOne(`${apiConfig.authUrl}/authenticate`)
-      .flush({ token: 'login-token', emailVerified: true });
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
 
-    expect(service.token()).toBe('login-token');
+    expect(service.isSignedIn()).toBe(true);
   });
 
   it('posts verification and resend requests to the email verification endpoints', () => {
     service.verifyEmailCode('123456').subscribe();
     httpTesting
       .expectOne(`${apiConfig.authUrl}/email-verification/verify`)
-      .flush({ token: 'verified-token', emailVerified: true });
+      .flush({ emailVerified: true });
 
     service.resendEmailVerification().subscribe();
     httpTesting
@@ -89,9 +86,9 @@ describe('AuthService', () => {
       .flush({ emailVerified: false });
   });
 
-  it('completes sign-in verification and stores the returned token', () => {
+  it('completes sign-in verification and activates the session', () => {
     service.completeEmailVerificationSignIn('challenge-token', '123456').subscribe((response) => {
-      expect(response.token).toBe('session-token');
+      expect(response.emailVerified).toBe(true);
     });
 
     const request = httpTesting.expectOne(
@@ -101,26 +98,20 @@ describe('AuthService', () => {
       verificationChallenge: 'challenge-token',
       code: '123456',
     });
-    request.flush({ token: 'session-token', emailVerified: true });
+    request.flush({ emailVerified: true });
 
-    expect(service.token()).toBe('session-token');
+    expect(service.isSignedIn()).toBe(true);
   });
 
   it('gets current account details with email verification state', () => {
-    localStorage.setItem('honest-car.access-token', 'account-token');
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    });
-    service = TestBed.inject(AuthService);
-    httpTesting = TestBed.inject(HttpTestingController);
-
     service.getCurrentAccount().subscribe((account) => {
       expect(account.emailVerified).toBe(false);
       expect(service.isEmailVerified()).toBe(false);
     });
 
-    httpTesting.expectOne(`${apiConfig.accountUrl}/me`).flush({
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
+    expect(accountRequest.request.withCredentials).toBe(true);
+    accountRequest.flush({
       userId: 1,
       email: 'pat@example.com',
       firstName: 'Pat',
@@ -131,11 +122,13 @@ describe('AuthService', () => {
       createdAt: '2026-05-07T17:47:00Z',
       updatedAt: '2026-05-07T17:47:00Z',
     });
+
+    expect(service.isSignedIn()).toBe(true);
   });
 
   it('clears the session when current account lookup returns unauthorized', () => {
     service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
-    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ token: 'login-token' });
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
 
     service.getCurrentAccount().subscribe({
       error: (error) => {
@@ -147,7 +140,32 @@ describe('AuthService', () => {
       .expectOne(`${apiConfig.accountUrl}/me`)
       .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
-    expect(service.token()).toBeNull();
+    expect(service.isSignedIn()).toBe(false);
+  });
+
+  it('restores the session from refresh when validating on page load', () => {
+    service.validateSession().subscribe((valid) => {
+      expect(valid).toBe(true);
+    });
+
+    const refreshRequest = httpTesting.expectOne(`${apiConfig.authUrl}/refresh`);
+    expect(refreshRequest.request.withCredentials).toBe(true);
+    refreshRequest.flush({ emailVerified: true });
+
+    const accountRequest = httpTesting.expectOne(`${apiConfig.accountUrl}/me`);
+    accountRequest.flush({
+      userId: 1,
+      email: 'pat@example.com',
+      firstName: 'Pat',
+      lastName: 'Driver',
+      userSms: null,
+      emailVerified: true,
+      emailVerifiedAt: '2026-01-02T03:04:00Z',
+      createdAt: '2026-05-07T17:47:00Z',
+      updatedAt: '2026-05-07T17:47:00Z',
+    });
+
+    expect(service.isSignedIn()).toBe(true);
   });
 
   it('maps invalid credential responses into a user-facing message', () => {

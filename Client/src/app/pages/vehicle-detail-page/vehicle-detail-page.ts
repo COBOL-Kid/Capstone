@@ -14,6 +14,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { EMPTY, filter, map } from 'rxjs';
 
+import { isSafeHttpUrl } from '../../core/http/safe-url';
 import { VehicleDetailResponse } from '../../core/vin/vin.models';
 import { VehiclePageData } from '../../core/vin/vehicle-page.models';
 import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
@@ -234,7 +235,7 @@ export class VehicleDetailPageComponent {
 
   protected openOwnersManual(): void {
     const url = this.vehicle()?.ownersManual;
-    if (!url) {
+    if (!isSafeHttpUrl(url)) {
       return;
     }
     const tab = window.open(url, '_blank');

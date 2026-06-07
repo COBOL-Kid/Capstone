@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.capstone.authentication.AuthCookies;
 import com.capstone.authentication.InvalidRefreshTokenException;
+import com.capstone.configuration.CookieSecurityProperties;
 import com.capstone.domain.AccountChangeRequiredException;
 import com.capstone.domain.DuplicateEmailException;
 import com.capstone.domain.EmailNotVerifiedException;
@@ -40,10 +42,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 class GlobalExceptionHandlerTest {
 
+  private GlobalExceptionHandler handler() {
+    return new GlobalExceptionHandler(new AuthCookies(new CookieSecurityProperties()));
+  }
+
   @Test
   @DisplayName("should return structured bad request response for validation errors")
   void shouldReturnStructuredBadRequestForValidationErrors() throws Exception {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
     AddVinRequest request = new AddVinRequest("too-short", -1, null);
     BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
     bindingResult.addError(new FieldError("request", "vin", "VIN must be 17 characters"));
@@ -60,7 +66,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnBadRequestForMessageConversionErrors() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleMalformedRequestBody(new HttpMessageConversionException("Bad JSON"));
@@ -71,7 +77,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnUnsupportedMediaTypeForMediaTypeErrors() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
     HttpMediaTypeNotSupportedException exception = mock(HttpMediaTypeNotSupportedException.class);
 
     when(exception.getMessage()).thenReturn("Unsupported media type");
@@ -84,17 +90,17 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnConflictForDuplicateEmail() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleConflictException(new DuplicateEmailException());
 
     assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-    assertEquals("Email is already registered", response.getBody());
+    assertEquals("Unable to complete registration", response.getBody());
   }
 
   @Test
   void shouldReturnConflictForAccountChangeRequired() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleConflictException(new AccountChangeRequiredException());
 
@@ -104,7 +110,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnUnauthorizedForInvalidAccountCredentials() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleInvalidAccountCredentialsException(new InvalidAccountCredentialsException());
@@ -115,7 +121,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnNotFoundForVinNotFound() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleNotFoundException(new VinNotFoundException());
 
@@ -125,7 +131,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnForbiddenForVinNotAssociated() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleForbiddenException(new VinNotAssociatedException());
 
@@ -135,7 +141,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnForbiddenForEmailNotVerified() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleForbiddenException(new EmailNotVerifiedException());
 
@@ -145,7 +151,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnNotFoundForMaintenanceItemNotFound() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleNotFoundException(new MaintenanceItemNotFoundException());
 
@@ -155,7 +161,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnNotFoundForRecallNotFound() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleNotFoundException(new RecallNotFoundException());
 
@@ -165,7 +171,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnNotFoundForPendingAccountChangeNotFound() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleNotFoundException(new PendingAccountChangeNotFoundException());
 
@@ -175,7 +181,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnBadRequestForInvalidEmailVerificationCode() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleEmailVerificationCodeException(new InvalidEmailVerificationCodeException());
@@ -186,7 +192,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnServiceUnavailableForEmailDeliveryFailure() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleEmailDeliveryException(new EmailDeliveryException("Mailjet API unavailable"));
@@ -198,20 +204,21 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldClearRefreshTokenCookieForInvalidRefreshToken() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleInvalidRefreshTokenException(new InvalidRefreshTokenException("expired"));
 
     assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-    String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
-    assertTrue(setCookie != null && setCookie.contains("refreshToken="));
-    assertTrue(setCookie.contains("Max-Age=0"));
+    String cookies = String.join(";", response.getHeaders().get(HttpHeaders.SET_COOKIE));
+    assertTrue(cookies.contains("refreshToken="));
+    assertTrue(cookies.contains("accessToken="));
+    assertTrue(cookies.contains("Max-Age=0"));
   }
 
   @Test
   void shouldReturnBadRequestForConstraintViolation() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
     @SuppressWarnings("unchecked")
     ConstraintViolation<AddVinRequest> violation = mock(ConstraintViolation.class);
     when(violation.getPropertyPath()).thenReturn(mock(jakarta.validation.Path.class));
@@ -228,7 +235,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnBadRequestForIllegalArgument() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleIllegalArgumentException(new IllegalArgumentException("bad input"));
@@ -239,7 +246,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnUnauthorizedForBadCredentials() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleInvalidAccountCredentialsException(new BadCredentialsException("bad"));
@@ -250,7 +257,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnBadRequestForTypeMismatch() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
     TypeMismatchException exception = mock(TypeMismatchException.class);
     when(exception.getMessage()).thenReturn("type mismatch");
 
@@ -262,7 +269,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnMethodNotAllowed() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response =
         handler.handleHttpRequestMethodNotSupportedException(
@@ -274,7 +281,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void shouldReturnGenericInternalServerErrorMessage() {
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    GlobalExceptionHandler handler = handler();
 
     var response = handler.handleException(new RuntimeException("Database unavailable"));
 

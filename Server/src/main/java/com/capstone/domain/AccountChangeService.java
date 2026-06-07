@@ -3,6 +3,7 @@ package com.capstone.domain;
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.AuthenticationResponse;
 import com.capstone.authentication.AuthenticationService;
+import com.capstone.authentication.PasswordPolicy;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.AccountChangeRequestRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
@@ -124,6 +125,7 @@ public class AccountChangeService {
             .findByUser(user)
             .orElseThrow(PendingAccountChangeNotFoundException::new);
 
+    enforceResendCooldown(pending);
     String plainCode = issueCode(pending);
     changeRequestRepository.save(pending);
     sendVerificationEmail(user, plainCode, pending.getChangeType());
@@ -171,12 +173,7 @@ public class AccountChangeService {
   }
 
   private void validateNewPassword(String newPassword) {
-    if (newPassword == null || newPassword.isBlank()) {
-      throw new IllegalArgumentException("New password is required");
-    }
-    if (newPassword.length() < 8 || newPassword.length() > 72) {
-      throw new IllegalArgumentException("New password must be between 8 and 72 characters");
-    }
+    PasswordPolicy.validate(newPassword);
   }
 
   private String validateNewSms(User user, String userSms) {
@@ -209,6 +206,8 @@ public class AccountChangeService {
     pending.setCodeHash(passwordEncoder.encode(plainCode));
     pending.setExpiresAt(
         Instant.now().plus(Duration.ofMinutes(properties.getCodeExpirationMinutes())));
+    pending.setCreatedAt(Instant.now());
+    pending.setFailedAttempts(0);
     return plainCode;
   }
 
@@ -218,7 +217,28 @@ public class AccountChangeService {
       throw new ExpiredEmailVerificationCodeException();
     }
     if (!passwordEncoder.matches(code, pending.getCodeHash())) {
-      throw new InvalidEmailVerificationCodeException();
+      handleFailedVerificationAttempt(pending);
+    }
+  }
+
+  private void handleFailedVerificationAttempt(AccountChangeRequest pending) {
+    int attempts = pending.getFailedAttempts() + 1;
+    pending.setFailedAttempts(attempts);
+    if (attempts >= properties.getMaxVerificationAttempts()) {
+      changeRequestRepository.delete(pending);
+      throw new TooManyRequestsException(
+          "Too many invalid verification attempts. Request a new code and try again.");
+    }
+    changeRequestRepository.save(pending);
+    throw new InvalidEmailVerificationCodeException();
+  }
+
+  private void enforceResendCooldown(AccountChangeRequest pending) {
+    Instant earliestResend =
+        pending.getCreatedAt().plusSeconds(properties.getResendCooldownSeconds());
+    if (Instant.now().isBefore(earliestResend)) {
+      throw new TooManyRequestsException(
+          "Please wait before requesting another verification code.");
     }
   }
 

@@ -14,10 +14,13 @@ public class AuthenticationController {
 
   private final AuthenticationService service;
   private final JwtProperties jwtProperties;
+  private final AuthCookies authCookies;
 
-  public AuthenticationController(AuthenticationService service, JwtProperties jwtProperties) {
+  public AuthenticationController(
+      AuthenticationService service, JwtProperties jwtProperties, AuthCookies authCookies) {
     this.service = service;
     this.jwtProperties = jwtProperties;
+    this.authCookies = authCookies;
   }
 
   @PostMapping("/register")
@@ -72,16 +75,17 @@ public class AuthenticationController {
     if (refreshToken != null && !refreshToken.isEmpty()) {
       service.logout(refreshToken);
     }
-    return ResponseEntity.ok().headers(RefreshTokenCookies.clearCookie()).build();
+    return ResponseEntity.ok().headers(authCookies.clearSessionCookies()).build();
   }
 
   private ResponseEntity<AuthenticationResponse> sessionResponse(AuthenticationResponse response) {
     if (response.hasRefreshToken()) {
+      long refreshMaxAge = Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds();
+      long accessMaxAge = Duration.ofMinutes(jwtProperties.getExpirationMinutes()).getSeconds();
       return ResponseEntity.ok()
           .headers(
-              RefreshTokenCookies.setCookie(
-                  response.getRefreshToken(),
-                  Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds()))
+              authCookies.setSessionCookies(
+                  response.getToken(), response.getRefreshToken(), accessMaxAge, refreshMaxAge))
           .body(response);
     }
     return ResponseEntity.ok().body(response);

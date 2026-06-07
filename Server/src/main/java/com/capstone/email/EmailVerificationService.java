@@ -1,12 +1,8 @@
-package com.capstone.authentication;
+package com.capstone.email;
 
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.EmailVerificationCodeRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
-import com.capstone.email.EmailContent;
-import com.capstone.email.VerificationEmailComposer;
-import com.capstone.integration.EmailDeliveryException;
-import com.capstone.integration.MailjetEmailClient;
 import com.capstone.models.EmailVerificationCode;
 import com.capstone.models.User;
 import java.nio.charset.StandardCharsets;

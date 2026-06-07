@@ -10,6 +10,7 @@ import com.capstone.configuration.JwtProperties;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
+import com.capstone.email.EmailVerificationService;
 import com.capstone.models.RefreshToken;
 import com.capstone.models.Role;
 import com.capstone.models.User;

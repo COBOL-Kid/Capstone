@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.UserDeletionService;
+import com.capstone.email.EmailVerificationService;
 import com.capstone.models.User;
 import java.time.Instant;
 import java.util.List;

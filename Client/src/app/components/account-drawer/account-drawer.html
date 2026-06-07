@@ -88,32 +88,23 @@
         </div>
       </dl>
 
-      <div aria-live="polite" class="account-drawer__status-region">
-        @if (emailChangeSuccessMessage(); as message) {
-          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
-        }
-        @if (smsChangeSuccessMessage(); as message) {
-          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
-        }
-        @if (passwordSuccessMessage(); as message) {
-          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
-        }
-      </div>
-
-      <div class="account-drawer__actions">
-        <button (click)="openChangeModal('EMAIL')" class="hc-btn hc-btn--secondary" type="button">
-          Change Email
-        </button>
-        <button (click)="openChangeModal('SMS')" class="hc-btn hc-btn--secondary" type="button">
-          Change SMS
-        </button>
-        <button
-          (click)="openChangeModal('PASSWORD')"
-          class="hc-btn hc-btn--secondary"
-          type="button"
-        >
-          Change Password
-        </button>
+      <div class="account-drawer__manage">
+        <p class="hc-label">Manage account</p>
+        <div class="account-drawer__actions">
+          <button (click)="openChangeModal('EMAIL')" class="hc-btn hc-btn--secondary" type="button">
+            Change Email
+          </button>
+          <button (click)="openChangeModal('SMS')" class="hc-btn hc-btn--secondary" type="button">
+            Change SMS
+          </button>
+          <button
+            (click)="openChangeModal('PASSWORD')"
+            class="hc-btn hc-btn--secondary"
+            type="button"
+          >
+            Change Password
+          </button>
+        </div>
       </div>
     } @else if (status() === 'unauthorized') {
       <p class="account-drawer__message" role="alert">

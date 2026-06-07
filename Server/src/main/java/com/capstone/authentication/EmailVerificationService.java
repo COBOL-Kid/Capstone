@@ -3,6 +3,8 @@ package com.capstone.authentication;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.EmailVerificationCodeRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.EmailContent;
+import com.capstone.email.VerificationEmailComposer;
 import com.capstone.integration.EmailDeliveryException;
 import com.capstone.integration.MailjetEmailClient;
 import com.capstone.models.EmailVerificationCode;
@@ -30,18 +32,21 @@ public class EmailVerificationService {
   private final PasswordEncoder passwordEncoder;
   private final EmailVerificationProperties properties;
   private final Optional<MailjetEmailClient> mailjetEmailClient;
+  private final VerificationEmailComposer verificationEmailComposer;
 
   public EmailVerificationService(
       EmailVerificationCodeRepositoryJPA verificationCodeRepository,
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
       EmailVerificationProperties properties,
-      Optional<MailjetEmailClient> mailjetEmailClient) {
+      Optional<MailjetEmailClient> mailjetEmailClient,
+      VerificationEmailComposer verificationEmailComposer) {
     this.verificationCodeRepository = verificationCodeRepository;
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.properties = properties;
     this.mailjetEmailClient = mailjetEmailClient;
+    this.verificationEmailComposer = verificationEmailComposer;
   }
 
   @Transactional
@@ -132,20 +137,10 @@ public class EmailVerificationService {
         mailjetEmailClient.orElseThrow(
             () -> new EmailDeliveryException("Email delivery is not configured"));
     String name = user.getFirstName() != null ? user.getFirstName() : user.getUserEmail();
+    EmailContent content =
+        verificationEmailComposer.compose(name, plainCode, properties.getCodeExpirationMinutes());
     client.sendEmail(
-        user.getUserEmail(),
-        name,
-        "Verify your Honest Car account",
-        "Your verification code is "
-            + plainCode
-            + ". It expires in "
-            + properties.getCodeExpirationMinutes()
-            + " minutes.",
-        "<p>Your verification code is <strong>"
-            + plainCode
-            + "</strong>. It expires in "
-            + properties.getCodeExpirationMinutes()
-            + " minutes.</p>");
+        user.getUserEmail(), name, content.subject(), content.textPart(), content.htmlPart());
   }
 
   private static String generateCode() {

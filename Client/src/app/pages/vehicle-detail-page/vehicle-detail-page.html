@@ -3,7 +3,20 @@
     <a class="vehicle-detail__back" routerLink="/home">← Back to vehicles</a>
 
     @if (isLoading()) {
-      <div class="vehicle-detail__status hc-state-message">Loading vehicle...</div>
+      <span class="hc-sr-only" role="status">Loading vehicle…</span>
+      <div aria-hidden="true" class="vehicle-detail__skeleton">
+        <div class="hc-skeleton vehicle-detail__skeleton-title"></div>
+        <div class="vehicle-detail__header">
+          <div class="hc-skeleton vehicle-detail__skeleton-image"></div>
+          <div class="vehicle-detail__details-column">
+            <div class="hc-skeleton vehicle-detail__skeleton-specs"></div>
+            <div class="hc-skeleton vehicle-detail__skeleton-btn"></div>
+            <div class="hc-skeleton vehicle-detail__skeleton-btn"></div>
+            <div class="hc-skeleton vehicle-detail__skeleton-toggle"></div>
+          </div>
+        </div>
+        <div class="hc-skeleton vehicle-detail__skeleton-section"></div>
+      </div>
     } @else if (error(); as message) {
       <div class="vehicle-detail__status vehicle-detail__status--error hc-state-message">
         {{ message }}
@@ -156,7 +169,7 @@
             </button>
           </span>
 
-          <div class="vehicle-detail__toggle" role="tablist">
+          <div [attr.data-active]="activeSection()" class="vehicle-detail__toggle" role="tablist">
             <button
               (click)="setActiveSection('maintenance')"
               [class.vehicle-detail__toggle-btn--active]="activeSection() === 'maintenance'"
@@ -189,7 +202,22 @@
             </summary>
             <div class="vehicle-detail__section-body">
               @if (upcomingIntervals().length === 0) {
-                <p class="vehicle-detail__empty">You're all caught up — no upcoming maintenance.</p>
+                <div class="hc-empty-state hc-empty-state--compact">
+                  <span class="hc-empty-state__icon" aria-hidden="true">
+                    <svg fill="none" height="22" viewBox="0 0 24 24" width="22">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
+                      <path
+                        d="m8.5 12 2.3 2.3 4.7-4.6"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                      />
+                    </svg>
+                  </span>
+                  <p class="hc-empty-state__title">All caught up</p>
+                  <p class="hc-empty-state__text">No upcoming maintenance is due right now.</p>
+                </div>
               } @else {
                 <label class="vehicle-detail__inspect-filter">
                   <input
@@ -288,7 +316,24 @@
             </summary>
             <div class="vehicle-detail__section-body">
               @if (completedMaintenance().length === 0) {
-                <p class="vehicle-detail__empty">No completed maintenance yet.</p>
+                <div class="hc-empty-state hc-empty-state--compact">
+                  <span class="hc-empty-state__icon" aria-hidden="true">
+                    <svg fill="none" height="22" viewBox="0 0 24 24" width="22">
+                      <path
+                        d="M12 7v5l3 2"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.7"
+                      />
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
+                    </svg>
+                  </span>
+                  <p class="hc-empty-state__title">Nothing logged yet</p>
+                  <p class="hc-empty-state__text">
+                    Completed maintenance you mark will appear here.
+                  </p>
+                </div>
               } @else {
                 <ul class="vehicle-detail__rows">
                   @for (item of completedMaintenance(); track item.completedMaintenanceId) {
@@ -327,7 +372,27 @@
             </summary>
             <div class="vehicle-detail__section-body">
               @if (uncompletedRecalls().length === 0) {
-                <p class="vehicle-detail__empty">No open recalls — this vehicle is in the clear.</p>
+                <div class="hc-empty-state hc-empty-state--compact">
+                  <span class="hc-empty-state__icon" aria-hidden="true">
+                    <svg fill="none" height="22" viewBox="0 0 24 24" width="22">
+                      <path
+                        d="M12 3.5 5 6.3v4.8c0 4.2 2.9 7.3 7 8.4 4.1-1.1 7-4.2 7-8.4V6.3L12 3.5Z"
+                        stroke="currentColor"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                      />
+                      <path
+                        d="m9.2 12 1.9 1.9 3.7-3.8"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.7"
+                      />
+                    </svg>
+                  </span>
+                  <p class="hc-empty-state__title">In the clear</p>
+                  <p class="hc-empty-state__text">No open recalls for this vehicle.</p>
+                </div>
               } @else {
                 <ul class="vehicle-detail__rows">
                   @for (item of uncompletedRecalls(); track item.recallId) {
@@ -362,7 +427,22 @@
             </summary>
             <div class="vehicle-detail__section-body">
               @if (completedRecalls().length === 0) {
-                <p class="vehicle-detail__empty">No completed recalls.</p>
+                <div class="hc-empty-state hc-empty-state--compact">
+                  <span class="hc-empty-state__icon" aria-hidden="true">
+                    <svg fill="none" height="22" viewBox="0 0 24 24" width="22">
+                      <path
+                        d="M12 7v5l3 2"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.7"
+                      />
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
+                    </svg>
+                  </span>
+                  <p class="hc-empty-state__title">Nothing logged yet</p>
+                  <p class="hc-empty-state__text">Recalls you resolve will appear here.</p>
+                </div>
               } @else {
                 <ul class="vehicle-detail__rows">
                   @for (item of completedRecalls(); track item.completedRecallId) {

@@ -1,8 +1,8 @@
 package com.capstone.controllers;
 
+import com.capstone.authentication.AuthCookies;
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.AuthenticationResponse;
-import com.capstone.authentication.RefreshTokenCookies;
 import com.capstone.configuration.JwtProperties;
 import com.capstone.domain.AccountChangeService;
 import com.capstone.domain.AccountChangeVerificationResult;
@@ -23,14 +23,17 @@ public class AccountController {
   private final AccountService accountService;
   private final AccountChangeService accountChangeService;
   private final JwtProperties jwtProperties;
+  private final AuthCookies authCookies;
 
   public AccountController(
       AccountService accountService,
       AccountChangeService accountChangeService,
-      JwtProperties jwtProperties) {
+      JwtProperties jwtProperties,
+      AuthCookies authCookies) {
     this.accountService = accountService;
     this.accountChangeService = accountChangeService;
     this.jwtProperties = jwtProperties;
+    this.authCookies = authCookies;
   }
 
   @GetMapping("/me")
@@ -84,11 +87,12 @@ public class AccountController {
     VerifyAccountChangeResponse body = toVerifyResponse(result);
     AuthenticationResponse session = result.session();
     if (session != null && session.hasRefreshToken()) {
+      long refreshMaxAge = Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds();
+      long accessMaxAge = Duration.ofMinutes(jwtProperties.getExpirationMinutes()).getSeconds();
       return ResponseEntity.ok()
           .headers(
-              RefreshTokenCookies.setCookie(
-                  session.getRefreshToken(),
-                  Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds()))
+              authCookies.setSessionCookies(
+                  session.getToken(), session.getRefreshToken(), accessMaxAge, refreshMaxAge))
           .body(body);
     }
     return ResponseEntity.ok(body);

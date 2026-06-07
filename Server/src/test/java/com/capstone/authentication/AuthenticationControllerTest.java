@@ -3,6 +3,7 @@ package com.capstone.authentication;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.capstone.configuration.CookieSecurityProperties;
 import com.capstone.configuration.JwtProperties;
 import com.capstone.models.Role;
 import org.junit.jupiter.api.Test;
@@ -11,30 +12,41 @@ import org.springframework.http.HttpStatus;
 
 class AuthenticationControllerTest {
 
+  private final AuthCookies authCookies =
+      new AuthCookies(
+          new CookieSecurityProperties() {
+            {
+              setSecure(true);
+            }
+          });
+
   @Test
-  void shouldSetRefreshCookieWhenSessionIncludesRefreshToken() {
+  void shouldSetSessionCookiesWhenSessionIncludesRefreshToken() {
     AuthenticationService service = mock(AuthenticationService.class);
     JwtProperties jwtProperties = mock(JwtProperties.class);
-    AuthenticationController controller = new AuthenticationController(service, jwtProperties);
+    AuthenticationController controller =
+        new AuthenticationController(service, jwtProperties, authCookies);
     AuthenticationResponse response =
         AuthenticationResponse.verifiedSession("jwt", "refresh-value");
 
     when(service.authenticate(any())).thenReturn(response);
     when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+    when(jwtProperties.getExpirationMinutes()).thenReturn(30L);
 
     var result = controller.authenticate(new AuthenticationRequest("driver@example.com", "secret"));
 
     assertEquals(HttpStatus.OK, result.getStatusCode());
-    assertNotNull(result.getHeaders().getFirst(HttpHeaders.SET_COOKIE));
-    assertTrue(result.getHeaders().getFirst(HttpHeaders.SET_COOKIE).contains("refreshToken"));
-    assertEquals("jwt", result.getBody().getToken());
+    String cookies = String.join(";", result.getHeaders().get(HttpHeaders.SET_COOKIE));
+    assertTrue(cookies.contains("refreshToken"));
+    assertTrue(cookies.contains("accessToken"));
+    assertEquals(Boolean.TRUE, result.getBody().getEmailVerified());
   }
 
   @Test
-  void shouldOmitRefreshCookieWhenVerificationIsRequired() {
+  void shouldOmitSessionCookiesWhenVerificationIsRequired() {
     AuthenticationService service = mock(AuthenticationService.class);
     AuthenticationController controller =
-        new AuthenticationController(service, mock(JwtProperties.class));
+        new AuthenticationController(service, mock(JwtProperties.class), authCookies);
     AuthenticationResponse response =
         AuthenticationResponse.verificationRequired("challenge-token");
 
@@ -51,7 +63,8 @@ class AuthenticationControllerTest {
   @Test
   void shouldRequireAuthenticationForResendAndVerifyEndpoints() {
     AuthenticationController controller =
-        new AuthenticationController(mock(AuthenticationService.class), mock(JwtProperties.class));
+        new AuthenticationController(
+            mock(AuthenticationService.class), mock(JwtProperties.class), authCookies);
 
     assertEquals(HttpStatus.UNAUTHORIZED, controller.resendEmailVerification(null).getStatusCode());
     assertEquals(
@@ -63,17 +76,19 @@ class AuthenticationControllerTest {
   void shouldDelegateAuthenticatedVerificationRequests() {
     AuthenticationService service = mock(AuthenticationService.class);
     JwtProperties jwtProperties = mock(JwtProperties.class);
-    AuthenticationController controller = new AuthenticationController(service, jwtProperties);
-    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    AuthenticationController controller =
+        new AuthenticationController(service, jwtProperties, authCookies);
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
     AuthenticationResponse response = AuthenticationResponse.verifiedSession("jwt", "refresh");
 
     when(service.verifyEmail(user, "123456")).thenReturn(response);
     when(jwtProperties.getRefreshExpirationDays()).thenReturn(7L);
+    when(jwtProperties.getExpirationMinutes()).thenReturn(30L);
 
     var result = controller.verifyEmail(user, new VerifyEmailRequest("123456"));
 
     verify(service).verifyEmail(user, "123456");
     assertEquals(HttpStatus.OK, result.getStatusCode());
-    assertEquals("jwt", result.getBody().getToken());
+    assertEquals(Boolean.TRUE, result.getBody().getEmailVerified());
   }
 }

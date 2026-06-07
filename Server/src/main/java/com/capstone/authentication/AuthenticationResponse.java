@@ -7,7 +7,7 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthenticationResponse {
 
-  private String token;
+  @JsonIgnore private String token;
 
   private Boolean emailVerified;
 

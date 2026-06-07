@@ -229,6 +229,9 @@ public class AuthenticationService {
     }
     User user = oldToken.getUser();
     user = repository.findById(user.getUserId()).orElseThrow();
+    if (user.getLockoutEnd() != null && user.getLockoutEnd().isAfter(LocalDateTime.now())) {
+      throw new LockedException("Account is locked");
+    }
     return issueSession(user);
   }
 

@@ -3,6 +3,7 @@ package com.capstone.email;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.EmailVerificationCodeRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.domain.TooManyRequestsException;
 import com.capstone.models.EmailVerificationCode;
 import com.capstone.models.User;
 import java.nio.charset.StandardCharsets;
@@ -61,6 +62,7 @@ public class EmailVerificationService {
 
   @Transactional
   public void resendCode(User user) {
+    enforceResendCooldown(user);
     String plainCode = issueCode(user, null);
     sendVerificationEmail(user, plainCode);
   }
@@ -98,6 +100,7 @@ public class EmailVerificationService {
         Instant.now().plus(Duration.ofMinutes(properties.getCodeExpirationMinutes())));
     verificationCode.setSignInChallengeHash(signInChallengeHash);
     verificationCode.setCreatedAt(Instant.now());
+    verificationCode.setFailedAttempts(0);
     verificationCodeRepository.save(verificationCode);
     return plainCode;
   }
@@ -116,10 +119,36 @@ public class EmailVerificationService {
     }
 
     if (!passwordEncoder.matches(code, verificationCode.getCodeHash())) {
-      throw new InvalidEmailVerificationCodeException();
+      handleFailedVerificationAttempt(verificationCode);
     }
 
     verificationCodeRepository.deleteByUser(user);
+  }
+
+  private void handleFailedVerificationAttempt(EmailVerificationCode verificationCode) {
+    int attempts = verificationCode.getFailedAttempts() + 1;
+    verificationCode.setFailedAttempts(attempts);
+    if (attempts >= properties.getMaxVerificationAttempts()) {
+      verificationCodeRepository.delete(verificationCode);
+      throw new TooManyRequestsException(
+          "Too many invalid verification attempts. Request a new code and try again.");
+    }
+    verificationCodeRepository.save(verificationCode);
+    throw new InvalidEmailVerificationCodeException();
+  }
+
+  private void enforceResendCooldown(User user) {
+    verificationCodeRepository
+        .findTopByUserOrderByCreatedAtDesc(user)
+        .ifPresent(
+            existing -> {
+              Instant earliestResend =
+                  existing.getCreatedAt().plusSeconds(properties.getResendCooldownSeconds());
+              if (Instant.now().isBefore(earliestResend)) {
+                throw new TooManyRequestsException(
+                    "Please wait before requesting another verification code.");
+              }
+            });
   }
 
   private void markVerified(User user) {

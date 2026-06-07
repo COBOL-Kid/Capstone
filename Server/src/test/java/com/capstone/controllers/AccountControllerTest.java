@@ -3,8 +3,10 @@ package com.capstone.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.capstone.authentication.AuthCookies;
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.AuthenticationResponse;
+import com.capstone.configuration.CookieSecurityProperties;
 import com.capstone.configuration.JwtProperties;
 import com.capstone.domain.AccountChangeService;
 import com.capstone.domain.AccountChangeVerificationResult;
@@ -137,11 +139,15 @@ class AccountControllerTest {
       AccountService accountService, AccountChangeService accountChangeService) {
     JwtProperties jwtProperties = new JwtProperties();
     jwtProperties.setRefreshExpirationDays(7);
-    return new AccountController(accountService, accountChangeService, jwtProperties);
+    return new AccountController(
+        accountService,
+        accountChangeService,
+        jwtProperties,
+        new AuthCookies(new CookieSecurityProperties()));
   }
 
   private AuthenticatedUser user() {
-    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
   }
 
   private AccountResponse account() {

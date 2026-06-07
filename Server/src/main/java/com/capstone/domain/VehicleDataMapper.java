@@ -54,7 +54,8 @@ public class VehicleDataMapper {
     vehicleType.setDriveType(clean(response.drive()));
     vehicleType.setTransmissionStyle(clean(response.transmission()));
     if (ownerManualResponse != null && ownerManualResponse.data() != null) {
-      vehicleType.setOwnersManual(clean(ownerManualResponse.data().path()));
+      vehicleType.setOwnersManual(
+          SafeUrl.sanitizeHttpUrl(clean(ownerManualResponse.data().path())));
     }
     return vehicleType;
   }

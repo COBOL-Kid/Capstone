@@ -37,6 +37,9 @@ public class AccountChangeRequest {
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
+  @Column(name = "failed_attempts", nullable = false)
+  private int failedAttempts;
+
   public AccountChangeRequest() {}
 
   public Long getId() {
@@ -109,5 +112,13 @@ public class AccountChangeRequest {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public int getFailedAttempts() {
+    return failedAttempts;
+  }
+
+  public void setFailedAttempts(int failedAttempts) {
+    this.failedAttempts = failedAttempts;
   }
 }

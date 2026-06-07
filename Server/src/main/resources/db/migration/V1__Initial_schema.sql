@@ -24,6 +24,7 @@ CREATE TABLE email_verification_code
     expires_at             DATETIME(6)  NOT NULL,
     sign_in_challenge_hash VARCHAR(100),
     created_at             DATETIME(6)  NOT NULL,
+    failed_attempts        INT          NOT NULL DEFAULT 0,
     CONSTRAINT fk_email_verification_code_user FOREIGN KEY (user_id) REFERENCES user_detail (user_id)
 );
 
@@ -38,6 +39,7 @@ CREATE TABLE account_change_request
     code_hash           VARCHAR(100) NOT NULL,
     expires_at          DATETIME(6)  NOT NULL,
     created_at          DATETIME(6)  NOT NULL,
+    failed_attempts     INT          NOT NULL DEFAULT 0,
     CONSTRAINT uk_account_change_request_user UNIQUE (user_id),
     CONSTRAINT fk_account_change_request_user FOREIGN KEY (user_id) REFERENCES user_detail (user_id)
 );

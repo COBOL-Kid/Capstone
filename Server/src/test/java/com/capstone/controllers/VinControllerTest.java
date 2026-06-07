@@ -320,7 +320,7 @@ class VinControllerTest {
   }
 
   private AuthenticatedUser user() {
-    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
   }
 
   private VehicleDetailResponse vehicleDetailResponse() {

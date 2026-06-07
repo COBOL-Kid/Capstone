@@ -129,8 +129,7 @@ describe('HomePageComponent', () => {
     fixture.componentInstance['openVerificationPanel']();
     fixture.detectChanges();
 
-    setInputValue(fixture.nativeElement, 'code', '123456');
-    fixture.componentInstance['submitVerificationCode']();
+    fixture.componentInstance['submitVerificationCode']('123456');
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

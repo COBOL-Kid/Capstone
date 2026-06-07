@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.capstone.authentication.AuthenticatedUser;
-import com.capstone.authentication.EmailVerificationService;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.Role;
 import com.capstone.models.User;
@@ -15,7 +14,6 @@ import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class AccountServiceTest {
@@ -44,16 +42,13 @@ class AccountServiceTest {
   }
 
   @Test
-  void shouldUpdateProfileWithTrimmedValues() {
+  void shouldUpdateProfileWithTrimmedNamesOnly() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
-    AccountService service = service(userRepository, emailVerificationService);
+    AccountService service = service(userRepository);
     User storedUser = storedUser();
-    UpdateAccountRequest request =
-        new UpdateAccountRequest(" Patricia ", " Driver-Smith ", " DRIVER@Example.COM ", "   ");
+    UpdateAccountRequest request = new UpdateAccountRequest(" Patricia ", " Driver-Smith ");
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(userRepository.findByUserEmail("driver@example.com")).thenReturn(Optional.of(storedUser));
     when(userRepository.save(storedUser)).thenReturn(storedUser);
 
     var response = service.updateProfile(authenticatedPrincipal(), request);
@@ -61,110 +56,21 @@ class AccountServiceTest {
     assertEquals("Patricia", storedUser.getFirstName());
     assertEquals("Driver-Smith", storedUser.getLastName());
     assertEquals("driver@example.com", storedUser.getUserEmail());
-    assertNull(storedUser.getUserSms());
+    assertEquals("+15551234567", storedUser.getUserSms());
     assertEquals("Patricia", response.firstName());
     assertEquals("driver@example.com", response.email());
     verify(userRepository).save(storedUser);
-    verifyNoInteractions(emailVerificationService);
   }
 
   @Test
-  void shouldResetVerificationAndSendCodeWhenEmailChanges() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
-    AccountService service = service(userRepository, emailVerificationService);
-    User storedUser = storedUser();
-    storedUser.setEmailVerified(true);
-    storedUser.setEmailVerifiedAt(Instant.parse("2026-01-02T03:04:00Z"));
-    UpdateAccountRequest request =
-        new UpdateAccountRequest("Pat", "Driver", " NEW.Driver@Example.COM ", null);
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(userRepository.findByUserEmail("new.driver@example.com")).thenReturn(Optional.empty());
-    when(userRepository.save(storedUser)).thenReturn(storedUser);
-
-    var response = service.updateProfile(authenticatedPrincipal(), request);
-
-    assertEquals("new.driver@example.com", storedUser.getUserEmail());
-    assertFalse(storedUser.isEmailVerified());
-    assertNull(storedUser.getEmailVerifiedAt());
-    assertFalse(response.emailVerified());
-    verify(emailVerificationService).sendRegistrationCode(storedUser);
-  }
-
-  @Test
-  void shouldUpdateProfileWithNormalizedNewEmailAndTrimmedPhone() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    AccountService service = service(userRepository);
-    User storedUser = storedUser();
-    UpdateAccountRequest request =
-        new UpdateAccountRequest("Pat", "Driver", " NEW.Driver@Example.COM ", " +1 555 222 3333 ");
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(userRepository.findByUserEmail("new.driver@example.com")).thenReturn(Optional.empty());
-    when(userRepository.save(storedUser)).thenReturn(storedUser);
-
-    var response = service.updateProfile(authenticatedPrincipal(), request);
-
-    assertEquals("new.driver@example.com", storedUser.getUserEmail());
-    assertEquals("+1 555 222 3333", storedUser.getUserSms());
-    assertEquals("new.driver@example.com", response.email());
-    assertEquals("+1 555 222 3333", response.userSms());
-  }
-
-  @Test
-  void shouldRejectProfileUpdateWhenEmailBelongsToDifferentUser() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    AccountService service = service(userRepository);
-    User storedUser = storedUser();
-    User otherUser = storedUser();
-    otherUser.setUserId(2L);
-    UpdateAccountRequest request =
-        new UpdateAccountRequest("Pat", "Driver", "taken@example.com", null);
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(userRepository.findByUserEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
+  void shouldRejectDirectPasswordChange() {
+    AccountService service = service(mock(UserRepositoryJPA.class));
 
     assertThrows(
-        DuplicateEmailException.class,
-        () -> service.updateProfile(authenticatedPrincipal(), request));
-    verify(userRepository, never()).save(any());
-  }
-
-  @Test
-  void shouldRejectProfileUpdateWhenEmailBecomesDuplicateDuringSave() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    AccountService service = service(userRepository);
-    User storedUser = storedUser();
-    UpdateAccountRequest request =
-        new UpdateAccountRequest("Pat", "Driver", "taken@example.com", null);
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(userRepository.findByUserEmail("taken@example.com")).thenReturn(Optional.empty());
-    when(userRepository.save(storedUser))
-        .thenThrow(new DataIntegrityViolationException("duplicate email"));
-
-    assertThrows(
-        DuplicateEmailException.class,
-        () -> service.updateProfile(authenticatedPrincipal(), request));
-  }
-
-  @Test
-  void shouldChangePasswordWhenCurrentPasswordMatches() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    AccountService service = service(userRepository, passwordEncoder);
-    User storedUser = storedUser();
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
-    when(passwordEncoder.matches("old-secret", "encoded-old")).thenReturn(true);
-    when(passwordEncoder.encode("new-secret")).thenReturn("encoded-new");
-
-    service.changePassword(
-        authenticatedPrincipal(), new ChangePasswordRequest("old-secret", "new-secret"));
-
-    assertEquals("encoded-new", storedUser.getUserPw());
-    verify(userRepository).save(storedUser);
+        AccountChangeRequiredException.class,
+        () ->
+            service.changePassword(
+                authenticatedPrincipal(), new ChangePasswordRequest("old-secret", "new-secret")));
   }
 
   @Test
@@ -203,22 +109,6 @@ class AccountServiceTest {
   }
 
   @Test
-  void shouldRejectPasswordChangeWhenCurrentPasswordDoesNotMatch() {
-    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
-    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    AccountService service = service(userRepository, passwordEncoder);
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser()));
-    when(passwordEncoder.matches("wrong", "encoded-old")).thenReturn(false);
-
-    assertThrows(
-        InvalidAccountCredentialsException.class,
-        () ->
-            service.changePassword(
-                authenticatedPrincipal(), new ChangePasswordRequest("wrong", "new-secret")));
-  }
-
-  @Test
   void shouldDelegateAccountDeletionToUserDeletionService() {
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
@@ -246,20 +136,10 @@ class AccountServiceTest {
   }
 
   private AccountService service(
-      UserRepositoryJPA userRepository, EmailVerificationService emailVerificationService) {
-    return new AccountService(
-        userRepository,
-        mock(PasswordEncoder.class),
-        mock(UserDeletionService.class),
-        emailVerificationService);
-  }
-
-  private AccountService service(
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
       UserDeletionService userDeletionService) {
-    return new AccountService(
-        userRepository, passwordEncoder, userDeletionService, mock(EmailVerificationService.class));
+    return new AccountService(userRepository, passwordEncoder, userDeletionService);
   }
 
   private AuthenticatedUser authenticatedPrincipal() {

@@ -11,10 +11,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, finalize, Subject, switchMap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthErrorMessage } from '../../core/auth/auth.models';
+import { EmailVerificationStepComponent } from '../../components/email-verification-step/email-verification-step';
 import { VinService } from '../../core/vin/vin.service';
 import {
   AddVinRequest,
@@ -30,19 +29,22 @@ import { DeleteVehicleModalComponent } from '../../components/delete-vehicle-mod
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [AddVehicleModalComponent, DeleteVehicleModalComponent, ReactiveFormsModule, RouterLink],
+  imports: [
+    AddVehicleModalComponent,
+    DeleteVehicleModalComponent,
+    EmailVerificationStepComponent,
+    RouterLink,
+  ],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePageComponent {
   private readonly vinService = inject(VinService);
-  private readonly authService = inject(AuthService);
+  protected readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly vehiclesStore = inject(UserVehiclesStore);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly fb = inject(NonNullableFormBuilder);
-
   private readonly vehiclesResource = rxResource({
     stream: () => this.vinService.getUserVehicles(),
     defaultValue: [] as UserVehicleResponse[],
@@ -63,9 +65,6 @@ export class HomePageComponent {
   protected readonly isVerifyingEmail = signal(false);
   protected readonly isResendingVerification = signal(false);
   protected readonly verificationError = signal<AuthErrorMessage | null>(null);
-  protected readonly verificationForm = this.fb.group({
-    code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
-  });
   protected readonly isEmailVerificationRequired = computed(
     () => this.authService.account()?.emailVerified === false,
   );
@@ -136,7 +135,6 @@ export class HomePageComponent {
   protected closeVerificationPanel(): void {
     this.isVerificationPanelOpen.set(false);
     this.verificationError.set(null);
-    this.verificationForm.reset();
   }
 
   protected resendVerificationEmail(): void {
@@ -157,20 +155,15 @@ export class HomePageComponent {
       });
   }
 
-  protected submitVerificationCode(): void {
+  protected submitVerificationCode(code: string): void {
     if (this.isVerifyingEmail()) {
-      return;
-    }
-
-    if (this.verificationForm.invalid) {
-      this.verificationForm.markAllAsTouched();
       return;
     }
 
     this.verificationError.set(null);
     this.isVerifyingEmail.set(true);
     this.authService
-      .verifyEmailCode(this.verificationForm.controls.code.value)
+      .verifyEmailCode(code)
       .pipe(
         switchMap(() => this.authService.getCurrentAccount({ forceRefresh: true })),
         finalize(() => this.isVerifyingEmail.set(false)),

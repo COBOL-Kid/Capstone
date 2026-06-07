@@ -43,8 +43,32 @@ export interface AccountDetails {
 export interface UpdateAccountRequest {
   firstName: string;
   lastName: string;
-  email: string;
-  userSms: string | null;
+}
+
+export type AccountChangeType = 'EMAIL' | 'PASSWORD' | 'SMS';
+
+export interface InitiateAccountChangeRequest {
+  changeType: AccountChangeType;
+  newEmail?: string | null;
+  currentPassword?: string | null;
+  newPassword?: string | null;
+  userSms?: string | null;
+}
+
+export interface AccountChangeInitiatedResponse {
+  changeType: AccountChangeType;
+  expiresInMinutes: number;
+}
+
+export interface PendingAccountChange {
+  changeType: AccountChangeType;
+  expiresInMinutes: number;
+}
+
+export interface VerifyAccountChangeResponse {
+  account: AccountDetails;
+  token?: string;
+  emailVerified?: boolean;
 }
 
 export interface ChangePasswordRequest {

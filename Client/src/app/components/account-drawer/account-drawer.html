@@ -45,6 +45,25 @@
         }}</a>
       </div>
 
+      @if (!accountDetails.emailVerified) {
+        <div class="hc-alert hc-alert--warning account-drawer__verification-warning" role="status">
+          <p>Verify your email to add vehicles.</p>
+          @if (registrationVerificationError(); as error) {
+            <p>{{ error.message }}</p>
+          }
+          <button
+            (click)="resendRegistrationVerification()"
+            [disabled]="isResendingRegistrationVerification()"
+            class="hc-btn hc-btn--secondary"
+            type="button"
+          >
+            {{
+              isResendingRegistrationVerification() ? 'Sending code…' : 'Resend verification code'
+            }}
+          </button>
+        </div>
+      }
+
       <button
         (click)="logout()"
         [disabled]="isLoggingOut()"
@@ -53,24 +72,6 @@
       >
         {{ isLoggingOut() ? 'Logging out…' : 'Log out' }}
       </button>
-
-      <div aria-live="polite" class="account-drawer__status-region">
-        @if (profileSuccessMessage(); as message) {
-          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
-        }
-        @if (profileServerError(); as error) {
-          <div class="hc-alert hc-alert--error" role="alert">
-            <p>{{ error.message }}</p>
-            @if (error.fieldMessages.length > 0) {
-              <ul>
-                @for (fieldMessage of error.fieldMessages; track fieldMessage) {
-                  <li>{{ fieldMessage }}</li>
-                }
-              </ul>
-            }
-          </div>
-        }
-      </div>
 
       <dl class="account-drawer__details">
         <div>
@@ -87,91 +88,33 @@
         </div>
       </dl>
 
-      @if (!isEditingProfile()) {
-        <button (click)="startProfileEdit()" class="hc-btn hc-btn--secondary" type="button">
-          Edit Contact Info
-        </button>
-      } @else {
-        <form
-          (ngSubmit)="submitProfile()"
-          [formGroup]="profileForm"
-          class="account-drawer__form hc-form"
-        >
-          <div class="hc-field hc-field--drawer">
-            <label for="account-email">Email address</label>
-            <input
-              autocomplete="email"
-              formControlName="email"
-              id="account-email"
-              maxlength="254"
-              type="email"
-            />
-            @if (
-              profileForm.controls.email.touched && profileForm.controls.email.hasError('required')
-            ) {
-              <p class="hc-alert--inline-error">Email is required.</p>
-            } @else if (
-              profileForm.controls.email.touched && profileForm.controls.email.hasError('email')
-            ) {
-              <p class="hc-alert--inline-error">Enter a valid email address.</p>
-            } @else if (
-              profileForm.controls.email.touched && profileForm.controls.email.hasError('maxlength')
-            ) {
-              <p class="hc-alert--inline-error">Email must be 254 characters or fewer.</p>
-            }
-          </div>
-          <div class="hc-field hc-field--drawer">
-            <label for="account-sms">SMS phone number</label>
-            <input
-              autocomplete="tel"
-              formControlName="userSms"
-              id="account-sms"
-              maxlength="20"
-              type="tel"
-            />
-            @if (
-              profileForm.controls.userSms.touched &&
-              profileForm.controls.userSms.hasError('maxlength')
-            ) {
-              <p class="hc-alert--inline-error">SMS number must be 20 characters or fewer.</p>
-            } @else if (
-              profileForm.controls.userSms.touched &&
-              profileForm.controls.userSms.hasError('pattern')
-            ) {
-              <p class="hc-alert--inline-error">
-                Use a phone number with digits and common phone characters.
-              </p>
-            }
-          </div>
-          <div class="account-drawer__form-actions">
-            <button
-              [disabled]="isSubmittingProfile()"
-              class="hc-btn hc-btn--primary-inverse"
-              type="submit"
-            >
-              {{ isSubmittingProfile() ? 'Saving…' : 'Save Changes' }}
-            </button>
-            <button
-              (click)="cancelProfileEdit()"
-              [disabled]="isSubmittingProfile()"
-              class="hc-btn hc-btn--secondary"
-              type="button"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      }
-
       <div aria-live="polite" class="account-drawer__status-region">
+        @if (emailChangeSuccessMessage(); as message) {
+          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
+        }
+        @if (smsChangeSuccessMessage(); as message) {
+          <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
+        }
         @if (passwordSuccessMessage(); as message) {
           <p class="hc-alert hc-alert--success" role="status">{{ message }}</p>
         }
       </div>
 
-      <button (click)="openPasswordModal()" class="hc-btn hc-btn--secondary" type="button">
-        Change Password
-      </button>
+      <div class="account-drawer__actions">
+        <button (click)="openChangeModal('EMAIL')" class="hc-btn hc-btn--secondary" type="button">
+          Change Email
+        </button>
+        <button (click)="openChangeModal('SMS')" class="hc-btn hc-btn--secondary" type="button">
+          Change SMS
+        </button>
+        <button
+          (click)="openChangeModal('PASSWORD')"
+          class="hc-btn hc-btn--secondary"
+          type="button"
+        >
+          Change Password
+        </button>
+      </div>
     } @else if (status() === 'unauthorized') {
       <p class="account-drawer__message" role="alert">
         Your session has expired. Sign in again to view your account details.
@@ -219,6 +162,30 @@
   />
 }
 
-@if (isPasswordModalOpen()) {
-  <app-change-password-modal (changed)="onPasswordChanged()" (close)="closePasswordModal()" />
+@if (activeChangeModal() === 'EMAIL' && account(); as accountDetails) {
+  <app-change-email-modal
+    (changed)="onEmailChanged()"
+    (close)="closeChangeModal()"
+    [currentEmail]="accountDetails.email"
+    [startOnVerifyStep]="resumeChangeOnVerifyStep()"
+  />
+}
+
+@if (activeChangeModal() === 'SMS' && account(); as accountDetails) {
+  <app-change-sms-modal
+    (changed)="onSmsChanged()"
+    (close)="closeChangeModal()"
+    [currentEmail]="accountDetails.email"
+    [currentSms]="accountDetails.userSms ?? ''"
+    [startOnVerifyStep]="resumeChangeOnVerifyStep()"
+  />
+}
+
+@if (activeChangeModal() === 'PASSWORD' && account(); as accountDetails) {
+  <app-change-password-modal
+    (changed)="onPasswordChanged()"
+    (close)="closeChangeModal()"
+    [currentEmail]="accountDetails.email"
+    [startOnVerifyStep]="resumeChangeOnVerifyStep()"
+  />
 }

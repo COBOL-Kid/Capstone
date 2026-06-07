@@ -63,37 +63,47 @@ class RequestValidationTest {
 
   @Test
   void shouldValidateAccountRequests() {
+    assertTrue(validator.validate(new UpdateAccountRequest("Pat", "Driver")).isEmpty());
+    assertTrue(validator.validate(new ChangePasswordRequest("old-secret", "new-secret")).isEmpty());
+    assertTrue(validator.validate(new DeleteAccountRequest("secret")).isEmpty());
     assertTrue(
         validator
             .validate(
-                new UpdateAccountRequest(
-                    "Pat", "Driver", "driver@example.com", "+1 (555) 123-4567"))
+                new InitiateAccountChangeRequest(
+                    com.capstone.models.AccountChangeType.EMAIL,
+                    "driver@example.com",
+                    null,
+                    null,
+                    null))
             .isEmpty());
     assertTrue(
         validator
-            .validate(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", ""))
+            .validate(
+                new InitiateAccountChangeRequest(
+                    com.capstone.models.AccountChangeType.SMS,
+                    null,
+                    null,
+                    null,
+                    "+1 (555) 123-4567"))
             .isEmpty());
-    assertTrue(
-        validator
-            .validate(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", null))
-            .isEmpty());
-    assertTrue(validator.validate(new ChangePasswordRequest("old-secret", "new-secret")).isEmpty());
-    assertTrue(validator.validate(new DeleteAccountRequest("secret")).isEmpty());
+    assertTrue(validator.validate(new VerifyAccountChangeRequest("123456")).isEmpty());
 
-    Set<String> updateMessages = messages(new UpdateAccountRequest("", "", "bad", "abc<script>"));
-    Set<String> noDigitsMessages =
-        messages(new UpdateAccountRequest("Pat", "Driver", "driver@example.com", "()-. "));
+    Set<String> updateMessages = messages(new UpdateAccountRequest("", ""));
     Set<String> passwordMessages = messages(new ChangePasswordRequest("", "short"));
     Set<String> deleteMessages = messages(new DeleteAccountRequest(""));
+    Set<String> smsMessages =
+        messages(
+            new InitiateAccountChangeRequest(
+                com.capstone.models.AccountChangeType.SMS, null, null, null, "()-. "));
+    Set<String> verifyMessages = messages(new VerifyAccountChangeRequest("12"));
 
     assertTrue(updateMessages.contains("First name is required"));
     assertTrue(updateMessages.contains("Last name is required"));
-    assertTrue(updateMessages.contains("Email must be valid"));
-    assertTrue(updateMessages.contains("SMS number contains invalid characters"));
-    assertTrue(noDigitsMessages.contains("SMS number contains invalid characters"));
     assertTrue(passwordMessages.contains("Current password is required"));
     assertTrue(passwordMessages.contains("New password must be between 8 and 72 characters"));
     assertTrue(deleteMessages.contains("Password is required"));
+    assertTrue(smsMessages.contains("SMS number contains invalid characters"));
+    assertTrue(verifyMessages.contains("Verification code must be 6 digits"));
   }
 
   @Test

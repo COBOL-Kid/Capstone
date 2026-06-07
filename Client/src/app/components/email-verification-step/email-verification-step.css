@@ -1,0 +1,15 @@
+.email-verification-step__email {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.email-verification-step__description {
+  margin: 0 0 1rem;
+}
+
+.email-verification-step__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}

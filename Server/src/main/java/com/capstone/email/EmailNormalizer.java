@@ -1,4 +1,4 @@
-package com.capstone.authentication;
+package com.capstone.email;
 
 import java.util.Locale;
 

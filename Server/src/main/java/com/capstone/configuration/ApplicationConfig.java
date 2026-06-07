@@ -1,7 +1,7 @@
 package com.capstone.configuration;
 
-import com.capstone.authentication.EmailNormalizer;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.EmailNormalizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

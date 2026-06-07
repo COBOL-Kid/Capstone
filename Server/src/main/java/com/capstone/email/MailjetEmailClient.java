@@ -1,4 +1,4 @@
-package com.capstone.integration;
+package com.capstone.email;
 
 import com.capstone.configuration.MailjetProperties;
 import com.mailjet.client.MailjetClient;

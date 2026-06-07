@@ -12,6 +12,7 @@ import com.capstone.email.EmailNormalizer;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
 import com.capstone.email.MailjetEmailClient;
+import com.capstone.logging.AuditLog;
 import com.capstone.models.AccountChangeRequest;
 import com.capstone.models.AccountChangeType;
 import com.capstone.models.User;
@@ -83,6 +84,13 @@ public class AccountChangeService {
     changeRequestRepository.save(pending);
     sendVerificationEmail(user, plainCode, request.changeType());
 
+    AuditLog.info(
+        "account_change_initiated",
+        "userId",
+        user.getUserId(),
+        "changeType",
+        request.changeType().name());
+
     return new AccountChangeInitiatedResponse(
         request.changeType(), properties.getCodeExpirationMinutes());
   }
@@ -113,6 +121,13 @@ public class AccountChangeService {
       throw new DuplicateEmailException();
     }
     changeRequestRepository.delete(pending);
+
+    AuditLog.info(
+        "account_change_verified",
+        "userId",
+        user.getUserId(),
+        "changeType",
+        pending.getChangeType().name());
 
     return new AccountChangeVerificationResult(toResponse(user), session);
   }

@@ -2,6 +2,7 @@ package com.capstone.integration;
 
 import com.capstone.domain.VehicleDatabasesPathNormalizer;
 import com.capstone.domain.VinNotFoundException;
+import com.capstone.logging.LogRedaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,7 +73,7 @@ public class VehicleDataProviderClient {
               headers(vehicleDatabasesApiKey, vehicleDatabasesApiKeyHeader),
               false,
               false,
-              maskVin(vin));
+              LogRedaction.maskVin(vin));
       return new RepairEstimatesVinProbeResult.Found(response);
     } catch (HttpStatusCodeException ex) {
       if (ex.getStatusCode().value() == HttpStatus.BAD_REQUEST.value()) {
@@ -260,7 +261,7 @@ public class VehicleDataProviderClient {
         headers(apiKey, apiKeyHeader),
         notFoundMeansInvalidVin,
         false,
-        maskVin(vin));
+        LogRedaction.maskVin(vin));
   }
 
   private <T> T executeGet(
@@ -358,13 +359,6 @@ public class VehicleDataProviderClient {
 
   private static long durationMs(long startNanos) {
     return (System.nanoTime() - startNanos) / 1_000_000L;
-  }
-
-  private static String maskVin(String vin) {
-    if (vin == null || vin.length() <= 4) {
-      return "****";
-    }
-    return "****" + vin.substring(vin.length() - 4);
   }
 
   private static String truncate(String body) {

@@ -8,20 +8,32 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, finalize, of, switchMap } from 'rxjs';
+import { catchError, finalize, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { AccountDetails, AuthErrorMessage, AuthModalMode } from '../../core/auth/auth.models';
+import {
+  AccountChangeType,
+  AccountDetails,
+  AuthErrorMessage,
+  AuthModalMode,
+} from '../../core/auth/auth.models';
 import { AuthModalComponent } from '../auth-modal/auth-modal';
+import { ChangeEmailModalComponent } from '../change-email-modal/change-email-modal';
 import { ChangePasswordModalComponent } from '../change-password-modal/change-password-modal';
+import { ChangeSmsModalComponent } from '../change-sms-modal/change-sms-modal';
 
 type AccountDrawerStatus = 'signed-out' | 'loading' | 'signed-in' | 'unauthorized' | 'error';
+type AccountChangeModal = AccountChangeType | null;
 
 @Component({
   selector: 'app-account-drawer',
-  imports: [AuthModalComponent, ChangePasswordModalComponent, ReactiveFormsModule],
+  imports: [
+    AuthModalComponent,
+    ChangeEmailModalComponent,
+    ChangePasswordModalComponent,
+    ChangeSmsModalComponent,
+  ],
   templateUrl: './account-drawer.html',
   styleUrl: './account-drawer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,19 +44,15 @@ export class AccountDrawerComponent {
   readonly status = signal<AccountDrawerStatus>('signed-out');
   readonly account = signal<AccountDetails | null>(null);
   readonly authModalMode = signal<AuthModalMode | null>(null);
-  readonly isPasswordModalOpen = signal(false);
-  readonly isEditingProfile = signal(false);
-  readonly isSubmittingProfile = signal(false);
+  readonly activeChangeModal = signal<AccountChangeModal>(null);
+  readonly resumeChangeOnVerifyStep = signal(false);
   readonly isLoggingOut = signal(false);
-  readonly profileSuccessMessage = signal<string | null>(null);
+  readonly emailChangeSuccessMessage = signal<string | null>(null);
+  readonly smsChangeSuccessMessage = signal<string | null>(null);
   readonly passwordSuccessMessage = signal<string | null>(null);
-  readonly profileServerError = signal<AuthErrorMessage | null>(null);
+  readonly registrationVerificationError = signal<AuthErrorMessage | null>(null);
+  readonly isResendingRegistrationVerification = signal(false);
   private readonly closeDelayMs = 240;
-  private readonly fb = inject(NonNullableFormBuilder);
-  readonly profileForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    userSms: ['', [Validators.maxLength(20), Validators.pattern(/^$|^(?=.*\d)[+0-9() .-]+$/)]],
-  });
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -62,7 +70,8 @@ export class AccountDrawerComponent {
       return;
     }
 
-    this.isPasswordModalOpen.set(false);
+    this.activeChangeModal.set(null);
+    this.resumeChangeOnVerifyStep.set(false);
     this.isClosing.set(true);
     this.closeTimer = window.setTimeout(() => {
       this.isOpen.set(false);
@@ -71,13 +80,25 @@ export class AccountDrawerComponent {
     }, this.closeDelayMs);
   }
 
-  openPasswordModal(): void {
-    this.passwordSuccessMessage.set(null);
-    this.isPasswordModalOpen.set(true);
+  openChangeModal(changeType: AccountChangeType): void {
+    this.clearChangeSuccessMessages();
+    this.resumeChangeOnVerifyStep.set(false);
+    this.activeChangeModal.set(changeType);
   }
 
-  closePasswordModal(): void {
-    this.isPasswordModalOpen.set(false);
+  closeChangeModal(): void {
+    this.activeChangeModal.set(null);
+    this.resumeChangeOnVerifyStep.set(false);
+  }
+
+  onEmailChanged(): void {
+    this.emailChangeSuccessMessage.set('Email updated.');
+    this.refreshAccountAfterChange();
+  }
+
+  onSmsChanged(): void {
+    this.smsChangeSuccessMessage.set('SMS number updated.');
+    this.refreshAccountAfterChange();
   }
 
   onPasswordChanged(): void {
@@ -107,82 +128,21 @@ export class AccountDrawerComponent {
       });
   }
 
-  startProfileEdit(): void {
-    const account = this.account();
-
-    if (!account) {
+  resendRegistrationVerification(): void {
+    if (this.isResendingRegistrationVerification()) {
       return;
     }
 
-    this.resetProfileForm(account);
-    this.profileServerError.set(null);
-    this.profileSuccessMessage.set(null);
-    this.isEditingProfile.set(true);
-  }
-
-  cancelProfileEdit(): void {
-    const account = this.account();
-
-    if (account) {
-      this.resetProfileForm(account);
-    }
-
-    this.profileServerError.set(null);
-    this.isEditingProfile.set(false);
-  }
-
-  submitProfile(): void {
-    const account = this.account();
-
-    if (!account || this.isSubmittingProfile()) {
-      return;
-    }
-
-    this.profileServerError.set(null);
-    this.profileSuccessMessage.set(null);
-
-    const rawValue = this.profileForm.getRawValue();
-    const requestedEmail = rawValue.email.trim();
-    const requestedSms = rawValue.userSms.trim();
-    this.profileForm.patchValue(
-      { email: requestedEmail, userSms: requestedSms },
-      { emitEvent: false },
-    );
-
-    if (this.profileForm.invalid) {
-      this.profileForm.markAllAsTouched();
-
-      return;
-    }
-
-    const emailChanged = requestedEmail.toLowerCase() !== account.email.toLowerCase();
-    this.isSubmittingProfile.set(true);
-
+    this.registrationVerificationError.set(null);
+    this.isResendingRegistrationVerification.set(true);
     this.authService
-      .updateCurrentAccount({
-        firstName: account.firstName,
-        lastName: account.lastName,
-        email: requestedEmail,
-        userSms: requestedSms || null,
-      })
+      .resendEmailVerification()
       .pipe(
-        switchMap((updatedAccount) => {
-          this.account.set(updatedAccount);
-          this.resetProfileForm(updatedAccount);
-
-          return emailChanged
-            ? this.authService.refresh().pipe(catchError(() => of(null)))
-            : of(null);
-        }),
-        finalize(() => this.isSubmittingProfile.set(false)),
+        finalize(() => this.isResendingRegistrationVerification.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => {
-          this.profileSuccessMessage.set('Account details updated.');
-          this.isEditingProfile.set(false);
-        },
-        error: (error: AuthErrorMessage) => this.profileServerError.set(error),
+        error: (error: AuthErrorMessage) => this.registrationVerificationError.set(error),
       });
   }
 
@@ -213,7 +173,7 @@ export class AccountDrawerComponent {
 
   @HostListener('document:keydown.escape')
   closeOnEscape(): void {
-    if (!this.isOpen() || this.isPasswordModalOpen() || this.authModalMode()) {
+    if (!this.isOpen() || this.activeChangeModal() || this.authModalMode()) {
       return;
     }
 
@@ -223,13 +183,8 @@ export class AccountDrawerComponent {
   private loadAccountDetails(forceRefresh = false): void {
     const cachedAccount = forceRefresh ? null : this.authService.account();
     if (cachedAccount) {
-      this.account.set(cachedAccount);
-      this.resetProfileForm(cachedAccount);
-      this.isEditingProfile.set(false);
-      this.profileServerError.set(null);
-      this.profileSuccessMessage.set(null);
-      this.passwordSuccessMessage.set(null);
-      this.status.set('signed-in');
+      this.setSignedInAccount(cachedAccount);
+      this.checkPendingAccountChange();
       return;
     }
 
@@ -248,13 +203,8 @@ export class AccountDrawerComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (account) => {
-          this.account.set(account);
-          this.resetProfileForm(account);
-          this.isEditingProfile.set(false);
-          this.profileServerError.set(null);
-          this.profileSuccessMessage.set(null);
-          this.passwordSuccessMessage.set(null);
-          this.status.set('signed-in');
+          this.setSignedInAccount(account);
+          this.checkPendingAccountChange();
         },
         error: (error: unknown) => {
           this.account.set(null);
@@ -277,6 +227,46 @@ export class AccountDrawerComponent {
       });
   }
 
+  private checkPendingAccountChange(): void {
+    this.authService
+      .getPendingAccountChange()
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((pending) => {
+        if (!pending || this.activeChangeModal()) {
+          return;
+        }
+
+        this.resumeChangeOnVerifyStep.set(true);
+        this.activeChangeModal.set(pending.changeType);
+      });
+  }
+
+  private refreshAccountAfterChange(): void {
+    this.authService
+      .getCurrentAccount({ forceRefresh: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (account) => this.account.set(account),
+        error: () => undefined,
+      });
+  }
+
+  private setSignedInAccount(account: AccountDetails): void {
+    this.account.set(account);
+    this.registrationVerificationError.set(null);
+    this.clearChangeSuccessMessages();
+    this.status.set('signed-in');
+  }
+
+  private clearChangeSuccessMessages(): void {
+    this.emailChangeSuccessMessage.set(null);
+    this.smsChangeSuccessMessage.set(null);
+    this.passwordSuccessMessage.set(null);
+  }
+
   private clearCloseTimer(): void {
     if (this.closeTimer === null) {
       return;
@@ -286,19 +276,11 @@ export class AccountDrawerComponent {
     this.closeTimer = null;
   }
 
-  private resetProfileForm(account: AccountDetails): void {
-    this.profileForm.reset({
-      email: account.email,
-      userSms: account.userSms ?? '',
-    });
-  }
-
   private resetSignedInState(): void {
-    this.isPasswordModalOpen.set(false);
-    this.isEditingProfile.set(false);
-    this.profileServerError.set(null);
-    this.passwordSuccessMessage.set(null);
-    this.profileSuccessMessage.set(null);
+    this.activeChangeModal.set(null);
+    this.resumeChangeOnVerifyStep.set(false);
+    this.clearChangeSuccessMessages();
+    this.registrationVerificationError.set(null);
     this.account.set(null);
   }
 }

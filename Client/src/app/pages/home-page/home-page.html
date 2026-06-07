@@ -11,59 +11,19 @@
             Enter verification code
           </button>
         } @else {
-          <form
-            (ngSubmit)="submitVerificationCode()"
-            [formGroup]="verificationForm"
+          <app-email-verification-step
+            (cancel)="closeVerificationPanel()"
+            (resend)="resendVerificationEmail()"
+            (verify)="submitVerificationCode($event)"
+            [description]="'We sent a 6-digit code to your inbox that expires in 5 minutes. Enter it below to verify your email.'"
+            [email]="authService.account()?.email ?? ''"
+            [error]="verificationError()"
+            [isResending]="isResendingVerification()"
+            [isSubmitting]="isVerifyingEmail()"
+            [showCancel]="true"
+            [submitLabel]="'Verify email'"
             class="home__verification-form"
-            novalidate
-          >
-            @if (verificationError(); as error) {
-              <div class="hc-alert hc-alert--error" role="alert">
-                <p>{{ error.message }}</p>
-              </div>
-            }
-            <label class="hc-field">
-              <span>Verification code</span>
-              <input
-                autocomplete="one-time-code"
-                formControlName="code"
-                inputmode="numeric"
-                maxlength="6"
-                pattern="[0-9]*"
-                type="text"
-              />
-              @if (
-                verificationForm.controls.code.touched &&
-                verificationForm.controls.code.hasError('required')
-              ) {
-                <small>Verification code is required.</small>
-              } @else if (
-                verificationForm.controls.code.touched && verificationForm.controls.code.invalid
-              ) {
-                <small>Enter the 6-digit code from your email.</small>
-              }
-            </label>
-            <div class="home__verification-actions">
-              <button [disabled]="isVerifyingEmail()" class="hc-btn hc-btn--primary" type="submit">
-                {{ isVerifyingEmail() ? 'Verifying...' : 'Verify email' }}
-              </button>
-              <button
-                (click)="resendVerificationEmail()"
-                [disabled]="isResendingVerification()"
-                class="hc-btn hc-btn--secondary"
-                type="button"
-              >
-                {{ isResendingVerification() ? 'Sending...' : 'Resend code' }}
-              </button>
-              <button
-                (click)="closeVerificationPanel()"
-                class="hc-dialog-switch-button"
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          />
         }
       </div>
     }

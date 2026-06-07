@@ -19,27 +19,25 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AuthErrorMessage } from '../../core/auth/auth.models';
 import { EmailVerificationStepComponent } from '../email-verification-step/email-verification-step';
 
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/;
-
-type ChangePasswordStep = 'details' | 'verify';
+type ChangeEmailStep = 'details' | 'verify';
 
 @Component({
-  selector: 'app-change-password-modal',
+  selector: 'app-change-email-modal',
   standalone: true,
   imports: [ReactiveFormsModule, EmailVerificationStepComponent],
-  templateUrl: './change-password-modal.html',
+  templateUrl: './change-email-modal.html',
   host: {
     class: 'hc-modal-host',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChangePasswordModalComponent implements AfterViewInit {
+export class ChangeEmailModalComponent implements AfterViewInit {
   readonly currentEmail = input.required<string>();
   readonly startOnVerifyStep = input(false);
   readonly close = output<void>();
   readonly changed = output<void>();
 
-  protected readonly step = signal<ChangePasswordStep>('details');
+  protected readonly step = signal<ChangeEmailStep>('details');
   protected readonly isSubmitting = signal(false);
   protected readonly isVerifying = signal(false);
   protected readonly isResending = signal(false);
@@ -49,17 +47,7 @@ export class ChangePasswordModalComponent implements AfterViewInit {
   private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly form = this.fb.group({
-    currentPassword: ['', [Validators.required]],
-    newPassword: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(8),
-        Validators.maxLength(72),
-        Validators.pattern(passwordPattern),
-      ],
-    ],
-    confirmPassword: ['', [Validators.required]],
+    newEmail: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
   });
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -76,11 +64,6 @@ export class ChangePasswordModalComponent implements AfterViewInit {
     this.close.emit();
   }
 
-  protected passwordConfirmationMatches(): boolean {
-    const value = this.form.getRawValue();
-    return value.newPassword === value.confirmPassword;
-  }
-
   protected submitDetails(): void {
     if (this.isSubmitting()) {
       return;
@@ -88,20 +71,17 @@ export class ChangePasswordModalComponent implements AfterViewInit {
 
     this.serverError.set(null);
 
-    if (this.form.invalid || !this.passwordConfirmationMatches()) {
+    const newEmail = this.form.controls.newEmail.value.trim();
+    this.form.patchValue({ newEmail }, { emitEvent: false });
+
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const value = this.form.getRawValue();
     this.isSubmitting.set(true);
-
     this.authService
-      .initiateAccountChange({
-        changeType: 'PASSWORD',
-        currentPassword: value.currentPassword,
-        newPassword: value.newPassword,
-      })
+      .initiateAccountChange({ changeType: 'EMAIL', newEmail })
       .pipe(
         finalize(() => this.isSubmitting.set(false)),
         takeUntilDestroyed(this.destroyRef),

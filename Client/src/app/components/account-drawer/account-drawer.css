@@ -24,11 +24,11 @@
 .account-drawer--open {
   transform: translateX(0);
   visibility: visible;
-  animation: account-drawer-enter 240ms ease-out;
+  animation: account-drawer-enter 240ms var(--ease-standard);
 }
 
 .account-drawer--closing {
-  animation: account-drawer-exit 240ms ease-in forwards;
+  animation: account-drawer-exit 240ms var(--ease-standard) forwards;
 }
 
 @keyframes account-drawer-enter {
@@ -92,9 +92,19 @@
 
 .account-drawer__profile {
   border: 1px solid var(--color-blue-800);
-  border-radius: 0.85rem;
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
   padding: var(--hc-drawer-profile-padding);
   background: var(--color-accent-tint);
+}
+
+.account-drawer__manage {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.account-drawer__manage .hc-label {
+  margin: 0;
 }
 
 .account-drawer__name {
@@ -148,11 +158,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-}
-
-.account-drawer__status-region {
-  display: grid;
-  gap: 0.45rem;
 }
 
 .account-drawer__verification-warning {

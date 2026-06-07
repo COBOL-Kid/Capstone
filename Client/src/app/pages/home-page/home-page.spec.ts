@@ -90,7 +90,7 @@ describe('HomePageComponent', () => {
   it('shows a verification banner and disables add controls for unverified users', () => {
     const { fixture } = createFixture(undefined, false);
 
-    expect(fixture.nativeElement.textContent).toContain('Verify your email before adding vehicles');
+    expect(fixture.nativeElement.textContent).toContain('Verify your email');
     const addButton = fixture.nativeElement.querySelector('.home__add-button') as HTMLButtonElement;
     const emptyAddButton = fixture.nativeElement.querySelector(
       '.home__empty .hc-btn',
@@ -104,9 +104,7 @@ describe('HomePageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).not.toContain(
-      'Verify your email before adding vehicles',
-    );
+    expect(fixture.nativeElement.textContent).not.toContain('Verify your email');
     const emptyAddButton = fixture.nativeElement.querySelector(
       '.home__empty .hc-btn',
     ) as HTMLButtonElement;

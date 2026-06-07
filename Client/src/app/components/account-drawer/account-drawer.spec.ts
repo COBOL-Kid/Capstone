@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 
 import { AccountDrawerComponent } from './account-drawer';
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/toast/toast.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal';
 
 const accountDetails = {
@@ -75,14 +76,20 @@ describe('AccountDrawerComponent', () => {
   let fixture: ComponentFixture<AccountDrawerComponent>;
   let component: AccountDrawerComponent;
   let authService: ReturnType<typeof createAuthServiceStub>;
+  let toastService: { success: ReturnType<typeof vi.fn> };
   let router: Router;
 
   beforeEach(async () => {
     authService = createAuthServiceStub();
+    toastService = { success: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [AccountDrawerComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: authService }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authService },
+        { provide: ToastService, useValue: toastService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AccountDrawerComponent);
@@ -186,7 +193,7 @@ describe('AccountDrawerComponent', () => {
     fixture.detectChanges();
 
     expect(authService.verifyAccountChange).toHaveBeenCalledWith('123456');
-    expect(fixture.nativeElement.textContent).toContain('Password updated.');
+    expect(toastService.success).toHaveBeenCalledWith('Password updated.');
   });
 
   it('resumes a pending password change on the verification step', () => {

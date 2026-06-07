@@ -22,7 +22,7 @@
   --color-accent: var(--color-blue-500);
   --color-accent-strong: var(--color-blue-700);
   --color-text-on-dark: #f5f9ff;
-  --color-text-muted: var(--color-blue-300);
+  --color-text-muted: #a6c6ec;
 
   /* Surface & border tokens */
   --color-surface-glass: rgba(7, 20, 43, 0.48);
@@ -45,6 +45,54 @@
   --color-alert-warning-border: rgba(255, 196, 102, 0.55);
   --color-alert-warning-bg: rgba(255, 196, 102, 0.12);
   --color-alert-warning-text: #ffe8b8;
+
+  /* Accent gradient (adds depth vs. a flat fill) */
+  --gradient-accent: linear-gradient(135deg, var(--color-blue-600) 0%, var(--color-blue-500) 100%);
+  --gradient-accent-strong: linear-gradient(
+    135deg,
+    var(--color-blue-700) 0%,
+    var(--color-blue-600) 100%
+  );
+
+  /* Elevation scale (soft, layered shadows tuned for the dark theme) */
+  --shadow-sm: 0 1px 2px rgba(7, 20, 43, 0.4);
+  --shadow-md: 0 4px 14px rgba(7, 20, 43, 0.45);
+  --shadow-lg: 0 12px 30px rgba(7, 20, 43, 0.5);
+  --shadow-xl: 0 24px 70px rgba(7, 20, 43, 0.62);
+  --shadow-accent: 0 8px 24px rgba(47, 111, 180, 0.45);
+  --shadow-accent-strong: 0 12px 30px rgba(28, 74, 133, 0.55);
+
+  /* Radius scale */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.8rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Spacing rhythm */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Motion tokens */
+  --dur-fast: 140ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+
+  /* Type scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.35rem;
+  --text-2xl: clamp(1.5rem, 3.5vw, 2rem);
+  --text-3xl: clamp(2rem, 5vw, 3rem);
 
   /* Layout tokens */
   --navbar-height: 4rem;
@@ -217,30 +265,36 @@ select {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 2px solid transparent;
   cursor: pointer;
   transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+    background-color var(--dur-base) var(--ease-standard),
+    color var(--dur-base) var(--ease-standard),
+    border-color var(--dur-base) var(--ease-standard),
+    transform var(--dur-base) var(--ease-standard),
+    box-shadow var(--dur-base) var(--ease-standard),
+    filter var(--dur-base) var(--ease-standard);
 }
 
 .hc-btn:hover {
   transform: translateY(-1px);
 }
 
+.hc-btn:active {
+  transform: translateY(0);
+}
+
 .hc-btn--primary {
+  background-image: var(--gradient-accent);
   background-color: var(--color-accent);
   color: var(--color-text-on-dark);
-  box-shadow: 0 8px 24px rgba(47, 111, 180, 0.45);
+  box-shadow: var(--shadow-accent);
 }
 
 .hc-btn--primary:hover {
-  background-color: var(--color-accent-strong);
-  box-shadow: 0 10px 28px rgba(28, 74, 133, 0.55);
+  background-image: var(--gradient-accent-strong);
+  box-shadow: var(--shadow-accent-strong);
 }
 
 .hc-btn--primary-inverse {
@@ -336,6 +390,17 @@ select {
 .hc-btn--dialog-submit:disabled {
   cursor: progress;
   opacity: 0.7;
+}
+
+.hc-btn--dialog-submit:disabled::before {
+  content: '';
+  width: 1.05em;
+  height: 1.05em;
+  margin-right: 0.5rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: hc-spin 0.7s linear infinite;
 }
 
 /* Forms */
@@ -527,6 +592,130 @@ select {
   color: var(--color-text-muted);
 }
 
+/* Visually hidden (screen-reader only) */
+.hc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Empty states */
+.hc-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: clamp(2rem, 6vw, 3.5rem) 1rem;
+  text-align: center;
+}
+
+.hc-empty-state--compact {
+  padding: 1.5rem 1rem;
+}
+
+.hc-empty-state--compact .hc-empty-state__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.hc-empty-state__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-accent-tint);
+  color: var(--color-blue-200);
+}
+
+.hc-empty-state__title {
+  margin: 0;
+  font-family: var(--font-heading), ui-monospace;
+  font-size: var(--text-lg);
+  color: var(--color-text-on-dark);
+}
+
+.hc-empty-state__text {
+  margin: 0;
+  max-width: 36ch;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* Skeleton loaders */
+.hc-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(168, 204, 239, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.hc-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(168, 204, 239, 0.14) 50%,
+    transparent 100%
+  );
+  animation: hc-shimmer 1.4s ease-in-out infinite;
+}
+
+.hc-skeleton--text {
+  height: 0.8rem;
+  border-radius: var(--radius-pill);
+}
+
+@keyframes hc-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Inline spinner (e.g. submit buttons) */
+.hc-spinner {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: hc-spin 0.7s linear infinite;
+}
+
+.hc-btn .hc-spinner {
+  margin-right: 0.5rem;
+}
+
+@keyframes hc-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-skeleton::after {
+    animation: none;
+  }
+
+  .hc-spinner,
+  .hc-btn--dialog-submit:disabled::before {
+    animation-duration: 1.4s;
+  }
+}
+
 /* Overlays */
 .hc-modal-host,
 .account-drawer {
@@ -595,7 +784,7 @@ select {
   inset: 0;
   background: var(--color-overlay-backdrop);
   backdrop-filter: blur(6px);
-  animation: hc-overlay-enter 220ms ease-out;
+  animation: hc-overlay-enter 220ms var(--ease-standard);
 }
 
 .hc-overlay-backdrop--light {
@@ -605,11 +794,11 @@ select {
 }
 
 .hc-modal-host--closing .hc-overlay-backdrop {
-  animation: hc-overlay-exit 220ms ease-in forwards;
+  animation: hc-overlay-exit 220ms var(--ease-standard) forwards;
 }
 
 .hc-overlay-backdrop--closing {
-  animation: hc-overlay-exit 220ms ease-in forwards;
+  animation: hc-overlay-exit 220ms var(--ease-standard) forwards;
 }
 
 .hc-dialog {
@@ -621,13 +810,13 @@ select {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--hc-dialog-border-radius);
   background: var(--color-surface);
-  box-shadow: 0 24px 80px rgba(7, 20, 43, 0.65);
+  box-shadow: var(--shadow-xl);
   color: var(--color-text-on-dark);
-  animation: hc-dialog-enter 240ms ease-out;
+  animation: hc-dialog-enter 240ms var(--ease-standard);
 }
 
 .hc-modal-host--closing .hc-dialog {
-  animation: hc-dialog-exit 240ms ease-in forwards;
+  animation: hc-dialog-exit 240ms var(--ease-standard) forwards;
 }
 
 .hc-dialog__close {

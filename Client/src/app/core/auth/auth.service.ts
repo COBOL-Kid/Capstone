@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 
 import {
   AccountChangeInitiatedResponse,
@@ -21,17 +21,15 @@ import { apiConfig } from '../api/api.config';
 import { toFieldErrorMessage } from '../http/http-error.util';
 import { UserVehiclesStore } from '../vin/user-vehicles.store';
 
-const authTokenStorageKey = 'honest-car.access-token';
-
 export interface GetCurrentAccountOptions {
   forceRefresh?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly token = signal<string | null>(this.readStoredToken());
+  readonly sessionActive = signal(false);
   readonly account = signal<AccountDetails | null>(null);
-  readonly isSignedIn = computed(() => this.token() !== null);
+  readonly isSignedIn = computed(() => this.sessionActive());
   readonly isEmailVerified = computed(() => this.account()?.emailVerified ?? null);
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = apiConfig.authUrl;
@@ -39,25 +37,17 @@ export class AuthService {
   private readonly vehiclesStore = inject(UserVehiclesStore);
 
   register(request: RegisterRequest): Observable<AuthenticationResponse> {
-    return this.http
-      .post<AuthenticationResponse>(`${this.apiBaseUrl}/register`, request, {
-        withCredentials: true,
-      })
-      .pipe(
-        map((response) => this.applyAuthResponse(response)),
-        catchError((error) => this.handleAuthError(error)),
-      );
+    return this.http.post<AuthenticationResponse>(`${this.apiBaseUrl}/register`, request).pipe(
+      map((response) => this.applyAuthResponse(response)),
+      catchError((error) => this.handleAuthError(error)),
+    );
   }
 
   login(request: AuthenticationRequest): Observable<AuthenticationResponse> {
-    return this.http
-      .post<AuthenticationResponse>(`${this.apiBaseUrl}/authenticate`, request, {
-        withCredentials: true,
-      })
-      .pipe(
-        map((response) => this.applyAuthResponse(response)),
-        catchError((error) => this.handleAuthError(error)),
-      );
+    return this.http.post<AuthenticationResponse>(`${this.apiBaseUrl}/authenticate`, request).pipe(
+      map((response) => this.applyAuthResponse(response)),
+      catchError((error) => this.handleAuthError(error)),
+    );
   }
 
   resendEmailVerification(): Observable<AuthenticationResponse> {
@@ -72,9 +62,7 @@ export class AuthService {
   verifyEmailCode(code: string): Observable<AuthenticationResponse> {
     const request: VerifyEmailRequest = { code };
     return this.http
-      .post<AuthenticationResponse>(`${this.apiBaseUrl}/email-verification/verify`, request, {
-        withCredentials: true,
-      })
+      .post<AuthenticationResponse>(`${this.apiBaseUrl}/email-verification/verify`, request)
       .pipe(
         map((response) => this.applyAuthResponse(response)),
         catchError((error) => this.handleAuthError(error)),
@@ -90,7 +78,6 @@ export class AuthService {
       .post<AuthenticationResponse>(
         `${this.apiBaseUrl}/email-verification/complete-sign-in`,
         request,
-        { withCredentials: true },
       )
       .pipe(
         map((response) => this.applyAuthResponse(response)),
@@ -99,16 +86,14 @@ export class AuthService {
   }
 
   refresh(): Observable<AuthenticationResponse> {
-    return this.http
-      .post<AuthenticationResponse>(`${this.apiBaseUrl}/refresh`, {}, { withCredentials: true })
-      .pipe(
-        map((response) => this.applyAuthResponse(response)),
-        catchError((error) => this.handleAuthError(error)),
-      );
+    return this.http.post<AuthenticationResponse>(`${this.apiBaseUrl}/refresh`, {}).pipe(
+      map((response) => this.applyAuthResponse(response)),
+      catchError((error) => this.handleAuthError(error)),
+    );
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>(`${this.apiBaseUrl}/logout`, {}, { withCredentials: true }).pipe(
+    return this.http.post<void>(`${this.apiBaseUrl}/logout`, {}).pipe(
       map((response) => {
         this.clearSession();
         return response;
@@ -118,25 +103,30 @@ export class AuthService {
   }
 
   clearSession(): void {
-    this.clearToken();
+    this.deactivateSession();
     this.vehiclesStore.reset();
   }
 
   validateSession(): Observable<boolean> {
-    if (!this.isSignedIn()) {
-      return of(false);
+    const validateAccount = (): Observable<boolean> =>
+      this.getCurrentAccount().pipe(
+        map(() => true),
+        catchError(() => {
+          this.clearSession();
+          return of(false);
+        }),
+      );
+
+    if (this.sessionActive()) {
+      if (this.account() !== null) {
+        return of(true);
+      }
+      return validateAccount();
     }
 
-    if (this.account() !== null) {
-      return of(true);
-    }
-
-    return this.getCurrentAccount().pipe(
-      map(() => true),
-      catchError(() => {
-        this.clearSession();
-        return of(false);
-      }),
+    return this.refresh().pipe(
+      switchMap(() => validateAccount()),
+      catchError(() => of(false)),
     );
   }
 
@@ -147,7 +137,10 @@ export class AuthService {
     }
 
     return this.http.get<AccountDetails>(`${this.accountApiBaseUrl}/me`).pipe(
-      tap((account) => this.account.set(account)),
+      tap((account) => {
+        this.account.set(account);
+        this.sessionActive.set(true);
+      }),
       catchError((error) => {
         if (error instanceof HttpErrorResponse && error.status === 401) {
           this.clearSession();
@@ -180,16 +173,12 @@ export class AuthService {
 
   verifyAccountChange(code: string): Observable<VerifyAccountChangeResponse> {
     return this.http
-      .post<VerifyAccountChangeResponse>(
-        `${this.accountApiBaseUrl}/change-requests/verify`,
-        { code },
-        { withCredentials: true },
-      )
+      .post<VerifyAccountChangeResponse>(`${this.accountApiBaseUrl}/change-requests/verify`, {
+        code,
+      })
       .pipe(
         tap((response) => {
-          if (response.token) {
-            this.storeToken(response.token);
-          }
+          this.activateSession();
           this.account.set(response.account);
         }),
         catchError((error) => this.handleAuthError(error)),
@@ -214,40 +203,21 @@ export class AuthService {
   }
 
   private applyAuthResponse(response: AuthenticationResponse): AuthenticationResponse {
-    if (response.token) {
-      this.storeToken(response.token);
+    if (response.verificationRequired) {
+      return response;
     }
+    this.activateSession();
+    this.account.set(null);
     return response;
   }
 
-  private storeToken(token: string): void {
-    this.account.set(null);
-    this.token.set(token);
-
-    try {
-      localStorage.setItem(authTokenStorageKey, token);
-    } catch {
-      // Token remains available in memory when browser storage is unavailable.
-    }
+  private activateSession(): void {
+    this.sessionActive.set(true);
   }
 
-  private clearToken(): void {
-    this.token.set(null);
+  private deactivateSession(): void {
+    this.sessionActive.set(false);
     this.account.set(null);
-
-    try {
-      localStorage.removeItem(authTokenStorageKey);
-    } catch {
-      // Nothing else to clear when browser storage is unavailable.
-    }
-  }
-
-  private readStoredToken(): string | null {
-    try {
-      return localStorage.getItem(authTokenStorageKey);
-    } catch {
-      return null;
-    }
   }
 
   private handleAuthError(error: unknown): Observable<never> {

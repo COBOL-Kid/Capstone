@@ -1,14 +1,18 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { vi } from 'vitest';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { LandingPageComponent } from './landing-page';
 
 describe('LandingPageComponent', () => {
-  function configureRoute(data: Record<string, string>) {
+  function configureRoute(
+    data: Record<string, string>,
+    options: { validateSessionResult?: boolean } = {},
+  ) {
     const routeData = new BehaviorSubject(data);
 
     TestBed.configureTestingModule({
@@ -24,6 +28,16 @@ describe('LandingPageComponent', () => {
             snapshot: { data },
           },
         },
+        ...(options.validateSessionResult === undefined
+          ? []
+          : [
+              {
+                provide: AuthService,
+                useValue: {
+                  validateSession: vi.fn().mockReturnValue(of(options.validateSessionResult)),
+                },
+              },
+            ]),
       ],
     });
 
@@ -56,7 +70,7 @@ describe('LandingPageComponent', () => {
 
   it('plays the close transition before navigating home', () => {
     vi.useFakeTimers();
-    const router = configureRoute({ authMode: 'sign-in' });
+    const router = configureRoute({ authMode: 'sign-in' }, { validateSessionResult: false });
 
     const fixture = TestBed.createComponent(LandingPageComponent);
     fixture.detectChanges();

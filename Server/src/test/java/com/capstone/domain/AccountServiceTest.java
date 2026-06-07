@@ -143,7 +143,7 @@ class AccountServiceTest {
   }
 
   private AuthenticatedUser authenticatedPrincipal() {
-    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
   }
 
   private User storedUser() {

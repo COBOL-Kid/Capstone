@@ -1,14 +1,18 @@
 package com.capstone.authentication;
 
+import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.Role;
+import com.capstone.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +29,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
   private final JwtService jwtService;
+  private final UserRepositoryJPA userRepository;
 
-  public JwtAuthenticationFilter(JwtService jwtService) {
+  public JwtAuthenticationFilter(JwtService jwtService, UserRepositoryJPA userRepository) {
     this.jwtService = jwtService;
+    this.userRepository = userRepository;
   }
 
   @Override
@@ -36,29 +42,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @Nonnull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
-    final String authHeader = request.getHeader("Authorization");
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    String jwtToken = extractAccessToken(request);
+    if (jwtToken == null || jwtToken.isBlank()) {
       filterChain.doFilter(request, response);
       return;
     }
-    String jwtToken = authHeader.substring(7);
     try {
       Claims claims = jwtService.parseClaims(jwtToken);
       String userEmail = claims.getSubject();
       if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         AuthenticatedUser userDetails = toAuthenticatedUser(claims);
-        if (jwtService.validateToken(claims, userDetails)) {
-          UsernamePasswordAuthenticationToken authToken =
-              new UsernamePasswordAuthenticationToken(
-                  userDetails, null, userDetails.getAuthorities());
-          authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-          SecurityContextHolder.getContext().setAuthentication(authToken);
+        if (!jwtService.validateToken(claims, userDetails)) {
+          filterChain.doFilter(request, response);
+          return;
         }
+        User user =
+            userRepository
+                .findById(userDetails.userId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        if (isLocked(user)) {
+          response.sendError(HttpServletResponse.SC_FORBIDDEN, "Account is locked");
+          return;
+        }
+        UsernamePasswordAuthenticationToken authToken =
+            new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
       }
     } catch (JwtException | UsernameNotFoundException | IllegalArgumentException ex) {
       log.debug("Rejecting request with invalid JWT: {}", ex.getMessage());
     }
     filterChain.doFilter(request, response);
+  }
+
+  private static boolean isLocked(User user) {
+    return user.getLockoutEnd() != null && user.getLockoutEnd().isAfter(LocalDateTime.now());
+  }
+
+  private static String extractAccessToken(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) {
+      return null;
+    }
+    for (Cookie cookie : cookies) {
+      if (AuthCookies.ACCESS_TOKEN_NAME.equals(cookie.getName())) {
+        return cookie.getValue();
+      }
+    }
+    return null;
   }
 
   private static AuthenticatedUser toAuthenticatedUser(Claims claims) {
@@ -71,6 +103,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throw new IllegalArgumentException("JWT is missing role claim");
     }
     Role role = Role.valueOf(roleName);
-    return new AuthenticatedUser(userId.longValue(), claims.getSubject(), role);
+    Boolean emailVerified = claims.get("emailVerified", Boolean.class);
+    return new AuthenticatedUser(
+        userId.longValue(), claims.getSubject(), role, Boolean.TRUE.equals(emailVerified));
   }
 }

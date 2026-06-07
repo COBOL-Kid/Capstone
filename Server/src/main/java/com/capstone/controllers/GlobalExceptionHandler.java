@@ -1,11 +1,12 @@
 package com.capstone.controllers;
 
+import com.capstone.authentication.AuthCookies;
 import com.capstone.authentication.InvalidRefreshTokenException;
-import com.capstone.authentication.RefreshTokenCookies;
 import com.capstone.domain.ConflictException;
 import com.capstone.domain.ForbiddenAccessException;
 import com.capstone.domain.InvalidAccountCredentialsException;
 import com.capstone.domain.ResourceNotFoundException;
+import com.capstone.domain.TooManyRequestsException;
 import com.capstone.email.EmailDeliveryException;
 import com.capstone.email.EmailVerificationCodeException;
 import jakarta.validation.ConstraintViolationException;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +30,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  private final AuthCookies authCookies;
+
+  public GlobalExceptionHandler(AuthCookies authCookies) {
+    this.authCookies = authCookies;
+  }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValidException(
@@ -114,12 +122,22 @@ public class GlobalExceptionHandler {
     return textResponse("Invalid account credentials", HttpStatus.UNAUTHORIZED);
   }
 
+  @ExceptionHandler(LockedException.class)
+  public ResponseEntity<String> handleLockedException(LockedException ex) {
+    return textResponse("Account is locked", HttpStatus.FORBIDDEN);
+  }
+
+  @ExceptionHandler(TooManyRequestsException.class)
+  public ResponseEntity<String> handleTooManyRequestsException(TooManyRequestsException ex) {
+    return textResponse(ex.getMessage(), HttpStatus.TOO_MANY_REQUESTS);
+  }
+
   @ExceptionHandler(InvalidRefreshTokenException.class)
   public ResponseEntity<String> handleInvalidRefreshTokenException(
       InvalidRefreshTokenException ex) {
     log.debug("Rejecting refresh: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        .headers(RefreshTokenCookies.clearCookie())
+        .headers(authCookies.clearSessionCookies())
         .build();
   }
 

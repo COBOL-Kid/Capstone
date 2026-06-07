@@ -109,13 +109,16 @@ class RecallControllerTest {
 
   private MockMvc mockMvc(RecallController controller) {
     return MockMvcBuilders.standaloneSetup(controller)
-        .setControllerAdvice(new GlobalExceptionHandler())
+        .setControllerAdvice(
+            new GlobalExceptionHandler(
+                new com.capstone.authentication.AuthCookies(
+                    new com.capstone.configuration.CookieSecurityProperties())))
         .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
         .build();
   }
 
   private AuthenticatedUser user() {
-    return new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    return new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
   }
 
   private CompletedRecallResponse completedRecall() {

@@ -63,10 +63,32 @@
   line-height: 1.55;
 }
 
-.about__note {
+.about__contact {
+  max-width: 60ch;
+  margin-top: 1rem;
+}
+
+.about__contact-title {
+  margin: 0 0 1rem;
+  font-size: var(--text-2xl);
+  color: var(--color-text-on-dark);
+}
+
+.about__contact-text {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
+  line-height: 1.6;
+}
+
+.about__contact-link {
+  color: var(--color-blue-200);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.about__contact-link:hover {
+  color: var(--color-blue-100);
 }
 
 @media (prefers-reduced-motion: reduce) {

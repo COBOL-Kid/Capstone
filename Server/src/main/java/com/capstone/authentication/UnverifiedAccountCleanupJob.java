@@ -3,6 +3,7 @@ package com.capstone.authentication;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.UserDeletionService;
+import com.capstone.email.EmailVerificationService;
 import com.capstone.models.User;
 import java.time.Duration;
 import java.time.Instant;

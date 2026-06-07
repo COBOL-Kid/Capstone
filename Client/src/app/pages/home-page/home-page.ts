@@ -23,6 +23,7 @@ import {
   VinErrorMessage,
 } from '../../core/vin/vin.models';
 import { UserVehiclesStore } from '../../core/vin/user-vehicles.store';
+import { ToastService } from '../../core/toast/toast.service';
 import { AddVehicleModalComponent } from '../../components/add-vehicle-modal/add-vehicle-modal';
 import { DeleteVehicleModalComponent } from '../../components/delete-vehicle-modal/delete-vehicle-modal';
 
@@ -44,6 +45,7 @@ export class HomePageComponent {
   protected readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly vehiclesStore = inject(UserVehiclesStore);
+  private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly vehiclesResource = rxResource({
     stream: () => this.vinService.getUserVehicles(),
@@ -54,6 +56,7 @@ export class HomePageComponent {
   private readonly addVehicleRequests = new Subject<AddVinRequest>();
 
   protected readonly vehicles = this.vehiclesStore.vehicles;
+  protected readonly skeletonPlaceholders = [0, 1, 2];
   protected readonly isAddModalOpen = signal(false);
   protected readonly isOnboardingVehicle = signal(false);
   protected readonly addVehicleError = signal<VinErrorMessage | null>(null);
@@ -208,6 +211,7 @@ export class HomePageComponent {
     this.isAddModalOpen.set(false);
     this.addVehicleError.set(null);
     this.trimSelectionContext.set(null);
+    this.toastService.success('Vehicle added to your garage.');
     void this.router.navigate(['/vehicles', response.vin]);
   }
 
@@ -224,5 +228,6 @@ export class HomePageComponent {
 
   protected onVehicleDeleted(vin: string): void {
     this.vehiclesStore.removeVehicle(vin);
+    this.toastService.success('Vehicle removed.');
   }
 }

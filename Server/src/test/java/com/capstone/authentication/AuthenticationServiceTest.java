@@ -247,6 +247,11 @@ class AuthenticationServiceTest {
             mock(AuthenticationManager.class),
             mock(JwtProperties.class),
             mock(EmailVerificationService.class));
+    User user = verifiedUser();
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setUser(user);
+    when(refreshTokenRepositoryJPA.findByToken("refresh-token"))
+        .thenReturn(Optional.of(refreshToken));
 
     service.logout("refresh-token");
 

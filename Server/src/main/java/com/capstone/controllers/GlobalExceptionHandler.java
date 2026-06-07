@@ -9,6 +9,7 @@ import com.capstone.domain.ResourceNotFoundException;
 import com.capstone.domain.TooManyRequestsException;
 import com.capstone.email.EmailDeliveryException;
 import com.capstone.email.EmailVerificationCodeException;
+import com.capstone.logging.RequestContextMdc;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
@@ -143,7 +144,11 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleException(Exception ex) {
-    log.error("Unhandled exception", ex);
+    log.error(
+        "Unhandled exception requestId={} exceptionType={}",
+        RequestContextMdc.requestId(),
+        ex.getClass().getName(),
+        ex);
     return textResponse(
         "Sometimes things just don't go as planned.", HttpStatus.INTERNAL_SERVER_ERROR);
   }

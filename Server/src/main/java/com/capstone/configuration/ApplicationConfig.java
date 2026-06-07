@@ -2,6 +2,7 @@ package com.capstone.configuration;
 
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.email.EmailNormalizer;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,5 +44,14 @@ public class ApplicationConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistration(
+      RequestLoggingFilter filter) {
+    FilterRegistrationBean<RequestLoggingFilter> registration =
+        new FilterRegistrationBean<>(filter);
+    registration.setEnabled(false);
+    return registration;
   }
 }

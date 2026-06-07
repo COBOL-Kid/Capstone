@@ -6,6 +6,8 @@ import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
 import com.capstone.email.EmailNormalizer;
 import com.capstone.email.EmailVerificationService;
+import com.capstone.logging.AuditLog;
+import com.capstone.logging.LogRedaction;
 import com.capstone.models.RefreshToken;
 import com.capstone.models.Role;
 import com.capstone.models.User;
@@ -15,8 +17,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthenticationService {
 
-  private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
   private static final int MAX_FAILED_ATTEMPTS = 5;
   private static final int LOCK_TIME_DURATION_MINUTES = 15;
 
@@ -84,7 +83,7 @@ public class AuthenticationService {
     String jwtToken = jwtService.generateToken(buildExtraClaims(user), user);
     RefreshToken refreshToken = createRefreshToken(user);
 
-    log.info("Audit - User registered successfully: {}", email);
+    AuditLog.info("user_registered", "userId", user.getUserId());
 
     return AuthenticationResponse.unverifiedSession(jwtToken, refreshToken.getToken());
   }
@@ -97,12 +96,15 @@ public class AuthenticationService {
             .findByUserEmail(email)
             .orElseThrow(
                 () -> {
-                  log.warn("Audit - Login failed, user not found: {}", email);
+                  AuditLog.warn(
+                      "login_failed_user_not_found",
+                      "emailDomain",
+                      LogRedaction.emailDomain(email));
                   return new UsernameNotFoundException("Invalid email or password");
                 });
 
     if (user.getLockoutEnd() != null && user.getLockoutEnd().isAfter(LocalDateTime.now())) {
-      log.warn("Audit - Login attempt on locked account: {}", email);
+      AuditLog.warn("login_attempt_locked_account", "userId", user.getUserId());
       throw new LockedException("Account is locked");
     }
 
@@ -111,14 +113,17 @@ public class AuthenticationService {
           new UsernamePasswordAuthenticationToken(email, request.getPassword()));
     } catch (BadCredentialsException ex) {
       user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-      log.warn(
-          "Audit - Login failed for user: {}. Attempt {}/{}",
-          email,
+      AuditLog.warn(
+          "login_failed",
+          "userId",
+          user.getUserId(),
+          "attempt",
           user.getFailedLoginAttempts(),
+          "maxAttempts",
           MAX_FAILED_ATTEMPTS);
       if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
         user.setLockoutEnd(LocalDateTime.now().plusMinutes(LOCK_TIME_DURATION_MINUTES));
-        log.warn("Audit - Account locked for user: {}", email);
+        AuditLog.warn("account_locked", "userId", user.getUserId());
       }
       repository.save(user);
       throw new BadCredentialsException("Invalid email or password", ex);
@@ -130,11 +135,11 @@ public class AuthenticationService {
 
     if (!user.isEmailVerified()) {
       String challenge = emailVerificationService.sendSignInCode(user);
-      log.info("Audit - Login requires email verification for user: {}", email);
+      AuditLog.info("login_requires_email_verification", "userId", user.getUserId());
       return AuthenticationResponse.verificationRequired(challenge);
     }
 
-    log.info("Audit - Login successful for user: {}", email);
+    AuditLog.info("login_success", "userId", user.getUserId());
     return issueSession(user);
   }
 
@@ -164,7 +169,7 @@ public class AuthenticationService {
       CompleteEmailVerificationRequest request) {
     User user =
         emailVerificationService.completeSignIn(request.verificationChallenge(), request.code());
-    log.info("Audit - Email verification sign-in completed for user: {}", user.getUserEmail());
+    AuditLog.info("email_verification_sign_in_completed", "userId", user.getUserId());
     return issueSession(user);
   }
 
@@ -211,6 +216,7 @@ public class AuthenticationService {
   @Transactional
   public RefreshToken verifyExpiration(RefreshToken token) {
     if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
+      AuditLog.warn("refresh_token_expired", "userId", token.getUser().getUserId());
       refreshTokenRepositoryJPA.delete(token);
       throw new InvalidRefreshTokenException("Refresh token was expired");
     }
@@ -222,14 +228,20 @@ public class AuthenticationService {
     RefreshToken oldToken =
         refreshTokenRepositoryJPA
             .findByToken(token)
-            .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not recognized"));
+            .orElseThrow(
+                () -> {
+                  AuditLog.warn("refresh_token_not_recognized");
+                  return new InvalidRefreshTokenException("Refresh token not recognized");
+                });
     verifyExpiration(oldToken);
     if (refreshTokenRepositoryJPA.deleteByIdReturning(oldToken.getId()) != 1) {
+      AuditLog.warn("refresh_token_already_consumed", "userId", oldToken.getUser().getUserId());
       throw new InvalidRefreshTokenException("Refresh token already consumed");
     }
     User user = oldToken.getUser();
     user = repository.findById(user.getUserId()).orElseThrow();
     if (user.getLockoutEnd() != null && user.getLockoutEnd().isAfter(LocalDateTime.now())) {
+      AuditLog.warn("refresh_attempt_locked_account", "userId", user.getUserId());
       throw new LockedException("Account is locked");
     }
     return issueSession(user);
@@ -237,7 +249,13 @@ public class AuthenticationService {
 
   @Transactional
   public void logout(String token) {
-    refreshTokenRepositoryJPA.deleteByToken(token);
+    refreshTokenRepositoryJPA
+        .findByToken(token)
+        .ifPresent(
+            refreshToken -> {
+              AuditLog.info("logout", "userId", refreshToken.getUser().getUserId());
+              refreshTokenRepositoryJPA.deleteByToken(token);
+            });
   }
 
   @Transactional

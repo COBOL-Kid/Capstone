@@ -14,6 +14,7 @@ import com.capstone.integration.VehiclePhotosResponse;
 import com.capstone.integration.VehicleRecallsResponse;
 import com.capstone.integration.VehicleWarrantyResponse;
 import com.capstone.integration.VinDecodeResponse;
+import com.capstone.logging.LogRedaction;
 import com.capstone.models.User;
 import com.capstone.models.UserVin;
 import com.capstone.models.VehicleType;
@@ -487,7 +488,7 @@ public class VehicleOnboardingService {
     log.info(
         "Vehicle data prefetch completed vin={} fallback={} durationMs={} peakConcurrentRequests={} "
             + "ownerManual={} repairEstimates={} repairCosts={} recalls={} warranty={} photos={}",
-        maskVin(normalizedVin),
+        LogRedaction.maskVin(normalizedVin),
         fallback,
         prefetchDurationMs,
         prefetchMetrics.maxInFlight(),
@@ -497,13 +498,6 @@ public class VehicleOnboardingService {
         supplemental.recalls() != null,
         supplemental.vehicleWarranty() != null,
         prefetch.photos() != null && !prefetch.photos().isEmpty());
-  }
-
-  private static String maskVin(String vin) {
-    if (vin == null || vin.length() <= 4) {
-      return "****";
-    }
-    return "****" + vin.substring(vin.length() - 4);
   }
 
   private <T> T await(Future<T> future) {

@@ -36,13 +36,17 @@ public class UnverifiedAccountCleanupJob {
 
   @Scheduled(cron = "0 */15 * * * *")
   public void cleanupUnverifiedAccounts() {
+    long startNanos = System.nanoTime();
     Instant cutoff =
         Instant.now().minus(Duration.ofHours(properties.getUnverifiedAccountRetentionHours()));
     List<User> staleUsers = userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(cutoff);
     for (User user : staleUsers) {
-      log.info("Deleting unverified account userId={}", user.getUserId());
+      log.debug("Deleting unverified account userId={}", user.getUserId());
       userDeletionService.deleteUserAndRelatedData(user);
     }
     emailVerificationService.deleteExpiredCodes();
+    long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+    log.info(
+        "cleanup_unverified_accounts deletedCount={} durationMs={}", staleUsers.size(), durationMs);
   }
 }

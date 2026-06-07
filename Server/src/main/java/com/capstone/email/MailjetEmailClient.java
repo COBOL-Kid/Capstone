@@ -1,6 +1,7 @@
 package com.capstone.email;
 
 import com.capstone.configuration.MailjetProperties;
+import com.capstone.logging.LogRedaction;
 import com.mailjet.client.MailjetClient;
 import com.mailjet.client.MailjetRequest;
 import com.mailjet.client.MailjetResponse;
@@ -58,7 +59,7 @@ public class MailjetEmailClient {
       MailjetResponse response = mailjetClient.post(request);
       return parseResponse(response, toEmail);
     } catch (MailjetException ex) {
-      log.error("Mailjet send failed for recipient={}", toEmail, ex);
+      log.error("Mailjet send failed recipientDomain={}", LogRedaction.emailDomain(toEmail), ex);
       throw new EmailDeliveryException("Failed to send email via Mailjet", ex);
     }
   }
@@ -67,7 +68,10 @@ public class MailjetEmailClient {
     int status = response.getStatus();
     if (status < HttpStatus.OK.value() || status >= HttpStatus.MULTIPLE_CHOICES.value()) {
       log.warn(
-          "Mailjet HTTP error status={} recipient={} data={}", status, toEmail, response.getData());
+          "Mailjet HTTP error status={} recipientDomain={} data={}",
+          status,
+          LogRedaction.emailDomain(toEmail),
+          response.getData());
       throw new EmailDeliveryException("Mailjet returned HTTP status " + status);
     }
 
@@ -80,9 +84,9 @@ public class MailjetEmailClient {
     String messageStatus = message.optString("Status", "");
     if (!SUCCESS_STATUS.equalsIgnoreCase(messageStatus)) {
       log.warn(
-          "Mailjet message not successful status={} recipient={} response={}",
+          "Mailjet message not successful status={} recipientDomain={} response={}",
           messageStatus,
-          toEmail,
+          LogRedaction.emailDomain(toEmail),
           response.getRawResponseContent());
       throw new EmailDeliveryException("Mailjet message status was " + messageStatus);
     }
@@ -90,8 +94,8 @@ public class MailjetEmailClient {
     List<EmailRecipientResult> recipients = parseRecipients(message);
     for (EmailRecipientResult recipient : recipients) {
       log.info(
-          "Mailjet send succeeded recipient={} messageId={}",
-          recipient.email(),
+          "Mailjet send succeeded recipientDomain={} messageId={}",
+          LogRedaction.emailDomain(recipient.email()),
           recipient.messageId());
     }
 

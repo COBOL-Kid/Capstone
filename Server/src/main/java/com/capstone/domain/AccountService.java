@@ -2,6 +2,7 @@ package com.capstone.domain;
 
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.logging.AuditLog;
 import com.capstone.models.User;
 import com.capstone.models.dto.AccountResponse;
 import com.capstone.models.dto.ChangePasswordRequest;
@@ -52,7 +53,9 @@ public class AccountService {
     if (!passwordEncoder.matches(request.password(), user.getUserPw())) {
       throw new InvalidAccountCredentialsException();
     }
+    Long userId = user.getUserId();
     userDeletionService.deleteUserAndRelatedData(user);
+    AuditLog.info("account_deleted", "userId", userId);
   }
 
   private User loadCurrentUser(AuthenticatedUser principal) {

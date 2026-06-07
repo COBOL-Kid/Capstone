@@ -1,5 +1,6 @@
 package com.capstone.authentication;
 
+import com.capstone.logging.AuditLog;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -49,6 +50,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     synchronized (windowState) {
       windowState.resetIfExpired(window);
       if (windowState.attempts() >= maxAttempts) {
+        AuditLog.warn("login_rate_limited", "clientIp", clientIp);
         response.sendError(429, "Too many login attempts. Please try again later.");
         return;
       }

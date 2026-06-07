@@ -25,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
+  private final RequestLoggingFilter requestLoggingFilter;
   private final LoginRateLimitFilter loginRateLimitFilter;
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final EmailVerifiedFilter emailVerifiedFilter;
@@ -35,11 +36,13 @@ public class SecurityConfig {
   private List<String> allowedOrigins;
 
   public SecurityConfig(
+      RequestLoggingFilter requestLoggingFilter,
       LoginRateLimitFilter loginRateLimitFilter,
       JwtAuthenticationFilter jwtAuthFilter,
       EmailVerifiedFilter emailVerifiedFilter,
       UserDetailsService userDetailsService,
       PasswordEncoder passwordEncoder) {
+    this.requestLoggingFilter = requestLoggingFilter;
     this.loginRateLimitFilter = loginRateLimitFilter;
     this.jwtAuthFilter = jwtAuthFilter;
     this.emailVerifiedFilter = emailVerifiedFilter;
@@ -93,6 +96,7 @@ public class SecurityConfig {
             sessionManagement ->
                 sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(requestLoggingFilter, LoginRateLimitFilter.class)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(emailVerifiedFilter, UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider);

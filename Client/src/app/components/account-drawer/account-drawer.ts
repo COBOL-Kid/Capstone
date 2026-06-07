@@ -18,6 +18,7 @@ import {
   AuthErrorMessage,
   AuthModalMode,
 } from '../../core/auth/auth.models';
+import { ToastService } from '../../core/toast/toast.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal';
 import { ChangeEmailModalComponent } from '../change-email-modal/change-email-modal';
 import { ChangePasswordModalComponent } from '../change-password-modal/change-password-modal';
@@ -47,14 +48,12 @@ export class AccountDrawerComponent {
   readonly activeChangeModal = signal<AccountChangeModal>(null);
   readonly resumeChangeOnVerifyStep = signal(false);
   readonly isLoggingOut = signal(false);
-  readonly emailChangeSuccessMessage = signal<string | null>(null);
-  readonly smsChangeSuccessMessage = signal<string | null>(null);
-  readonly passwordSuccessMessage = signal<string | null>(null);
   readonly registrationVerificationError = signal<AuthErrorMessage | null>(null);
   readonly isResendingRegistrationVerification = signal(false);
   private readonly closeDelayMs = 240;
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private closeTimer: ReturnType<typeof window.setTimeout> | null = null;
 
@@ -81,7 +80,6 @@ export class AccountDrawerComponent {
   }
 
   openChangeModal(changeType: AccountChangeType): void {
-    this.clearChangeSuccessMessages();
     this.resumeChangeOnVerifyStep.set(false);
     this.activeChangeModal.set(changeType);
   }
@@ -92,17 +90,17 @@ export class AccountDrawerComponent {
   }
 
   onEmailChanged(): void {
-    this.emailChangeSuccessMessage.set('Email updated.');
+    this.toastService.success('Email updated.');
     this.refreshAccountAfterChange();
   }
 
   onSmsChanged(): void {
-    this.smsChangeSuccessMessage.set('SMS number updated.');
+    this.toastService.success('SMS number updated.');
     this.refreshAccountAfterChange();
   }
 
   onPasswordChanged(): void {
-    this.passwordSuccessMessage.set('Password updated.');
+    this.toastService.success('Password updated.');
   }
 
   logout(): void {
@@ -257,14 +255,7 @@ export class AccountDrawerComponent {
   private setSignedInAccount(account: AccountDetails): void {
     this.account.set(account);
     this.registrationVerificationError.set(null);
-    this.clearChangeSuccessMessages();
     this.status.set('signed-in');
-  }
-
-  private clearChangeSuccessMessages(): void {
-    this.emailChangeSuccessMessage.set(null);
-    this.smsChangeSuccessMessage.set(null);
-    this.passwordSuccessMessage.set(null);
   }
 
   private clearCloseTimer(): void {
@@ -279,7 +270,6 @@ export class AccountDrawerComponent {
   private resetSignedInState(): void {
     this.activeChangeModal.set(null);
     this.resumeChangeOnVerifyStep.set(false);
-    this.clearChangeSuccessMessages();
     this.registrationVerificationError.set(null);
     this.account.set(null);
   }

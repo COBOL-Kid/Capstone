@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.EmailVerificationCodeRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.VerificationEmailComposer;
 import com.capstone.integration.MailjetEmailClient;
 import com.capstone.models.EmailVerificationCode;
 import com.capstone.models.User;
@@ -16,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class EmailVerificationServiceTest {
+
+  private final VerificationEmailComposer verificationEmailComposer =
+      new VerificationEmailComposer();
 
   @Test
   void shouldVerifyAuthenticatedUserWithValidCode() {
@@ -31,7 +35,8 @@ class EmailVerificationServiceTest {
             userRepository,
             passwordEncoder,
             properties,
-            Optional.of(mailjetEmailClient));
+            Optional.of(mailjetEmailClient),
+            verificationEmailComposer);
 
     User user = user();
     EmailVerificationCode stored = storedCode(user, "hash", Instant.now().plusSeconds(300), null);
@@ -58,7 +63,8 @@ class EmailVerificationServiceTest {
             userRepository,
             passwordEncoder,
             properties(),
-            Optional.of(mock(MailjetEmailClient.class)));
+            Optional.of(mock(MailjetEmailClient.class)),
+            verificationEmailComposer);
 
     User user = user();
     EmailVerificationCode stored = storedCode(user, "hash", Instant.now().minusSeconds(60), null);
@@ -83,7 +89,8 @@ class EmailVerificationServiceTest {
             userRepository,
             passwordEncoder,
             properties(),
-            Optional.of(mailjetEmailClient));
+            Optional.of(mailjetEmailClient),
+            verificationEmailComposer);
 
     User user = user();
     when(passwordEncoder.encode(anyString())).thenReturn("encoded-code");

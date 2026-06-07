@@ -18,6 +18,7 @@ import { VehicleDetailResponse } from '../../core/vin/vin.models';
 import { VehiclePageData } from '../../core/vin/vehicle-page.models';
 import { VehiclePageDataService } from '../../core/vin/vehicle-page.data';
 import { UserVehiclesStore } from '../../core/vin/user-vehicles.store';
+import { ToastService } from '../../core/toast/toast.service';
 import {
   CompletedMaintenanceResponse,
   LaborCostResponse,
@@ -51,7 +52,12 @@ type ActiveSection = 'maintenance' | 'recalls';
     VehiclePhotoModalComponent,
   ],
   templateUrl: './vehicle-detail-page.html',
-  styleUrl: './vehicle-detail-page.css',
+  styleUrls: [
+    './vehicle-detail-page.css',
+    './vehicle-detail-media.css',
+    './vehicle-detail-sections.css',
+    './vehicle-detail-maintenance.css',
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VehicleDetailPageComponent {
@@ -72,6 +78,7 @@ export class VehicleDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly vehiclePageData = inject(VehiclePageDataService);
   private readonly vehiclesStore = inject(UserVehiclesStore);
+  private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly routeVin = toSignal(
@@ -238,6 +245,7 @@ export class VehicleDetailPageComponent {
 
   protected onMileageUpdated(_detail: VehicleDetailResponse): void {
     this.closeMileageModal();
+    this.toastService.success('Mileage updated.');
     this.refreshPageData();
   }
 
@@ -257,6 +265,7 @@ export class VehicleDetailPageComponent {
     });
     this.vehiclesStore.updateSelectedPhoto(vin, selectedImageUrl);
     this.closePhotoModal();
+    this.toastService.success('Vehicle photo updated.');
     this.refreshPageData();
   }
 
@@ -329,10 +338,12 @@ export class VehicleDetailPageComponent {
   }
 
   protected onMaintenanceChanged(): void {
+    this.toastService.success('Maintenance record updated.');
     this.refreshPageData();
   }
 
   protected onRecallChanged(): void {
+    this.toastService.success('Recall record updated.');
     this.refreshPageData();
   }
 

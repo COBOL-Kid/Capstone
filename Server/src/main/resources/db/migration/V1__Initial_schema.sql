@@ -27,6 +27,21 @@ CREATE TABLE email_verification_code
     CONSTRAINT fk_email_verification_code_user FOREIGN KEY (user_id) REFERENCES user_detail (user_id)
 );
 
+CREATE TABLE account_change_request
+(
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id             BIGINT       NOT NULL,
+    change_type         VARCHAR(20)  NOT NULL CHECK (change_type IN ('EMAIL', 'PASSWORD', 'SMS')),
+    new_email           VARCHAR(254),
+    new_password_hash   VARCHAR(100),
+    new_user_sms        VARCHAR(20),
+    code_hash           VARCHAR(100) NOT NULL,
+    expires_at          DATETIME(6)  NOT NULL,
+    created_at          DATETIME(6)  NOT NULL,
+    CONSTRAINT uk_account_change_request_user UNIQUE (user_id),
+    CONSTRAINT fk_account_change_request_user FOREIGN KEY (user_id) REFERENCES user_detail (user_id)
+);
+
 CREATE INDEX idx_user_detail_unverified_created
     ON user_detail (email_verified, created_at);
 

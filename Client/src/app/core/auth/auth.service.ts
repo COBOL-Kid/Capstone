@@ -3,14 +3,18 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
 
 import {
+  AccountChangeInitiatedResponse,
   AccountDetails,
   AuthenticationRequest,
   AuthenticationResponse,
   AuthErrorMessage,
   ChangePasswordRequest,
   CompleteEmailVerificationRequest,
+  InitiateAccountChangeRequest,
+  PendingAccountChange,
   RegisterRequest,
   UpdateAccountRequest,
+  VerifyAccountChangeResponse,
   VerifyEmailRequest,
 } from './auth.models';
 import { apiConfig } from '../api/api.config';
@@ -166,6 +170,49 @@ export class AuthService {
       .pipe(catchError((error) => this.handleAuthError(error)));
   }
 
+  initiateAccountChange(
+    request: InitiateAccountChangeRequest,
+  ): Observable<AccountChangeInitiatedResponse> {
+    return this.http
+      .post<AccountChangeInitiatedResponse>(`${this.accountApiBaseUrl}/change-requests`, request)
+      .pipe(catchError((error) => this.handleAuthError(error)));
+  }
+
+  verifyAccountChange(code: string): Observable<VerifyAccountChangeResponse> {
+    return this.http
+      .post<VerifyAccountChangeResponse>(
+        `${this.accountApiBaseUrl}/change-requests/verify`,
+        { code },
+        { withCredentials: true },
+      )
+      .pipe(
+        tap((response) => {
+          if (response.token) {
+            this.storeToken(response.token);
+          }
+          this.account.set(response.account);
+        }),
+        catchError((error) => this.handleAuthError(error)),
+      );
+  }
+
+  resendAccountChangeCode(): Observable<AccountChangeInitiatedResponse> {
+    return this.http
+      .post<AccountChangeInitiatedResponse>(`${this.accountApiBaseUrl}/change-requests/resend`, {})
+      .pipe(catchError((error) => this.handleAuthError(error)));
+  }
+
+  getPendingAccountChange(): Observable<PendingAccountChange | null> {
+    return this.http
+      .get<PendingAccountChange>(`${this.accountApiBaseUrl}/change-requests/pending`, {
+        observe: 'response',
+      })
+      .pipe(
+        map((response) => (response.status === 204 ? null : (response.body ?? null))),
+        catchError((error) => this.handleAuthError(error)),
+      );
+  }
+
   private applyAuthResponse(response: AuthenticationResponse): AuthenticationResponse {
     if (response.token) {
       this.storeToken(response.token);
@@ -216,7 +263,14 @@ export class AuthService {
 
   private toAuthErrorMessage(error: HttpErrorResponse): AuthErrorMessage {
     if (error.status === 401) {
+      if (typeof error.error === 'string' && error.error.trim()) {
+        return { message: error.error, fieldMessages: [] };
+      }
       return { message: 'Invalid email or password.', fieldMessages: [] };
+    }
+
+    if (error.status === 404 && typeof error.error === 'string') {
+      return { message: error.error, fieldMessages: [] };
     }
 
     if (error.status === 409) {

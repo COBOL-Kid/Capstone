@@ -94,6 +94,18 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
   }
 
+  @ExceptionHandler(AccountChangeRequiredException.class)
+  public ResponseEntity<String> handleAccountChangeRequiredException(
+      AccountChangeRequiredException ex) {
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+  }
+
+  @ExceptionHandler(PendingAccountChangeNotFoundException.class)
+  public ResponseEntity<String> handlePendingAccountChangeNotFoundException(
+      PendingAccountChangeNotFoundException ex) {
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+  }
+
   @ExceptionHandler(VinNotAssociatedException.class)
   public ResponseEntity<String> handleVinNotAssociatedException(VinNotAssociatedException ex) {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);

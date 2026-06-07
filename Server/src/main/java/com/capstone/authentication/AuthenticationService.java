@@ -234,4 +234,9 @@ public class AuthenticationService {
   public void logout(String token) {
     refreshTokenRepositoryJPA.deleteByToken(token);
   }
+
+  @Transactional
+  public AuthenticationResponse createSession(User user) {
+    return issueSession(user);
+  }
 }

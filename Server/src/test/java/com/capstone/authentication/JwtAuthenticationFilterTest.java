@@ -4,11 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.capstone.data.UserRepositoryJPA;
 import com.capstone.models.Role;
+import com.capstone.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -24,9 +27,11 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
-  void shouldSkipAuthenticationWhenBearerHeaderIsMissing() throws ServletException, IOException {
+  void shouldSkipAuthenticationWhenAccessTokenCookieIsMissing()
+      throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
 
     filter.doFilter(
         new MockHttpServletRequest(), new MockHttpServletResponse(), new MockFilterChain());
@@ -36,19 +41,24 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
-  void shouldSetAuthenticationForValidBearerToken() throws ServletException, IOException {
+  void shouldSetAuthenticationForValidAccessTokenCookie() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
     MockHttpServletRequest request = new MockHttpServletRequest();
-    request.addHeader("Authorization", "Bearer jwt-token");
-    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    request.setCookies(new jakarta.servlet.http.Cookie(AuthCookies.ACCESS_TOKEN_NAME, "jwt-token"));
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
     Claims claims = mock(Claims.class);
+    User storedUser = new User();
+    storedUser.setUserId(1L);
 
     when(jwtService.parseClaims("jwt-token")).thenReturn(claims);
     when(claims.getSubject()).thenReturn("driver@example.com");
     when(claims.get("userId", Number.class)).thenReturn(1);
     when(claims.get("role", String.class)).thenReturn("USER");
+    when(claims.get("emailVerified", Boolean.class)).thenReturn(true);
     when(jwtService.validateToken(claims, user)).thenReturn(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
 
     filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
@@ -59,31 +69,64 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
+  void shouldRejectLockedAccounts() throws ServletException, IOException {
+    JwtService jwtService = mock(JwtService.class);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setCookies(new jakarta.servlet.http.Cookie(AuthCookies.ACCESS_TOKEN_NAME, "jwt-token"));
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
+    Claims claims = mock(Claims.class);
+    User storedUser = new User();
+    storedUser.setUserId(1L);
+    storedUser.setLockoutEnd(java.time.LocalDateTime.now().plusMinutes(5));
+
+    when(jwtService.parseClaims("jwt-token")).thenReturn(claims);
+    when(claims.getSubject()).thenReturn("driver@example.com");
+    when(claims.get("userId", Number.class)).thenReturn(1);
+    when(claims.get("role", String.class)).thenReturn("USER");
+    when(claims.get("emailVerified", Boolean.class)).thenReturn(true);
+    when(jwtService.validateToken(claims, user)).thenReturn(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(storedUser));
+
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    filter.doFilter(request, response, new MockFilterChain());
+
+    assertEquals(403, response.getStatus());
+    assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  @Test
   void shouldLeaveContextEmptyWhenTokenIsInvalid() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
     MockHttpServletRequest request = new MockHttpServletRequest();
-    request.addHeader("Authorization", "Bearer jwt-token");
-    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER);
+    request.setCookies(new jakarta.servlet.http.Cookie(AuthCookies.ACCESS_TOKEN_NAME, "jwt-token"));
+    AuthenticatedUser user = new AuthenticatedUser(1L, "driver@example.com", Role.USER, true);
     Claims claims = mock(Claims.class);
 
     when(jwtService.parseClaims("jwt-token")).thenReturn(claims);
     when(claims.getSubject()).thenReturn("driver@example.com");
     when(claims.get("userId", Number.class)).thenReturn(1);
     when(claims.get("role", String.class)).thenReturn("USER");
+    when(claims.get("emailVerified", Boolean.class)).thenReturn(true);
     when(jwtService.validateToken(claims, user)).thenReturn(false);
 
     filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
+    verify(userRepository, never()).findById(any());
   }
 
   @Test
   void shouldRejectMalformedTokenWithoutCrashingFilterChain() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
     MockHttpServletRequest request = new MockHttpServletRequest();
-    request.addHeader("Authorization", "Bearer not.a.real.jwt");
+    request.setCookies(
+        new jakarta.servlet.http.Cookie(AuthCookies.ACCESS_TOKEN_NAME, "not.a.real.jwt"));
     MockFilterChain chain = new MockFilterChain();
 
     when(jwtService.parseClaims("not.a.real.jwt"))
@@ -98,9 +141,10 @@ class JwtAuthenticationFilterTest {
   @Test
   void shouldRejectTokenMissingRoleClaim() throws ServletException, IOException {
     JwtService jwtService = mock(JwtService.class);
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+    UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userRepository);
     MockHttpServletRequest request = new MockHttpServletRequest();
-    request.addHeader("Authorization", "Bearer jwt-token");
+    request.setCookies(new jakarta.servlet.http.Cookie(AuthCookies.ACCESS_TOKEN_NAME, "jwt-token"));
     MockFilterChain chain = new MockFilterChain();
     Claims claims = mock(Claims.class);
 

@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+This project uses pnpm. Use pnpm commands instead of npm, npx etc.

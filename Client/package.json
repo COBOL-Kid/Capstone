@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "audit": "pnpm audit",
+    "audit:ci": "pnpm audit --audit-level=moderate"
   },
   "private": true,
   "packageManager": "pnpm@11.3.0",

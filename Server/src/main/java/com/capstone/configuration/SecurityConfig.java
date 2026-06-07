@@ -1,6 +1,8 @@
 package com.capstone.configuration;
 
+import com.capstone.authentication.EmailVerifiedFilter;
 import com.capstone.authentication.JwtAuthenticationFilter;
+import com.capstone.authentication.LoginRateLimitFilter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +25,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
+  private final LoginRateLimitFilter loginRateLimitFilter;
   private final JwtAuthenticationFilter jwtAuthFilter;
+  private final EmailVerifiedFilter emailVerifiedFilter;
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
 
@@ -31,10 +35,14 @@ public class SecurityConfig {
   private List<String> allowedOrigins;
 
   public SecurityConfig(
+      LoginRateLimitFilter loginRateLimitFilter,
       JwtAuthenticationFilter jwtAuthFilter,
+      EmailVerifiedFilter emailVerifiedFilter,
       UserDetailsService userDetailsService,
       PasswordEncoder passwordEncoder) {
+    this.loginRateLimitFilter = loginRateLimitFilter;
     this.jwtAuthFilter = jwtAuthFilter;
+    this.emailVerifiedFilter = emailVerifiedFilter;
     this.userDetailsService = userDetailsService;
     this.passwordEncoder = passwordEncoder;
   }
@@ -45,7 +53,13 @@ public class SecurityConfig {
         new DaoAuthenticationProvider(userDetailsService);
     authenticationProvider.setPasswordEncoder(passwordEncoder);
 
-    http.csrf(AbstractHttpConfigurer::disable)
+    http.csrf(csrf -> csrf.spa())
+        .headers(
+            headers ->
+                headers
+                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                    .httpStrictTransportSecurity(
+                        hsts -> hsts.maxAgeInSeconds(31_536_000).includeSubDomains(true)))
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(
             authorizeRequests ->
@@ -69,12 +83,18 @@ public class SecurityConfig {
                     .hasAuthority("USER")
                     .requestMatchers("/api/reminder/**")
                     .hasAuthority("USER")
+                    .requestMatchers("/actuator/health")
+                    .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .hasAuthority("ADMIN")
                     .anyRequest()
                     .authenticated())
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(emailVerifiedFilter, UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider);
     return http.build();
   }
@@ -84,7 +104,8 @@ public class SecurityConfig {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(allowedOrigins);
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+    configuration.setAllowedHeaders(
+        List.of("Authorization", "Content-Type", "Accept", "X-XSRF-TOKEN"));
     configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);

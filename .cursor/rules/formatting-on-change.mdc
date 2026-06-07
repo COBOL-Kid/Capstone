@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+When the current task is finished: run prettier if typescript files were changed or spotless if java files were changed.

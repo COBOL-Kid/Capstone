@@ -153,7 +153,7 @@ describe('AuthService', () => {
   it('maps invalid credential responses into a user-facing message', () => {
     service.login({ email: 'pat@example.com', password: 'wrong' }).subscribe({
       error: (error) => {
-        expect(error.message).toBe('Invalid email or password.');
+        expect(error.message).toBe('Invalid account credentials');
       },
     });
 

@@ -1,0 +1,53 @@
+@if (email()) {
+  <p class="email-verification-step__email">Code sent to {{ email() }}</p>
+}
+<p class="email-verification-step__description">{{ description() }}</p>
+
+<form (ngSubmit)="submit()" [formGroup]="form" class="email-verification-step hc-form" novalidate>
+  @if (error(); as verificationError) {
+    <div class="hc-alert hc-alert--error" role="alert">
+      <p>{{ verificationError.message }}</p>
+      @if (verificationError.fieldMessages.length > 0) {
+        <ul>
+          @for (fieldMessage of verificationError.fieldMessages; track fieldMessage) {
+            <li>{{ fieldMessage }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <label class="hc-field">
+    <span>Verification code</span>
+    <input
+      autocomplete="one-time-code"
+      formControlName="code"
+      inputmode="numeric"
+      maxlength="6"
+      pattern="[0-9]*"
+      type="text"
+    />
+    @if (form.controls.code.touched && form.controls.code.hasError('required')) {
+      <small>Verification code is required.</small>
+    } @else if (form.controls.code.touched && form.controls.code.invalid) {
+      <small>Enter the 6-digit code from your email.</small>
+    }
+  </label>
+
+  <div class="email-verification-step__actions">
+    <button [disabled]="isSubmitting()" class="hc-btn hc-btn--primary" type="submit">
+      {{ isSubmitting() ? 'Verifying…' : submitLabel() }}
+    </button>
+    <button
+      (click)="onResend()"
+      [disabled]="isResending()"
+      class="hc-btn hc-btn--secondary"
+      type="button"
+    >
+      {{ isResending() ? 'Sending…' : resendLabel() }}
+    </button>
+    @if (showCancel()) {
+      <button (click)="cancel.emit()" class="hc-dialog-switch-button" type="button">Cancel</button>
+    }
+  </div>
+</form>

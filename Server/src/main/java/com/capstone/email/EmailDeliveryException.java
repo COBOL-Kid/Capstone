@@ -1,4 +1,4 @@
-package com.capstone.integration;
+package com.capstone.email;
 
 public class EmailDeliveryException extends RuntimeException {
 

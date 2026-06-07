@@ -2,6 +2,7 @@ package com.capstone.controllers;
 
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.authentication.AuthenticationResponse;
+import com.capstone.authentication.RefreshTokenCookies;
 import com.capstone.configuration.JwtProperties;
 import com.capstone.domain.AccountChangeService;
 import com.capstone.domain.AccountChangeVerificationResult;
@@ -10,9 +11,7 @@ import com.capstone.models.dto.*;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.Optional;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -85,7 +84,12 @@ public class AccountController {
     VerifyAccountChangeResponse body = toVerifyResponse(result);
     AuthenticationResponse session = result.session();
     if (session != null && session.hasRefreshToken()) {
-      return ResponseEntity.ok().headers(createCookieHeader(session.getRefreshToken())).body(body);
+      return ResponseEntity.ok()
+          .headers(
+              RefreshTokenCookies.setCookie(
+                  session.getRefreshToken(),
+                  Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds()))
+          .body(body);
     }
     return ResponseEntity.ok(body);
   }
@@ -127,20 +131,5 @@ public class AccountController {
     }
     return new VerifyAccountChangeResponse(
         result.account(), session.getToken(), session.getEmailVerified());
-  }
-
-  private HttpHeaders createCookieHeader(String refreshToken) {
-    long maxAgeSeconds = Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds();
-    ResponseCookie cookie =
-        ResponseCookie.from("refreshToken", refreshToken)
-            .httpOnly(true)
-            .secure(true)
-            .path("/api/auth")
-            .maxAge(maxAgeSeconds)
-            .sameSite("Strict")
-            .build();
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-    return headers;
   }
 }

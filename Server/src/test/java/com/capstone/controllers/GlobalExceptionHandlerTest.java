@@ -6,12 +6,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.capstone.authentication.InvalidRefreshTokenException;
+import com.capstone.domain.AccountChangeRequiredException;
 import com.capstone.domain.DuplicateEmailException;
+import com.capstone.domain.EmailNotVerifiedException;
 import com.capstone.domain.InvalidAccountCredentialsException;
 import com.capstone.domain.MaintenanceItemNotFoundException;
+import com.capstone.domain.PendingAccountChangeNotFoundException;
 import com.capstone.domain.RecallNotFoundException;
 import com.capstone.domain.VinNotAssociatedException;
 import com.capstone.domain.VinNotFoundException;
+import com.capstone.email.EmailDeliveryException;
+import com.capstone.email.InvalidEmailVerificationCodeException;
 import com.capstone.models.dto.AddVinRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -58,8 +63,7 @@ class GlobalExceptionHandlerTest {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     var response =
-        handler.handleHttpMessageConversionException(
-            new HttpMessageConversionException("Bad JSON"));
+        handler.handleMalformedRequestBody(new HttpMessageConversionException("Bad JSON"));
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals("Malformed request body", response.getBody());
@@ -82,10 +86,20 @@ class GlobalExceptionHandlerTest {
   void shouldReturnConflictForDuplicateEmail() {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    var response = handler.handleDuplicateEmailException(new DuplicateEmailException());
+    var response = handler.handleConflictException(new DuplicateEmailException());
 
     assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
     assertEquals("Email is already registered", response.getBody());
+  }
+
+  @Test
+  void shouldReturnConflictForAccountChangeRequired() {
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    var response = handler.handleConflictException(new AccountChangeRequiredException());
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals("Use account change verification to update your password", response.getBody());
   }
 
   @Test
@@ -113,10 +127,20 @@ class GlobalExceptionHandlerTest {
   void shouldReturnForbiddenForVinNotAssociated() {
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    var response = handler.handleVinNotAssociatedException(new VinNotAssociatedException());
+    var response = handler.handleForbiddenException(new VinNotAssociatedException());
 
     assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     assertEquals("VIN is not associated with this user", response.getBody());
+  }
+
+  @Test
+  void shouldReturnForbiddenForEmailNotVerified() {
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    var response = handler.handleForbiddenException(new EmailNotVerifiedException());
+
+    assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    assertEquals("Email address must be verified before adding vehicles", response.getBody());
   }
 
   @Test
@@ -137,6 +161,39 @@ class GlobalExceptionHandlerTest {
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     assertEquals("Recall not found", response.getBody());
+  }
+
+  @Test
+  void shouldReturnNotFoundForPendingAccountChangeNotFound() {
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    var response = handler.handleNotFoundException(new PendingAccountChangeNotFoundException());
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    assertEquals("No pending account change request", response.getBody());
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidEmailVerificationCode() {
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    var response =
+        handler.handleEmailVerificationCodeException(new InvalidEmailVerificationCodeException());
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals("Invalid verification code", response.getBody());
+  }
+
+  @Test
+  void shouldReturnServiceUnavailableForEmailDeliveryFailure() {
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    var response =
+        handler.handleEmailDeliveryException(new EmailDeliveryException("Mailjet API unavailable"));
+
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+    assertEquals(
+        "Unable to send verification email right now. Please try again later.", response.getBody());
   }
 
   @Test
@@ -197,7 +254,7 @@ class GlobalExceptionHandlerTest {
     TypeMismatchException exception = mock(TypeMismatchException.class);
     when(exception.getMessage()).thenReturn("type mismatch");
 
-    var response = handler.handleTypeMismatchException(exception);
+    var response = handler.handleMalformedRequestBody(exception);
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals("Malformed request body", response.getBody());

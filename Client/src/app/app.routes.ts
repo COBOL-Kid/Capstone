@@ -25,9 +25,9 @@ export const routes: Routes = [
     title: 'Vehicle · Honest Car',
   },
   {
-    path: 'about',
+    path: 'our-services',
     loadComponent: () => import('./pages/about-page/about-page').then((m) => m.AboutPageComponent),
-    title: 'About Us · Honest Car',
+    title: 'Our Services · Honest Car',
   },
   {
     path: 'sign-in',

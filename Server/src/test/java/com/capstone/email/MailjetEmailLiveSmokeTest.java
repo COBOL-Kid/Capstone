@@ -1,4 +1,4 @@
-package com.capstone.integration;
+package com.capstone.email;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;

@@ -3,9 +3,7 @@ package com.capstone.authentication;
 import com.capstone.configuration.JwtProperties;
 import jakarta.validation.Valid;
 import java.time.Duration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -74,44 +72,18 @@ public class AuthenticationController {
     if (refreshToken != null && !refreshToken.isEmpty()) {
       service.logout(refreshToken);
     }
-    return ResponseEntity.ok().headers(createCleanCookieHeader()).build();
+    return ResponseEntity.ok().headers(RefreshTokenCookies.clearCookie()).build();
   }
 
   private ResponseEntity<AuthenticationResponse> sessionResponse(AuthenticationResponse response) {
     if (response.hasRefreshToken()) {
       return ResponseEntity.ok()
-          .headers(createCookieHeader(response.getRefreshToken()))
+          .headers(
+              RefreshTokenCookies.setCookie(
+                  response.getRefreshToken(),
+                  Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds()))
           .body(response);
     }
     return ResponseEntity.ok().body(response);
-  }
-
-  private HttpHeaders createCookieHeader(String refreshToken) {
-    long maxAgeSeconds = Duration.ofDays(jwtProperties.getRefreshExpirationDays()).getSeconds();
-    ResponseCookie cookie =
-        ResponseCookie.from("refreshToken", refreshToken)
-            .httpOnly(true)
-            .secure(true)
-            .path("/api/auth")
-            .maxAge(maxAgeSeconds)
-            .sameSite("Strict")
-            .build();
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-    return headers;
-  }
-
-  private HttpHeaders createCleanCookieHeader() {
-    ResponseCookie cookie =
-        ResponseCookie.from("refreshToken", "")
-            .httpOnly(true)
-            .secure(true)
-            .path("/api/auth")
-            .maxAge(0)
-            .sameSite("Strict")
-            .build();
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-    return headers;
   }
 }

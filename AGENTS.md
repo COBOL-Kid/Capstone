@@ -21,4 +21,36 @@
 - Public support contact email is `support@honest-car.co`.
 - Run Spotless after Java changes and Prettier after TypeScript changes.
 - Prod profile (`SPRING_PROFILES_ACTIVE=prod`): structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
-- Local dev: `ng serve` proxies `/api` to the backend (`proxy.conf.json`) so API calls stay same-origin for cookies and XSRF.
+- Local dev: Angular calls `http://localhost:8080` directly when the hostname is `localhost` (`Client/src/app/core/api/api.config.ts`); there is no `proxy.conf.json` in the repo. CORS is configured for `http://localhost:4200`.
+
+## Cursor Cloud specific instructions
+
+### One-time VM prerequisites (not in the update script)
+
+- **JDK 25** (IBM Semeru Open Edition): project toolchain is Java 25 (`Server/build.gradle.kts`). Install to `$HOME/.jdks/jdk25` and set `JAVA_HOME` / `PATH` in `~/.bashrc`. Example: `ibm-semeru-open-jdk_x64_linux_25.0.3.0.tar.gz` from [ibmruntimes/semeru25-binaries](https://github.com/ibmruntimes/semeru25-binaries/releases).
+- **MySQL 8**: local dev uses Flyway on boot against `DB_URL` from `/.env`. Example: database `honestcar`, user `honestcar` / password `honestcar_dev`.
+- **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
+- **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
+
+### Running services
+
+| Service | Command | Port |
+|---------|---------|------|
+| Backend | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
+| Frontend | `cd Client && pnpm start --host 0.0.0.0` | 4200 |
+| Health | `curl http://localhost:8080/actuator/health` | — |
+
+Use tmux for long-running dev servers. Do **not** pass `pnpm start -- --host` (double `--` breaks `ng serve`).
+
+### Lint / test / build
+
+| Area | Lint | Test | Build |
+|------|------|------|-------|
+| Client | `pnpm exec prettier --check .` | `pnpm test` | `pnpm build` |
+| Server | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` |
+
+Server tests use in-memory H2 (no MySQL). One integration test (`VehicleOnboardingProviderBurstIntegrationTest`) can be timing-sensitive on slow VMs. Client `local-date.spec.ts` asserts UTC vs local calendar dates and may fail when the VM timezone is UTC.
+
+### External APIs (optional for browse-only dev)
+
+Full vehicle and email flows need Auto.dev, Vehicle Databases, and Mailjet keys in `/.env`. Browse-only (landing, services, auth UI) works with placeholder provider keys and `MAILJET_ENABLED=false`.

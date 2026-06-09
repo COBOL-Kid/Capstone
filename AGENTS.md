@@ -22,12 +22,13 @@
 - Run Spotless after Java changes and Prettier after TypeScript changes.
 - Prod profile (`SPRING_PROFILES_ACTIVE=prod`): structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
 - Local dev: Angular calls `http://localhost:8080` directly when the hostname is `localhost` (`Client/src/app/core/api/api.config.ts`); there is no `proxy.conf.json` in the repo. CORS is configured for `http://localhost:4200`.
+- Local JVM dev uses any installed JDK 25 toolchain; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host.
 
 ## Cursor Cloud specific instructions
 
 ### One-time VM prerequisites (not in the update script)
 
-- **JDK 25** (IBM Semeru Open Edition): project toolchain is Java 25 (`Server/build.gradle.kts`). Install to `$HOME/.jdks/jdk25` and set `JAVA_HOME` / `PATH` in `~/.bashrc`. Example: `ibm-semeru-open-jdk_x64_linux_25.0.3.0.tar.gz` from [ibmruntimes/semeru25-binaries](https://github.com/ibmruntimes/semeru25-binaries/releases).
+- **JDK 25**: local dev and tests use any JDK 25 (Gradle toolchain in `Server/build.gradle.kts`). Native image builds use GraalVM inside `Server/Dockerfile`; no host GraalVM install required.
 - **MySQL 8**: local dev uses Flyway on boot against `DB_URL` from `/.env`. Example: database `honestcar`, user `honestcar` / password `honestcar_dev`.
 - **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
 - **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
@@ -36,7 +37,8 @@
 
 | Service | Command | Port |
 |---------|---------|------|
-| Backend | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
+| Backend (JVM dev) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
+| Backend (native image) | `cd Server && docker build -t honest-car-server .` then `docker run ... honest-car-server` | 8080 |
 | Frontend | `cd Client && pnpm start --host 0.0.0.0` | 4200 |
 | Health | `curl http://localhost:8080/actuator/health` | — |
 
@@ -47,7 +49,10 @@ Use tmux for long-running dev servers. Do **not** pass `pnpm start -- --host` (d
 | Area | Lint | Test | Build |
 |------|------|------|-------|
 | Client | `pnpm exec prettier --check .` | `pnpm test` | `pnpm build` |
-| Server | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` |
+| Server (JVM) | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` |
+| Server (native) | `./gradlew spotlessCheck` | `./gradlew test` | `docker build -t honest-car-server .` (from `Server/`) |
+
+Production backend images are built from `Server/Dockerfile`, which compiles a GraalVM native executable and packages it in a `debian:bookworm-slim` container for Cloud Run. `nativeCompile` is gated behind `NATIVE_IMAGE_BUILD=true` (set in the Dockerfile). Native AOT uses the `prod` profile by default. Conditional beans (for example Mailjet) are fixed at AOT build time via the placeholder env vars in `Server/build.gradle.kts`.
 
 Server tests use in-memory H2 (no MySQL). One integration test (`VehicleOnboardingProviderBurstIntegrationTest`) can be timing-sensitive on slow VMs. Client `local-date.spec.ts` asserts UTC vs local calendar dates and may fail when the VM timezone is UTC.
 

@@ -1,9 +1,12 @@
+import org.springframework.boot.gradle.tasks.aot.ProcessAot
+
 plugins {
     java
     id("org.springframework.boot") version "4.0.6"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "8.4.0"
     id("org.owasp.dependencycheck") version "12.1.0"
+    id("org.graalvm.buildtools.native") version "0.11.5"
 }
 
 group = "com.capstone"
@@ -46,6 +49,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
     testRuntimeOnly("com.h2database:h2")
+
+    add("nativeImageCompileOnly", sourceSets["main"].output)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -80,6 +85,57 @@ tasks.register<Test>("liveTest") {
 
 tasks.jar {
     enabled = false
+}
+
+val aotProfiles = (findProperty("aotProfiles") as String?) ?: "prod"
+
+tasks.withType<ProcessAot>().configureEach {
+    args("--spring.profiles.active=$aotProfiles")
+    environment(
+        mapOf(
+            "SPRING_PROFILES_ACTIVE" to aotProfiles,
+            "DB_URL" to "jdbc:mysql://localhost:3306/aot",
+            "DB_USER" to "aot",
+            "DB_PASS" to "aot",
+            "SECRET_KEY" to "aot-jwt-secret-key-at-least-32-characters-long",
+            "JWT_EXPIRATION_MINUTES" to "15",
+            "JWT_REFRESH_EXPIRATION_DAYS" to "7",
+            "AUTODEV_BASE_URL" to "https://autodev.placeholder.invalid",
+            "AUTODEV_API_KEY" to "aot",
+            "AUTODEV_API_KEY_HEADER" to "x-api-key",
+            "VEHICLE_DATA_BASE_URL" to "https://vdb.placeholder.invalid",
+            "VEHICLE_DATA_API_KEY" to "aot",
+            "VEHICLE_DATA_API_KEY_HEADER" to "x-authkey",
+            "MAILJET_ENABLED" to "true",
+            "MAILJET_API_KEY_PUBLIC" to "aot",
+            "MAILJET_API_KEY_PRIVATE" to "aot",
+            "MAILJET_FROM_EMAIL" to "aot@example.com",
+            "MAILJET_FROM_NAME" to "AOT",
+            "GCP_PROJECT_ID" to "aot-project",
+        ),
+    )
+}
+
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("capstone-server")
+            buildArgs.add("--enable-http")
+            buildArgs.add("--enable-https")
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(25))
+                    vendor.set(JvmVendorSpec.GRAAL_VM)
+                },
+            )
+        }
+    }
+}
+
+tasks.named("nativeCompile") {
+    onlyIf("Native image builds run in Docker (NATIVE_IMAGE_BUILD=true)") {
+        System.getenv("NATIVE_IMAGE_BUILD") == "true"
+    }
 }
 
 spotless {

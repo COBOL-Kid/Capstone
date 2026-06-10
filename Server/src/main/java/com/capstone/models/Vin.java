@@ -10,7 +10,7 @@ import java.util.Set;
 public class Vin {
 
   @Id
-  @Column(name = "vin_num", nullable = false, columnDefinition = "char(17)")
+  @Column(name = "vin_num", nullable = false, length = 17)
   private String vin;
 
   @ManyToOne(fetch = FetchType.LAZY)

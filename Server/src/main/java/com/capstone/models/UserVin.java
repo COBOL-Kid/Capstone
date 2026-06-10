@@ -17,11 +17,7 @@ public class UserVin {
 
   @MapsId("vin")
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(
-      name = "vin_num",
-      referencedColumnName = "vin_num",
-      nullable = false,
-      columnDefinition = "char(17)")
+  @JoinColumn(name = "vin_num", referencedColumnName = "vin_num", nullable = false)
   private Vin vin;
 
   @Column(name = "current_mileage", nullable = false, columnDefinition = "int")

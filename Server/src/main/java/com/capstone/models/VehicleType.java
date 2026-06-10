@@ -44,13 +44,13 @@ public class VehicleType {
   @Column(name = "vehicle_trim", nullable = false, columnDefinition = "varchar(120)")
   private String vehicleTrim;
 
-  @Column(name = "vehicle_year", nullable = false, columnDefinition = "char(4)")
+  @Column(name = "vehicle_year", nullable = false, length = 4)
   private String vehicleYear;
 
   @Column(name = "vehicle_style", nullable = false, columnDefinition = "varchar(160)")
   private String vehicleStyle = "UNKNOWN";
 
-  @Column(name = "source_vin", columnDefinition = "char(17)")
+  @Column(name = "source_vin", length = 17)
   private String sourceVin;
 
   @Column(name = "origin", columnDefinition = "varchar(60)")

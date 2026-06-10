@@ -12,6 +12,9 @@
     "audit:ci": "pnpm audit --audit-level=moderate"
   },
   "private": true,
+  "engines": {
+    "node": ">=24.15.0"
+  },
   "packageManager": "pnpm@11.3.0",
   "dependencies": {
     "@angular/common": "^22.0.0",

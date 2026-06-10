@@ -8,7 +8,7 @@ Since then, I’ve reworked the codebase as I’ve grown as a developer. My prof
 
 ## Local development
 
-**Prerequisites:** JDK 25, PostgreSQL 16+, pnpm 11 (`corepack prepare pnpm@11.3.0 --activate`), and a repo-root `.env` file (see `Server/src/main/resources/application.properties` for variable names). Set `MAILJET_ENABLED=false` if you don’t have Mailjet keys.
+**Prerequisites:** Node.js 24 LTS (`>=24.15.0`; use the repo-root `.nvmrc`), JDK 25, PostgreSQL 16+, pnpm 11 (`corepack prepare pnpm@11.3.0 --activate`), and a repo-root `.env` file (see `Server/src/main/resources/application.properties` for variable names). Set `MAILJET_ENABLED=false` if you don’t have Mailjet keys.
 
 | Service | Command | Port |
 |---------|---------|------|

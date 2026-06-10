@@ -32,6 +32,7 @@
 - **JDK 25**: local dev and tests use any JDK 25 (Gradle toolchain in `Server/build.gradle.kts`). Native image builds use GraalVM inside `Server/Dockerfile`; no host GraalVM install required.
 - **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
 - **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
+- **Node.js 24 LTS**: use the repo-root `.nvmrc` (`>=24.15.0`; Angular CLI 22 requires at least 24.15 on the 24.x line). Cloud Agents run `.cursor/setup-node.sh` via `.cursor/environment.json` to install and prefer the nvm-managed Node over the default exec-daemon binary.
 - **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
 
 ### Running services

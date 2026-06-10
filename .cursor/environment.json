@@ -1,0 +1,3 @@
+{
+  "install": "bash .cursor/setup-node.sh && pnpm --dir Client install"
+}

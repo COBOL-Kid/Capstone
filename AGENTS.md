@@ -16,12 +16,13 @@
 - Auth uses HttpOnly cookies for access and refresh tokens with CSRF protection; JWTs are not stored in `localStorage`.
 - Login rate limit is 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
 - Database is PostgreSQL; schema is managed by a single Flyway migration `V1__Initial_schema.sql` (V2 was merged before production).
-- Local dev uses the `dev` Spring profile (`SPRING_PROFILES_ACTIVE=dev`) to load `.env` and disable secure cookies.
+- Local dev uses the `dev` Spring profile (`SPRING_PROFILES_ACTIVE=dev`) to load `.env`, disable secure cookies, and default `app.public-url` to `http://localhost:4200`.
 - No CI pipeline config exists in the repo today.
 - Public support contact email is `support@honest-car.co`.
 - Run Spotless after Java changes and Prettier after TypeScript changes.
-- Prod profile (`SPRING_PROFILES_ACTIVE=prod`): `server.port=${PORT:8080}` for Cloud Run, structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
-- Local dev: Angular uses same-origin API URLs (`Client/src/app/core/api/api.config.ts`); `Client/proxy.conf.json` proxies `/api/**` to `http://localhost:8080`. Production Firebase Hosting should rewrite `/api/**` to Cloud Run. No server CORS config.
+- Prod profile (`SPRING_PROFILES_ACTIVE=prod`): `server.port=${PORT:8080}` for Cloud Run, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
+- Local dev: Angular uses same-origin API URLs (`Client/src/app/core/api/api.config.ts`); `Client/proxy.conf.json` proxies `/api/**` to `http://localhost:8080`. Production Firebase Hosting (`firebase.json`) rewrites `/api/**` to Cloud Run service `honest-car-server` in `us-central1`. Custom domain `honest-car.co` is connected in Firebase Console (Hosting → Custom domains). No server CORS config.
+- Deploy frontend: set `.firebaserc` project ID, then `pnpm --dir Client deploy:hosting` (builds Angular and runs `pnpm dlx firebase-tools@latest deploy --only hosting`).
 - Local JVM dev uses any installed JDK 25 toolchain; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host.
 
 ## Cursor Cloud specific instructions

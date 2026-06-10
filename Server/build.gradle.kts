@@ -119,6 +119,7 @@ val aotPlaceholderEnv =
         "MAILJET_FROM_EMAIL" to "aot@example.com",
         "MAILJET_FROM_NAME" to "AOT",
         "GCP_PROJECT_ID" to "aot-project",
+        "APP_PUBLIC_URL" to "https://honest-car.co",
     )
 
 tasks.named<ProcessAot>("processAot") {

@@ -29,8 +29,10 @@
 
 ### One-time VM prerequisites (not in the update script)
 
+- **Node.js 24 LTS**: use nvm (`nvm install 24 && nvm alias default 24`). Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 to `PATH` in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"`, then `corepack prepare pnpm@11.3.0 --activate`. Verify with `node -v` → `v24.x`.
 - **JDK 25**: local dev and tests use any JDK 25 (Gradle toolchain in `Server/build.gradle.kts`). Native image builds use GraalVM inside `Server/Dockerfile`; no host GraalVM install required.
-- **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
+- **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Start local Postgres with `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
+- **Injected `DB_*` env vars**: Cloud Agent secrets for `DB_URL`/`DB_USER`/`DB_PASS` override `/.env` at runtime. If they point at a non-PostgreSQL URL, export PostgreSQL values on the `bootRun` command line (or unset them) so Spring connects to local Postgres.
 - **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
 - **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
 
@@ -38,7 +40,7 @@
 
 | Service | Command | Port |
 |---------|---------|------|
-| Backend (JVM dev) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
+| Backend (JVM dev) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` (prepend `DB_URL=jdbc:postgresql://localhost:5432/honestcar DB_USER=honestcar DB_PASS=honestcar` when injected secrets override `/.env`) | 8080 |
 | Backend (native image) | `cd Server && docker build -t honest-car-server .` then `docker run ... honest-car-server` | 8080 |
 | Frontend | `cd Client && pnpm start --host 0.0.0.0` | 4200 |
 | Health | `curl http://localhost:8080/actuator/health` | — |

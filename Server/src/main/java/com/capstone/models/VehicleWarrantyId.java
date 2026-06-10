@@ -8,7 +8,7 @@ import java.util.Objects;
 @Embeddable
 public class VehicleWarrantyId implements Serializable {
 
-  @Column(name = "vehicle_year", columnDefinition = "char(4)")
+  @Column(name = "vehicle_year", length = 4)
   private String vehicleYear;
 
   @Column(name = "vehicle_make", columnDefinition = "varchar(60)")

@@ -20,7 +20,9 @@ class VehicleReadDaoSqlMappingTest {
     for (RecordComponent component : recordType.getRecordComponents()) {
       String label = JdbcRecordColumns.toSnakeCase(component.getName());
       assertTrue(
-          sql.contains(" AS " + label) || sql.contains(" AS `" + label + "`"),
+          sql.contains(" AS " + label)
+              || sql.contains(" AS `" + label + "`")
+              || sql.contains(" AS \"" + label + "\""),
           () ->
               recordType.getSimpleName()
                   + "."

@@ -55,7 +55,7 @@ public class Recall {
   @Column(name = "over_the_air_update", nullable = false)
   private boolean overTheAirUpdate;
 
-  @Column(name = "model_year", columnDefinition = "char(4)")
+  @Column(name = "model_year", length = 4)
   private String modelYear;
 
   @Column(name = "make", columnDefinition = "varchar(60)")

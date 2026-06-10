@@ -20,7 +20,7 @@
 - No CI pipeline config exists in the repo today.
 - Public support contact email is `support@honest-car.co`.
 - Run Spotless after Java changes and Prettier after TypeScript changes.
-- Prod profile (`SPRING_PROFILES_ACTIVE=prod`): structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
+- Prod profile (`SPRING_PROFILES_ACTIVE=prod`): `server.port=${PORT:8080}` for Cloud Run, structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
 - Local dev: Angular calls `http://localhost:8080` directly when the hostname is `localhost` (`Client/src/app/core/api/api.config.ts`); there is no `proxy.conf.json` in the repo. CORS is configured for `http://localhost:4200`.
 - Local JVM dev uses any installed JDK 25 toolchain; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host.
 
@@ -29,7 +29,7 @@
 ### One-time VM prerequisites (not in the update script)
 
 - **JDK 25**: local dev and tests use any JDK 25 (Gradle toolchain in `Server/build.gradle.kts`). Native image builds use GraalVM inside `Server/Dockerfile`; no host GraalVM install required.
-- **MySQL 8**: local dev uses Flyway on boot against `DB_URL` from `/.env`. Example: database `honestcar`, user `honestcar` / password `honestcar_dev`.
+- **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
 - **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
 - **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
 
@@ -54,7 +54,7 @@ Use tmux for long-running dev servers. Do **not** pass `pnpm start -- --host` (d
 
 Production backend images are built from `Server/Dockerfile`, which compiles a GraalVM native executable and packages it in a `debian:bookworm-slim` container for Cloud Run. `nativeCompile` is gated behind `NATIVE_IMAGE_BUILD=true` (set in the Dockerfile). Native AOT uses the `prod` profile by default. Conditional beans (for example Mailjet) are fixed at AOT build time via the placeholder env vars in `Server/build.gradle.kts`.
 
-Server tests use in-memory H2 (no MySQL). One integration test (`VehicleOnboardingProviderBurstIntegrationTest`) can be timing-sensitive on slow VMs. Client `local-date.spec.ts` asserts UTC vs local calendar dates and may fail when the VM timezone is UTC.
+Server tests use in-memory H2 in PostgreSQL compatibility mode for Flyway integration tests (not a real Postgres instance). One integration test (`VehicleOnboardingProviderBurstIntegrationTest`) can be timing-sensitive on slow VMs. Client `local-date.spec.ts` asserts UTC vs local calendar dates and may fail when the VM timezone is UTC.
 
 ### External APIs (optional for browse-only dev)
 

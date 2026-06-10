@@ -32,7 +32,7 @@ public class VehicleReadDao {
         vt.vehicle_style AS vehicle_style,
         vt.source_vin AS source_vin,
         vt.origin AS origin,
-        vt.`body` AS body,
+        vt.body AS body,
         vt.engine_description AS engine_description,
         vt.transmission_style AS transmission_style,
         vt.drive_type AS drive_type,
@@ -54,8 +54,8 @@ public class VehicleReadDao {
         vt.vehicle_type_id AS vehicle_type_id,
         vt.vehicle_make AS make,
         vt.vehicle_model AS model,
-        vt.vehicle_trim AS `trim`,
-        vt.vehicle_year AS `year`,
+        vt.vehicle_trim AS "trim",
+        vt.vehicle_year AS "year",
         uv.selected_image_url AS selected_image_url
       """;
 
@@ -159,7 +159,7 @@ public class VehicleReadDao {
         vehicle_year AS vehicle_year,
         vehicle_make AS vehicle_make,
         vehicle_model AS vehicle_model,
-        coverages AS coverages
+        CAST(coverages AS VARCHAR) AS coverages
       """;
 
   private final JdbcClient jdbcClient;

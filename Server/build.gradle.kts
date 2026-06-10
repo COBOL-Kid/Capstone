@@ -1,4 +1,6 @@
 import org.springframework.boot.gradle.tasks.aot.ProcessAot
+import org.springframework.boot.gradle.tasks.aot.ProcessTestAot
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     java
@@ -34,8 +36,8 @@ dependencies {
     
     implementation("com.mailjet:mailjet-client:6.0.1")
 
-    runtimeOnly("org.flywaydb:flyway-mysql:11.15.0")
-    runtimeOnly("com.mysql:mysql-connector-j")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.15.0")
+    runtimeOnly("org.postgresql:postgresql")
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
@@ -87,33 +89,46 @@ tasks.jar {
     enabled = false
 }
 
+tasks.named<BootRun>("bootRun") {
+    outputs.upToDateWhen { false }
+}
+
+tasks.named<BootRun>("bootTestRun") {
+    outputs.upToDateWhen { false }
+}
+
 val aotProfiles = (findProperty("aotProfiles") as String?) ?: "prod"
 
-tasks.withType<ProcessAot>().configureEach {
-    args("--spring.profiles.active=$aotProfiles")
-    environment(
-        mapOf(
-            "SPRING_PROFILES_ACTIVE" to aotProfiles,
-            "DB_URL" to "jdbc:mysql://localhost:3306/aot",
-            "DB_USER" to "aot",
-            "DB_PASS" to "aot",
-            "SECRET_KEY" to "aot-jwt-secret-key-at-least-32-characters-long",
-            "JWT_EXPIRATION_MINUTES" to "15",
-            "JWT_REFRESH_EXPIRATION_DAYS" to "7",
-            "AUTODEV_BASE_URL" to "https://autodev.placeholder.invalid",
-            "AUTODEV_API_KEY" to "aot",
-            "AUTODEV_API_KEY_HEADER" to "x-api-key",
-            "VEHICLE_DATA_BASE_URL" to "https://vdb.placeholder.invalid",
-            "VEHICLE_DATA_API_KEY" to "aot",
-            "VEHICLE_DATA_API_KEY_HEADER" to "x-authkey",
-            "MAILJET_ENABLED" to "true",
-            "MAILJET_API_KEY_PUBLIC" to "aot",
-            "MAILJET_API_KEY_PRIVATE" to "aot",
-            "MAILJET_FROM_EMAIL" to "aot@example.com",
-            "MAILJET_FROM_NAME" to "AOT",
-            "GCP_PROJECT_ID" to "aot-project",
-        ),
+val aotPlaceholderEnv =
+    mapOf(
+        "DB_URL" to "jdbc:postgresql://localhost:5432/aot",
+        "DB_USER" to "aot",
+        "DB_PASS" to "aot",
+        "SECRET_KEY" to "aot-jwt-secret-key-at-least-32-characters-long",
+        "JWT_EXPIRATION_MINUTES" to "15",
+        "JWT_REFRESH_EXPIRATION_DAYS" to "7",
+        "AUTODEV_BASE_URL" to "https://autodev.placeholder.invalid",
+        "AUTODEV_API_KEY" to "aot",
+        "AUTODEV_API_KEY_HEADER" to "x-api-key",
+        "VEHICLE_DATA_BASE_URL" to "https://vdb.placeholder.invalid",
+        "VEHICLE_DATA_API_KEY" to "aot",
+        "VEHICLE_DATA_API_KEY_HEADER" to "x-authkey",
+        "MAILJET_ENABLED" to "true",
+        "MAILJET_API_KEY_PUBLIC" to "aot",
+        "MAILJET_API_KEY_PRIVATE" to "aot",
+        "MAILJET_FROM_EMAIL" to "aot@example.com",
+        "MAILJET_FROM_NAME" to "AOT",
+        "GCP_PROJECT_ID" to "aot-project",
+        "APP_PUBLIC_URL" to "https://honest-car.co",
     )
+
+tasks.named<ProcessAot>("processAot") {
+    args("--spring.profiles.active=$aotProfiles")
+    environment(aotPlaceholderEnv + ("SPRING_PROFILES_ACTIVE" to aotProfiles))
+}
+
+tasks.named<ProcessTestAot>("processTestAot") {
+    enabled = false
 }
 
 graalvmNative {

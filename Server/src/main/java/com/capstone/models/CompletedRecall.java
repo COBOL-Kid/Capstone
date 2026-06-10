@@ -17,11 +17,7 @@ public class CompletedRecall {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumns({
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false),
-    @JoinColumn(
-        name = "vin_num",
-        referencedColumnName = "vin_num",
-        nullable = false,
-        columnDefinition = "char(17)")
+    @JoinColumn(name = "vin_num", referencedColumnName = "vin_num", nullable = false)
   })
   private UserVin userVin;
 

@@ -11,7 +11,7 @@ public class UserVinId implements Serializable {
   @Column(name = "user_id")
   private Long userId;
 
-  @Column(name = "vin_num", columnDefinition = "char(17)")
+  @Column(name = "vin_num", length = 17)
   private String vin;
 
   public UserVinId() {}

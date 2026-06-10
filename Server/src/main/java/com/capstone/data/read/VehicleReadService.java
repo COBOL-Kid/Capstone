@@ -125,7 +125,8 @@ public class VehicleReadService {
     int modelYear = parseVehicleYear(vehicleYear);
     LocalDate today = LocalDate.now();
     try {
-      Map<String, String> coverages = OBJECT_MAPPER.readValue(coveragesJson, COVERAGES_MAP);
+      String normalizedJson = normalizeCoveragesJson(coveragesJson);
+      Map<String, String> coverages = OBJECT_MAPPER.readValue(normalizedJson, COVERAGES_MAP);
       return coverages.entrySet().stream()
           .map(
               entry ->
@@ -135,6 +136,15 @@ public class VehicleReadService {
     } catch (JsonProcessingException ex) {
       throw new IllegalStateException("Failed to deserialize warranty coverages", ex);
     }
+  }
+
+  private static String normalizeCoveragesJson(String coveragesJson)
+      throws JsonProcessingException {
+    String trimmed = coveragesJson.trim();
+    if (trimmed.startsWith("\"")) {
+      return OBJECT_MAPPER.readValue(trimmed, String.class);
+    }
+    return trimmed;
   }
 
   private static int parseVehicleYear(String vehicleYear) {

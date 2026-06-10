@@ -1,6 +1,4 @@
-const localBackendOrigin = 'http://localhost:8080';
-
-export const backendOrigin = resolveBackendOrigin(window.location.hostname, window.location.origin);
+export const backendOrigin = resolveBackendOrigin(window.location.origin);
 
 export const apiConfig = {
   authUrl: `${backendOrigin}/api/auth`,
@@ -10,10 +8,6 @@ export const apiConfig = {
   recallUrl: `${backendOrigin}/api/recall`,
 } as const;
 
-export function resolveBackendOrigin(hostname: string, origin: string): string {
-  return isLocalHost(hostname) ? localBackendOrigin : origin;
-}
-
-function isLocalHost(hostname: string): boolean {
-  return hostname === 'localhost' || hostname === '127.0.0.1';
+export function resolveBackendOrigin(origin: string): string {
+  return origin;
 }

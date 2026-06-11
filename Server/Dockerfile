@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- Build: GraalVM native image (glibc) for Cloud Run ---
-FROM ghcr.io/graalvm/native-image-community:25 AS builder
+FROM ghcr.io/graalvm/native-image-community:25.0.2 AS builder
 
 ENV JAVA_HOME=/usr/lib64/graalvm/graalvm-community-java25
 ENV GRAALVM_HOME=/usr/lib64/graalvm/graalvm-community-java25

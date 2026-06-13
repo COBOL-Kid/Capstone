@@ -15,14 +15,12 @@ COPY gradle/ gradle/
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
 
-RUN --mount=type=cache,target=/root/.gradle \
-    chmod +x gradlew \
+RUN chmod +x gradlew \
     && ./gradlew dependencies --no-daemon -q
 
 COPY src/ src/
 
-RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew nativeCompile -x test --no-daemon
+RUN ./gradlew nativeCompile -x test --no-daemon
 
 # --- Runtime: minimal glibc image for Cloud Run ---
 FROM debian:bookworm-slim

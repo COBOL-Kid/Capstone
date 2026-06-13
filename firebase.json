@@ -1,12 +1,16 @@
 {
   "hosting": {
     "public": "Client/dist/Client/browser",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "honest-car-server",
+          "serviceId": "hc-server",
           "region": "us-central1"
         }
       },

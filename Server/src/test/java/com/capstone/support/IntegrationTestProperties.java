@@ -42,6 +42,7 @@ public final class IntegrationTestProperties {
       "spring.jpa.hibernate.ddl-auto=none",
       "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect",
       "spring.flyway.enabled=true",
+      "spring.flyway.locations=classpath:integration-test-db/migration",
       "spring.flyway.target=1",
       "security.jwt.secret=" + JWT_SECRET,
       "security.jwt.expiration-minutes=15",

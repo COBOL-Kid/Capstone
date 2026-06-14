@@ -52,6 +52,7 @@ dependencies {
     }
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testRuntimeOnly("com.h2database:h2")
 
     add("nativeImageCompileOnly", sourceSets["main"].output)

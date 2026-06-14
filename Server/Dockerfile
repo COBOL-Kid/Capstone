@@ -6,8 +6,6 @@ FROM ghcr.io/graalvm/native-image-community:25.0.2 AS builder
 ENV JAVA_HOME=/usr/lib64/graalvm/graalvm-community-java25
 ENV GRAALVM_HOME=/usr/lib64/graalvm/graalvm-community-java25
 ENV NATIVE_IMAGE_BUILD=true
-# Native image compilation is memory-heavy; tune if Cloud Build OOMs.
-ENV GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx4g
 
 WORKDIR /workspace
 
@@ -15,7 +13,8 @@ COPY gradle/ gradle/
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
 
-RUN chmod +x gradlew \
+RUN sed -i 's/\r$//' gradlew \
+    && chmod +x gradlew \
     && ./gradlew dependencies --no-daemon -q
 
 COPY src/ src/

@@ -41,8 +41,8 @@ class VehicleDataProviderRequestMetricsTest {
           () ->
               scopeB.call(
                   () -> {
-                    bothStarted.countDown();
                     metrics.requestStarted();
+                    bothStarted.countDown();
                     metrics.requestFinished();
                     return null;
                   }));

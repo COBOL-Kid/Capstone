@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 public interface CompletedMaintenanceRepositoryJPA
     extends JpaRepository<CompletedMaintenance, Long> {
 
+  @Query(
+      "SELECT c FROM CompletedMaintenance c WHERE c.userVin = :userVin AND c.maintMileage = :maintMileage")
   Optional<CompletedMaintenance> findByUserVinAndMaintMileage(
       UserVin userVin, MaintMileage maintMileage);
 

@@ -12,6 +12,5 @@ public interface AccountChangeRequestRepositoryJPA
   @Query("SELECT a FROM AccountChangeRequest a WHERE a.user = :user")
   Optional<AccountChangeRequest> findByUser(User user);
 
-  @Query("SELECT a FROM AccountChangeRequest a WHERE a.user = :user")
   void deleteByUser(User user);
 }

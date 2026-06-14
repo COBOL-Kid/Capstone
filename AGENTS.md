@@ -34,7 +34,7 @@
 - **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Start local Postgres with `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
 - **Injected `DB_*` env vars**: Cloud Agent secrets for `DB_URL`/`DB_USER`/`DB_PASS` override `/.env` at runtime. If they point at a non-PostgreSQL URL, export PostgreSQL values on the `bootRun` command line (or unset them) so Spring connects to local Postgres.
 - **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
-- **pnpm 11**: `packageManager` is `pnpm@11.3.0`; activate via `corepack prepare pnpm@11.3.0 --activate`.
+- **pnpm 11**: `packageManager` in `Client/package.json` is `pnpm@11.6.0`; activate via `corepack prepare pnpm@11.6.0 --activate` (corepack auto-fetches the pinned version when running `pnpm` inside `Client/`).
 
 ### Running services
 
@@ -62,3 +62,10 @@ Server tests use in-memory H2 in PostgreSQL compatibility mode for Flyway integr
 ### External APIs (optional for browse-only dev)
 
 Full vehicle and email flows need Auto.dev, Vehicle Databases, and Mailjet keys in `/.env`. Browse-only (landing, services, auth UI) works with placeholder provider keys and `MAILJET_ENABLED=false`.
+
+### Non-obvious gotchas (verified in setup)
+
+- **`spotlessCheck` also formats Spring Boot AOT-generated sources.** The spring-boot AOT plugin registers `build/generated/aotSources` into the main source set, and Spotless (no explicit `target()`) scans it; `./gradlew spotlessCheck` therefore triggers `processAot` and FAILS on the generated code even on a clean checkout (true on both `main` and `version-bump`). The hand-written `src/` tree is clean — confirm by checking that no `src/main` or `src/test` paths appear in the violation list; generated-only failures can be ignored for source linting.
+- **Injected `DB_*` secrets point to a real Supabase Postgres.** With the Cloud Agent secrets present, `bootRun` connects to Supabase out of the box (reports Postgres 17.x, catalog `postgres`). To avoid writing to that shared DB during local testing, override `DB_URL`/`DB_USER`/`DB_PASS` to local Postgres on the `bootRun` command line.
+- **Flyway checksum mismatch on a reused local DB.** A local `honestcar` DB migrated in a previous session can have a different V1 checksum than the current branch (migrations were consolidated into V1), causing `FlywayValidateException` at startup. Fix by resetting the local DB: `sudo -u postgres psql -c "DROP DATABASE honestcar;"` then recreate it with owner `honestcar` and let Flyway re-apply V1.
+- **Email is mandatory for signup.** `/api/auth/register` always calls Mailjet (the verification code is stored bcrypt-hashed, so it cannot be recovered from the DB). Without a reachable inbox, seed a verified user directly into `user_detail` (`email_verified=true`, `user_pw` = a BCrypt hash) and use `/api/auth/authenticate` / the login UI to reach the authenticated dashboard. The SPA's first login POST can fail once if the `XSRF-TOKEN` cookie hasn't been issued yet; a retry succeeds.

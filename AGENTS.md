@@ -8,12 +8,13 @@
 - Do not edit attached plan files when implementing a plan; follow the plan and update code only.
 - Prefer GCP-native observability (Cloud Logging, Error Reporting, trace correlation); no third-party APM or Sentry unless asked.
 - Angular backend mutations must use HttpClient (not `fetch`) so XSRF and credentials interceptors apply.
+- Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
 
 ## Learned Workspace Facts
 
 - Monorepo layout: `Client/` (Angular 22 frontend) and `Server/` (Spring Boot 4.1.0 / Java backend). Server JSON uses Jackson 3 (`tools.jackson` / `JsonMapper`); JJWT via `jjwt-gson` (not `jjwt-jackson`).
 - Git `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
-- Production deployment target is Google Cloud Run (GCP project `honest-car-498923`, region `us-central1`); server image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Secrets and config come from Secret Manager / service env vars at deploy time, not baked into the image or a local `.env` file.
+- Production deployment target is Google Cloud Run (GCP project `honest-car-498923`, region `us-central1`); server image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Build from `Server/` with `docker build -t <image>:latest .`, push to Artifact Registry, then `gcloud run services update honest-car-server --region=us-central1 --image=<image>:latest` (Cloud Run does not always pick up a new `:latest` tag automatically). Secrets and config come from Secret Manager / service env vars at deploy time, not baked into the image or a local `.env` file.
 - Auth uses HttpOnly cookies for access and refresh tokens with CSRF protection (JWTs not in `localStorage`); login rate limit is 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
 - Database is PostgreSQL; schema is managed by a single Flyway migration `V1__Initial_schema.sql` (V2 was merged before production). Server tests use in-memory H2 in PostgreSQL compatibility mode (`MODE=PostgreSQL`) with Hibernate `PostgreSQLDialect`.
 - Local dev uses the `dev` Spring profile (`SPRING_PROFILES_ACTIVE=dev`) to load `.env`, disable secure cookies, and default `app.public-url` to `http://localhost:4200`.
@@ -22,7 +23,7 @@
 - Run Spotless after Java changes and Prettier after TypeScript changes.
 - Prod profile (`SPRING_PROFILES_ACTIVE=prod`): `server.port=${PORT:8080}` for Cloud Run, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
 - Local dev: Angular uses same-origin API URLs (`Client/src/app/core/api/api.config.ts`); `Client/proxy.conf.json` proxies `/api/**` to `http://localhost:8080`. Production Firebase Hosting (`firebase.json`) rewrites `/api/**` to Cloud Run service `honest-car-server` in `us-central1`. Custom domain `honest-car.co` is connected in Firebase Console (Hosting → Custom domains). No server CORS config. Deploy frontend: `pnpm --dir Client deploy:hosting`.
-- Server Gradle uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` is pinned at `11.15.0` above the BOM. Local JVM dev uses JDK 25; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF). Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile—Google Cloud Build's default Docker builder does not enable BuildKit; rely on multi-stage layer caching instead.
+- Server Gradle uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` is pinned at `11.15.0` above the BOM. Local JVM dev uses JDK 25; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh` (e.g. `"C:\Program Files\Git\bin\sh.exe" ./gradlew test`). Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF). Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile—Google Cloud Build's default Docker builder does not enable BuildKit; rely on multi-stage layer caching instead.
 
 ## Cursor Cloud specific instructions
 

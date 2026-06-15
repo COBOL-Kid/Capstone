@@ -10,50 +10,51 @@
 - Angular backend mutations must use HttpClient (not `fetch`) so XSRF and credentials interceptors apply.
 - Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
 
-## Learned Workspace Facts
+## Repository Overview
 
-- Monorepo layout: `Client/` (Angular 22 frontend) and `Server/` (Spring Boot 4.1.0 / Java backend). Server JSON uses Jackson 3 (`tools.jackson` / `JsonMapper`); JJWT via `jjwt-gson` (not `jjwt-jackson`).
-- Git `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
-- Production deployment target is Google Cloud Run (GCP project `honest-car-498923`, region `us-central1`); server image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Build from `Server/` with `docker build -t <image>:latest .`, push to Artifact Registry, then `gcloud run services update honest-car-server --region=us-central1 --image=<image>:latest` (Cloud Run does not always pick up a new `:latest` tag automatically). Secrets and config come from Secret Manager / service env vars at deploy time, not baked into the image or a local `.env` file. Native image container has no CLI args (`ENTRYPOINT ./capstone-server`); `SPRING_PROFILES_ACTIVE=prod` and `PORT=8080` are set in the Dockerfile—do not set `PORT` manually on Cloud Run when the container port is 8080.
-- Auth uses HttpOnly cookies for access and refresh tokens with CSRF protection (JWTs not in `localStorage`); login rate limit is 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
-- Database is PostgreSQL; schema is managed by a single Flyway migration `V1__Initial_schema.sql` (V2 was merged before production). Server tests use in-memory H2 in PostgreSQL compatibility mode (`MODE=PostgreSQL`) with Hibernate `PostgreSQLDialect`.
-- Local dev uses the `dev` Spring profile (`SPRING_PROFILES_ACTIVE=dev`) to load `.env`, disable secure cookies, and default `app.public-url` to `http://localhost:4200`.
-- Firebase Hosting CI (only GitHub Actions in repo): `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → `live`). Workflows build with `pnpm install` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). Firebase/GCP project `honest-car-498923` (same project as Cloud Run); GitHub secret `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`.
-- Public support contact email is `support@honest-car.co`.
-- Run Spotless after Java changes and Prettier after TypeScript changes.
-- Prod profile (`SPRING_PROFILES_ACTIVE=prod`): `server.port=${PORT:8080}` for Cloud Run, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, and `GCP_PROJECT_ID` for Cloud Logging trace correlation.
-- Local dev: Angular uses same-origin API URLs (`Client/src/app/core/api/api.config.ts`); `Client/proxy.conf.json` proxies `/api/**` to `http://localhost:8080`. Production Firebase Hosting (`firebase.json`, project `honest-car-498923`) rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name, not the project ID; Hosting only resolves Cloud Run in the same Firebase/GCP project). Custom domain `honest-car.co` is connected in Firebase Console (Hosting → Custom domains). No server CORS config. Deploy frontend: `pnpm --dir Client deploy:hosting`.
-- Server Gradle uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` is pinned at `11.15.0` above the BOM. Local JVM dev uses JDK 25; GraalVM native images are built only via `Server/Dockerfile` (`docker build`), not `./gradlew nativeCompile` on the host. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh` (e.g. `"C:\Program Files\Git\bin\sh.exe" ./gradlew test`). Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF). Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile—Google Cloud Build's default Docker builder does not enable BuildKit; rely on multi-stage layer caching instead.
+- **Layout:** `Client/` (Angular 22 SPA) and `Server/` (Spring Boot 4.1.0 / Java 25 backend).
+- **JSON:** Server uses Jackson 3 (`tools.jackson` / `JsonMapper`). JWTs use JJWT via `jjwt-gson` (not `jjwt-jackson`).
+- **Git:** `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
+- **Support contact:** `support@honest-car.co` (see `Client/src/app/pages/about-page/about-page.html`).
 
-## Cursor Cloud specific instructions
+## Authentication & Security
 
-### One-time VM prerequisites (not in the update script)
+- Access and refresh tokens are HttpOnly cookies (`accessToken`, `refreshToken`); JWTs are not stored in `localStorage`.
+- Spring Security uses CSRF SPA mode (`SecurityConfig`); Angular sends the `XSRF-TOKEN` cookie on mutating requests.
+- Login rate limit: 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
+- No server-side CORS configuration (same-origin in prod via Firebase Hosting rewrites; dev proxy in Angular).
 
-- **Node.js 24 LTS**: use nvm (`nvm install 24 && nvm alias default 24`). Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 to `PATH` in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"`, then `corepack prepare pnpm@11.3.0 --activate`. Verify with `node -v` → `v24.x`.
-- **JDK 25**: local dev and tests use any JDK 25 (Gradle toolchain in `Server/build.gradle.kts`). Native image builds use GraalVM inside `Server/Dockerfile`; no host GraalVM install required.
-- **PostgreSQL 16+** (Docker `postgres:16`, local install, or **Supabase**): dev uses Flyway on boot against `DB_URL` from `/.env`. Start local Postgres with `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Local example: `jdbc:postgresql://localhost:5432/honestcar`. Supabase **transaction pooler** example: `jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?user=postgres.<project-ref>&password=<pass>&sslmode=require&prepareThreshold=0` with matching `DB_USER=postgres.<project-ref>`. Use `prepareThreshold=0` on port `6543` (PgBouncer). Direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails on local networks.
-- **Injected `DB_*` env vars**: Cloud Agent secrets for `DB_URL`/`DB_USER`/`DB_PASS` override `/.env` at runtime. If they point at a non-PostgreSQL URL, export PostgreSQL values on the `bootRun` command line (or unset them) so Spring connects to local Postgres.
-- **Repo-root `/.env`**: gitignored; required for `SPRING_PROFILES_ACTIVE=dev` (`application-dev.properties` imports `../.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable (signup returns 503 until email is configured).
-- **pnpm 11**: `packageManager` in `Client/package.json` is `pnpm@11.6.0`; activate via `corepack prepare pnpm@11.6.0 --activate` (corepack auto-fetches the pinned version when running `pnpm` inside `Client/`).
+## Database
 
-### Running services
+- **Production/dev:** PostgreSQL. Schema is a single Flyway migration: `Server/src/main/resources/db/migration/V1__Initial_schema.sql` (V2 was merged before production).
+- **Tests:** In-memory H2 in PostgreSQL compatibility mode (`MODE=PostgreSQL`); Flyway disabled in test config; Hibernate `PostgreSQLDialect`.
+- **Primary user table:** `user_detail` (not `users`).
+
+## Local Development
+
+- **Spring profile:** `SPRING_PROFILES_ACTIVE=dev` loads `.env`, sets `security.cookies.secure=false`, and defaults `app.public-url` to `http://localhost:4200`.
+- **`.env` import:** `application-dev.properties` imports `optional:file:../.env[.properties]` (repo root) and `optional:file:.env[.properties]` (`Server/.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable.
+- **Frontend API URLs:** Same-origin via `Client/src/app/core/api/api.config.ts` (`resolveBackendOrigin` returns `window.location.origin`).
+- **Dev proxy:** `Client/proxy.conf.json` forwards `/api/**` to `http://localhost:8080`.
 
 | Service | Command | Port |
 |---------|---------|------|
-| Backend (JVM dev) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` (prepend `DB_URL=jdbc:postgresql://localhost:5432/honestcar DB_USER=honestcar DB_PASS=honestcar` when injected secrets override `/.env`) | 8080 |
-| Backend (native image) | `cd Server && docker build -t honest-car-server .` then `docker run ... honest-car-server` | 8080 |
-| Frontend | `cd Client && pnpm start --host 0.0.0.0` | 4200 |
+| Backend (JVM) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
+| Backend (native image) | `cd Server && docker build -t honest-car-server .` then `docker run -p 8080:8080 honest-car-server` | 8080 |
+| Frontend | `cd Client && pnpm start` (use `pnpm start --host 0.0.0.0` on Cloud Agent VMs) | 4200 |
 | Health | `curl http://localhost:8080/actuator/health` | — |
 
-Use tmux for long-running dev servers. Do **not** pass `pnpm start -- --host` (double `--` breaks `ng serve`).
+Run backend and frontend in separate terminals (tmux on Cloud Agent VMs). Do **not** pass `pnpm start -- --host` (double `--` breaks `ng serve`).
 
-### Lint / test / build
+**Browse-only dev** works with placeholder vehicle-provider keys and `MAILJET_ENABLED=false`. Full vehicle and email flows need Auto.dev, Vehicle Databases, and Mailjet keys in `.env`.
 
-| Area | Lint | Test | Build |
-|------|------|------|-------|
-| Client | `pnpm exec prettier --check .` | `pnpm test` | `pnpm build` |
-| Server (JVM) | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` |
-| Server (native) | `./gradlew spotlessCheck` | `./gradlew test` | `docker build -t honest-car-server .` (from `Server/`) |
+## Testing, Formatting & Dependency Scanning
+
+| Area | Format (after edits) | Lint check | Test | Build |
+|------|----------------------|------------|------|-------|
+| Client | `pnpm exec prettier --write .` | `pnpm exec prettier --check .` | `pnpm test` (Vitest via `@angular/build:unit-test`) | `pnpm build` |
+| Server (JVM) | `./gradlew spotlessApply` | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` |
+| Server (native) | `./gradlew spotlessApply` | `./gradlew spotlessCheck` | `./gradlew test` | `docker build -t honest-car-server .` (from `Server/`) |
 
 **Targeted Server regression suites** (auth/repository work):
 
@@ -95,6 +96,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
   - **New seeded integration tests** via `IntegrationTestProperties.h2FlywaySeed(...)`: Flyway loads `classpath:integration-test-db/migration` (`Server/src/test/resources/integration-test-db/migration/V1__Initial_schema.sql`) so seed data does not conflict with the legacy `db/migration` path.
 - **Test JWT secret must be valid Base64.** `JwtService` decodes `security.jwt.secret` with `Decoders.BASE64`. Test config uses `MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=` (same key material as `JwtServiceTest`). Integration tests that issue real JWTs inherit this from `application.properties` or `IntegrationTestProperties.JWT_SECRET`.
 - **Repository query guard:** `RepositoryQueryArchitectureTest` fails CI if a repository method combines `@Modifying` with a `SELECT` `@Query`, or returns primitive `boolean` from a nullable scalar `SELECT`. Add new `*RepositoryJPA` interfaces with custom `@Query` to that test's scan list.
+- **Custom `@Query` on `*RepositoryJPA` can fail at runtime, not compile time.** Prefer Spring Data derived query method names (`existsBy…`, `deleteBy…`) when possible; when adding custom `@Query`, add a repository integration test and update `RepositoryQueryArchitectureTest`.
 - **MockMvc (Spring Boot 4):** `@AutoConfigureMockMvc` lives in `org.springframework.boot.webmvc.test.autoconfigure`; dependency is `spring-boot-starter-webmvc-test`. CSRF is enforced on mutating auth endpoints—bootstrap `XSRF-TOKEN` via a GET (e.g. `/actuator/health`) before POSTing in MockMvc tests.
 - **Transactional deletes in repository tests:** `@Modifying` / derived delete methods need an active transaction; annotate the test method with `@Transactional` when calling `deleteByUser`, `deleteOrphanedVins`, etc.
 
@@ -103,19 +105,36 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 - Auth specs live under `Client/src/app/core/auth/` and `Client/src/app/core/http/`. Interceptor specs (`unauthorized.interceptor.spec.ts`, `credentials.interceptor.spec.ts`) use `provideHttpClient(withInterceptors([...]))` + `HttpTestingController`, matching `auth.service.spec.ts`.
 - Registration/login error handling is tested against plain-text error bodies returned by `GlobalExceptionHandler` (e.g. 500 → `"Sometimes things just don't go as planned."`).
 
-Production backend images are built from `Server/Dockerfile`, which compiles a GraalVM native executable and packages it in a `debian:bookworm-slim` container for Cloud Run. `nativeCompile` is gated behind `NATIVE_IMAGE_BUILD=true` (set in the Dockerfile). Native AOT uses the `prod` profile by default. Conditional beans (for example Mailjet) are fixed at AOT build time via the placeholder env vars in `Server/build.gradle.kts`.
+- **Dependency scanning:** `cd Server && ./gradlew dependencyCheck` (OWASP); `cd Client && pnpm audit` or `pnpm audit:ci`.
+- **Optional live API smoke tests:** `cd Server && ./gradlew liveTest` (tagged `live`; needs real provider/Mailjet env vars).
+- **Gradle:** Uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` pinned at `11.15.0`. JDK 25 toolchain. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh`. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF).
+- **Known flaky tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs). `VehicleReadDaoTest` / `MaintenanceDashboardIntegrationTest` can fail intermittently on slow or UTC-timezone VMs—confirm with the targeted suites above before blaming unrelated changes. Client `local-date.spec.ts` may fail when the VM timezone is UTC.
 
-Server tests use in-memory H2 in PostgreSQL compatibility mode for Flyway integration tests (not a real Postgres instance). One integration test (`VehicleOnboardingProviderBurstIntegrationTest`) can be timing-sensitive on slow VMs. Client `local-date.spec.ts` asserts UTC vs local calendar dates and may fail when the VM timezone is UTC.
+### Spotless + Spring Boot AOT gotcha
 
-### External APIs (optional for browse-only dev)
+`spotlessCheck` triggers `processAot`, which registers `build/generated/aotSources` into the main source set. Spotless (no explicit `target()`) may then report violations in generated code on a clean checkout. Hand-written `src/` is clean when no `src/main` or `src/test` paths appear in the violation list—ignore generated-only failures for source linting.
 
-Full vehicle and email flows need Auto.dev, Vehicle Databases, and Mailjet keys in `/.env`. Browse-only (landing, services, auth UI) works with placeholder provider keys and `MAILJET_ENABLED=false`.
+## Deployment & CI
 
-### Non-obvious gotchas (verified in setup)
+- **GCP project:** `honest-car-498923` (Firebase Hosting and Cloud Run share this project).
+- **Backend (Cloud Run):** Service `honest-car-server`, region `us-central1`. Image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Build from `Server/` with `docker build -t <image>:latest .`, push to Artifact Registry, then `gcloud run services update honest-car-server --region=us-central1 --image=<image>:latest` (Cloud Run may not pick up a repushed `:latest` tag automatically). Secrets and config come from Secret Manager / service env vars at deploy time—not baked into the image or a local `.env`.
+- **Native image container:** `ENTRYPOINT ./capstone-server`; `SPRING_PROFILES_ACTIVE=prod` and `PORT=8080` set in `Server/Dockerfile`. Do not set `PORT` manually on Cloud Run when the container port is 8080. `nativeCompile` is gated behind `NATIVE_IMAGE_BUILD=true` (set in the Dockerfile). Native AOT uses the `prod` profile; conditional beans (e.g. Mailjet) are fixed at AOT build time via placeholder env vars in `Server/build.gradle.kts`. GraalVM native images are built only in Docker—not via `./gradlew nativeCompile` on the host. Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile (Google Cloud Build's default builder does not enable BuildKit).
+- **Prod profile:** `server.port=${PORT:8080}`, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, `GCP_PROJECT_ID` for Cloud Logging trace correlation.
+- **Frontend (Firebase Hosting):** `firebase.json` serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting`.
+- **CI (only GitHub Actions in repo):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`.
 
-- **`spotlessCheck` also formats Spring Boot AOT-generated sources.** The spring-boot AOT plugin registers `build/generated/aotSources` into the main source set, and Spotless (no explicit `target()`) scans it; `./gradlew spotlessCheck` therefore triggers `processAot` and FAILS on the generated code even on a clean checkout (true on both `main` and `version-bump`). The hand-written `src/` tree is clean — confirm by checking that no `src/main` or `src/test` paths appear in the violation list; generated-only failures can be ignored for source linting.
-- **Injected `DB_*` secrets point to a real Supabase Postgres.** With the Cloud Agent secrets present, `bootRun` connects to Supabase out of the box (reports Postgres 17.x, catalog `postgres`). To avoid writing to that shared DB during local testing, override `DB_URL`/`DB_USER`/`DB_PASS` to local Postgres on the `bootRun` command line.
-- **Flyway checksum mismatch on a reused local DB.** A local `honestcar` DB migrated in a previous session can have a different V1 checksum than the current branch (migrations were consolidated into V1), causing `FlywayValidateException` at startup. Fix by resetting the local DB: `sudo -u postgres psql -c "DROP DATABASE honestcar;"` then recreate it with owner `honestcar` and let Flyway re-apply V1.
-- **Email is mandatory for signup.** `/api/auth/register` always calls Mailjet (the verification code is stored bcrypt-hashed, so it cannot be recovered from the DB). Without a reachable inbox, seed a verified user directly into `user_detail` (`email_verified=true`, `user_pw` = a BCrypt hash) and use `/api/auth/authenticate` / the login UI to reach the authenticated dashboard. The SPA's first login POST can fail once if the `XSRF-TOKEN` cookie hasn't been issued yet; a retry succeeds.
-- **Custom `@Query` on `*RepositoryJPA` can fail at runtime, not compile time.** A refactor that adds `SELECT` JPQL to `@Modifying` delete methods or returns nullable scalars for primitive `boolean` caused registration HTTP 500. Prefer Spring Data derived query method names (`existsBy…`, `deleteBy…`) when possible; when adding custom `@Query`, add a repository integration test and update `RepositoryQueryArchitectureTest`.
-- **`VehicleReadDaoTest` / `MaintenanceDashboardIntegrationTest` can fail intermittently** on slow or UTC-timezone VMs (assertion / seed lookup issues). Failures in those classes are often environmental, not caused by unrelated auth/repository changes—confirm with the targeted suites above first.
+## Cursor Cloud Agent Setup
+
+### One-time VM prerequisites
+
+- **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"`.
+- **pnpm 11:** `Client/package.json` pins `pnpm@11.6.0` via `packageManager`; activate with `corepack prepare pnpm@11.6.0 --activate` (CI workflows currently pin `11.3.0` in `pnpm/action-setup`).
+- **JDK 25:** Gradle toolchain in `Server/build.gradle.kts`. GraalVM for native images is only inside `Server/Dockerfile`.
+- **PostgreSQL 16+:** Docker `postgres:16`, local install, or Supabase. Start local Postgres: `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Example URL: `jdbc:postgresql://localhost:5432/honestcar`. Supabase transaction pooler: port `6543` with `prepareThreshold=0` and `sslmode=require`; direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails locally.
+
+### Cloud Agent gotchas
+
+- **Injected `DB_*` secrets** override `/.env` at runtime and may point at a shared Supabase Postgres (Postgres 17.x, catalog `postgres`). Override on the `bootRun` command line to use local Postgres, e.g. prepend `DB_URL=jdbc:postgresql://localhost:5432/honestcar DB_USER=honestcar DB_PASS=honestcar`.
+- **Flyway checksum mismatch** on a reused local DB: drop and recreate `honestcar` if V1 was applied from an older branch (`sudo -u postgres psql -c "DROP DATABASE honestcar;"`, then recreate with owner `honestcar`).
+- **Signup requires email delivery:** `/api/auth/register` persists the user, then sends a verification code via Mailjet. The code is bcrypt-hashed in `email_verification_code` and cannot be recovered from the DB. With `MAILJET_ENABLED=false`, register returns **503** after creating an unverified user. Without a reachable inbox, seed a verified user in `user_detail` (`email_verified=true`, `user_pw` = BCrypt hash) and log in via `/api/auth/authenticate`.
+- **First login POST may fail once** if the `XSRF-TOKEN` cookie has not been issued yet; a retry succeeds.

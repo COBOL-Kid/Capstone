@@ -6,24 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.capstone.data.read.VehicleReadDao;
 import com.capstone.data.read.VehicleReadService;
+import com.capstone.support.IntegrationTestProperties;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
-@SpringBootTest(
-    properties = {
-      "spring.profiles.active=test",
-      "spring.datasource.url=jdbc:h2:mem:vehicle-read-dao;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-      "spring.datasource.driver-class-name=org.h2.Driver",
-      "spring.datasource.username=sa",
-      "spring.datasource.password=",
-      "spring.jpa.hibernate.ddl-auto=none",
-      "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect",
-      "spring.flyway.enabled=true",
-      "spring.flyway.target=1"
-    })
+@SpringBootTest
 class VehicleReadDaoTest {
+
+  @DynamicPropertySource
+  static void h2FlywaySeedProperties(DynamicPropertyRegistry registry) {
+    for (String property : IntegrationTestProperties.h2FlywaySeed("vehicle-read-dao")) {
+      int separator = property.indexOf('=');
+      registry.add(property.substring(0, separator), () -> property.substring(separator + 1));
+    }
+  }
 
   @Autowired VehicleReadDao vehicleReadDao;
   @Autowired VehicleReadService vehicleReadService;

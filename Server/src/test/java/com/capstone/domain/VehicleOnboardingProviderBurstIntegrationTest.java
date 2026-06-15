@@ -10,6 +10,7 @@ import com.capstone.models.User;
 import com.capstone.models.dto.AddVinOutcome;
 import com.capstone.models.dto.AddVinRequest;
 import com.capstone.models.dto.AddVinResponse;
+import com.capstone.support.IntegrationTestProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,20 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootTest(
     properties = {
-      "spring.profiles.active=test",
-      "spring.datasource.url=jdbc:h2:mem:provider-burst;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-      "spring.datasource.driver-class-name=org.h2.Driver",
-      "spring.datasource.username=sa",
-      "spring.datasource.password=",
-      "spring.jpa.hibernate.ddl-auto=none",
-      "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect",
-      "spring.flyway.enabled=true",
-      "spring.flyway.target=1",
       "vehicle-data.autodev.base-url=https://api.auto.dev",
       "vehicle-data.vehicle-databases.base-url=https://api.vehicledatabases.com",
       "vehicle-data.autodev.api-key=test-autodev",
@@ -50,6 +44,14 @@ class VehicleOnboardingProviderBurstIntegrationTest {
   @Autowired private VehicleOnboardingService vehicleOnboardingService;
   @Autowired private VinRepositoryJPA vinRepository;
   @Autowired private RestTemplate restTemplate;
+
+  @DynamicPropertySource
+  static void h2FlywaySeedProperties(DynamicPropertyRegistry registry) {
+    for (String property : IntegrationTestProperties.h2FlywaySeed("provider-burst")) {
+      int separator = property.indexOf('=');
+      registry.add(property.substring(0, separator), () -> property.substring(separator + 1));
+    }
+  }
 
   private MockRestServiceServer mockServer;
   private final AtomicInteger inFlight = new AtomicInteger();

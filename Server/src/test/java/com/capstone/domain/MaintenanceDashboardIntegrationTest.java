@@ -6,27 +6,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.capstone.data.read.VehicleReadService;
 import com.capstone.models.dto.CompleteMaintenanceRequest;
 import com.capstone.models.dto.VehicleDashboardResponse;
+import com.capstone.support.IntegrationTestProperties;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
-@SpringBootTest(
-    properties = {
-      "spring.profiles.active=test",
-      "spring.datasource.url=jdbc:h2:mem:maintenance-dashboard;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-      "spring.datasource.driver-class-name=org.h2.Driver",
-      "spring.datasource.username=sa",
-      "spring.datasource.password=",
-      "spring.jpa.hibernate.ddl-auto=none",
-      "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect",
-      "spring.flyway.enabled=true",
-      "spring.flyway.target=1"
-    })
+@SpringBootTest
 class MaintenanceDashboardIntegrationTest {
 
   private static final String CAMRY_VIN = "4T1C11AK5LU123456";
   private static final long TEST_USER_ID = 1L;
+
+  @DynamicPropertySource
+  static void h2FlywaySeedProperties(DynamicPropertyRegistry registry) {
+    for (String property : IntegrationTestProperties.h2FlywaySeed("maintenance-dashboard")) {
+      int separator = property.indexOf('=');
+      registry.add(property.substring(0, separator), () -> property.substring(separator + 1));
+    }
+  }
 
   @Autowired MaintenanceTrackingService maintenanceTrackingService;
   @Autowired VehicleReadService vehicleReadService;

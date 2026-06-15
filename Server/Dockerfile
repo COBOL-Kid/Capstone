@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1
 
-# --- Build: GraalVM native image (glibc) for Cloud Run ---
-FROM ghcr.io/graalvm/native-image-community:25.0.2 AS builder
+# --- Build: fat JAR with IBM Semeru JDK 25 ---
+FROM icr.io/appcafe/ibm-semeru-runtimes:open-25-jdk-ubi-minimal AS builder
 
-ENV JAVA_HOME=/usr/lib64/graalvm/graalvm-community-java25
-ENV GRAALVM_HOME=/usr/lib64/graalvm/graalvm-community-java25
-ENV NATIVE_IMAGE_BUILD=true
+USER root
+
+RUN microdnf install -y findutils \
+    && microdnf clean all
 
 WORKDIR /workspace
 
@@ -19,26 +20,27 @@ RUN sed -i 's/\r$//' gradlew \
 
 COPY src/ src/
 
-RUN ./gradlew nativeCompile -x test --no-daemon
+RUN ./gradlew bootJar -x test --no-daemon
 
-# --- Runtime: minimal glibc image for Cloud Run ---
-FROM debian:bookworm-slim
+# --- Runtime: IBM Semeru JRE 25 on UBI minimal ---
+FROM icr.io/appcafe/ibm-semeru-runtimes:open-25-jre-ubi-minimal
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --uid 65532 --home-dir /app --shell /usr/sbin/nologin nonroot
+USER root
+
+RUN microdnf install -y shadow-utils ca-certificates \
+    && microdnf clean all \
+    && useradd --system --uid 65532 --home-dir /app --shell /sbin/nologin nonroot
 
 WORKDIR /app
 
-COPY --from=builder /workspace/build/native/nativeCompile/capstone-server ./capstone-server
+COPY --from=builder --chown=65532:65532 /workspace/build/libs/capstone-server.jar ./app.jar
 
-USER nonroot
+USER 65532
 
-# Cloud Run contract: HTTP on PORT (injected at runtime; 8080 is the default).
-ENV PORT=8080
+# Cloud Run injects PORT at runtime; prod profile binds via server.port=${PORT:8080}.
 ENV SPRING_PROFILES_ACTIVE=prod
 
+# Informational only — the process listens on $PORT (8080 when unset).
 EXPOSE 8080
 
-ENTRYPOINT ["./capstone-server"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

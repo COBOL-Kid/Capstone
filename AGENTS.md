@@ -26,8 +26,8 @@
 
 ## Database
 
-- **Production/dev:** PostgreSQL. Schema is a single Flyway migration: `Server/src/main/resources/db/migration/V1__Initial_schema.sql` (V2 was merged before production).
-- **Tests:** In-memory H2 in PostgreSQL compatibility mode (`MODE=PostgreSQL`); Flyway disabled in test config; Hibernate `PostgreSQLDialect`.
+- **Production/dev:** PostgreSQL. Schema is a single Flyway migration: `Server/src/main/resources/db/migration/V1__Initial_schema.sql` (V2 was merged before production; schema only, no seed data).
+- **Tests:** In-memory H2 in PostgreSQL compatibility mode (`MODE=PostgreSQL`); Flyway disabled in default test config; Hibernate `PostgreSQLDialect`. Seeded Flyway tests use a separate copy at `Server/src/test/resources/integration-test-db/migration/V1__Initial_schema.sql`.
 - **Primary user table:** `user_detail` (not `users`).
 
 ## Local Development
@@ -77,7 +77,7 @@ cd Client && pnpm exec ng test --watch=false \
 ### Server testing conventions
 
 - **Mocked service tests do not execute JPA queries.** `AuthenticationServiceTest`, `EmailVerificationServiceTest`, and similar tests mock `*RepositoryJPA` beans, so broken `@Query` / `@Modifying` JPQL (e.g. `SELECT` on a delete method, nullable scalar returned for primitive `boolean`) will not be caught. Add repository integration tests or service integration tests that use real repositories for any custom repository method.
-- **Shared harness:** `Server/src/test/java/com/capstone/support/IntegrationTestProperties.java` exposes `h2CreateDrop(dbName)` (Hibernate `create-drop`, Flyway off) and `h2FlywaySeed(dbName)` (Flyway V1 seed data, Hibernate `validate`). `MailjetTestSupport.stubSuccessfulSend` stubs `@MockitoBean MailjetClient` for flows that send email.
+- **Shared harness:** `Server/src/test/java/com/capstone/support/IntegrationTestProperties.java` exposes `h2CreateDrop(dbName)` (Hibernate `create-drop`, Flyway off) and `h2FlywaySeed(dbName)` (Flyway V1 seed data, Hibernate `ddl-auto=none`). `MailjetTestSupport.stubSuccessfulSend` stubs `@MockitoBean MailjetClient` for flows that send email.
 - **`@DynamicPropertySource` required for harness properties.** `IntegrationTestProperties.h2CreateDrop(...)` cannot be passed to `@SpringBootTest(properties = …)` (annotation values must be compile-time constants). Register properties at runtime:
 
 ```java
@@ -90,12 +90,13 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 }
 ```
 
-- **Two H2 + Flyway setups:**
-  - **Default test config** (`Server/src/test/resources/application.properties`): `flyway.enabled=false`, Hibernate `create-drop`; used by `@SpringBootTest` tests without overrides.
-  - **Legacy seeded tests** (`VehicleReadDaoTest`, `MaintenanceDashboardIntegrationTest`, `MigrationValidationTest`): inline `@SpringBootTest(properties=…)` with `spring.flyway.enabled=true` and seed SQL at `classpath:db/migration` (`Server/src/test/resources/db/V1_inital_schema.sql`).
-  - **New seeded integration tests** via `IntegrationTestProperties.h2FlywaySeed(...)`: Flyway loads `classpath:integration-test-db/migration` (`Server/src/test/resources/integration-test-db/migration/V1__Initial_schema.sql`) so seed data does not conflict with the legacy `db/migration` path.
+- **Three H2 + Flyway setups:**
+  - **Default test config** (`Server/src/test/resources/application.properties`): `spring.config.import=` (blocks dev `.env` import), `flyway.enabled=false`, Hibernate `create-drop`; used by `@SpringBootTest` tests without overrides.
+  - **Flyway schema validation** (`MigrationValidationTest`): inline `@SpringBootTest(properties=…)` with `spring.flyway.enabled=true` and default `classpath:db/migration` (production `Server/src/main/resources/db/migration/V1__Initial_schema.sql`; schema only, no seed rows).
+  - **Flyway seeded integration tests** via `IntegrationTestProperties.h2FlywaySeed(...)`: Flyway loads `classpath:integration-test-db/migration` (`Server/src/test/resources/integration-test-db/migration/V1__Initial_schema.sql`; duplicates production schema plus seed data). Used by auth/repository integration tests (`UserDeletionIntegrationTest`, `*RepositoryJPATest`, `AuthenticationControllerIntegrationTest`, etc.). Any test that queries seed users/VINs must use this harness (or set `spring.flyway.locations=classpath:integration-test-db/migration`); `VehicleReadDaoTest` and `MaintenanceDashboardIntegrationTest` currently omit that location and fail until migrated.
+  - When editing production `V1__Initial_schema.sql`, keep `integration-test-db/migration/V1__Initial_schema.sql` in sync (schema + seeds).
 - **Test JWT secret must be valid Base64.** `JwtService` decodes `security.jwt.secret` with `Decoders.BASE64`. Test config uses `MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=` (same key material as `JwtServiceTest`). Integration tests that issue real JWTs inherit this from `application.properties` or `IntegrationTestProperties.JWT_SECRET`.
-- **Repository query guard:** `RepositoryQueryArchitectureTest` fails CI if a repository method combines `@Modifying` with a `SELECT` `@Query`, or returns primitive `boolean` from a nullable scalar `SELECT`. Add new `*RepositoryJPA` interfaces with custom `@Query` to that test's scan list.
+- **Repository query guard:** `RepositoryQueryArchitectureTest` fails `./gradlew test` if a repository method combines `@Modifying` with a `SELECT` `@Query`, or returns primitive `boolean` from a nullable scalar `SELECT`. Add new `*RepositoryJPA` interfaces with custom `@Query` to that test's scan list.
 - **Custom `@Query` on `*RepositoryJPA` can fail at runtime, not compile time.** Prefer Spring Data derived query method names (`existsBy…`, `deleteBy…`) when possible; when adding custom `@Query`, add a repository integration test and update `RepositoryQueryArchitectureTest`.
 - **MockMvc (Spring Boot 4):** `@AutoConfigureMockMvc` lives in `org.springframework.boot.webmvc.test.autoconfigure`; dependency is `spring-boot-starter-webmvc-test`. CSRF is enforced on mutating auth endpoints—bootstrap `XSRF-TOKEN` via a GET (e.g. `/actuator/health`) before POSTing in MockMvc tests.
 - **Transactional deletes in repository tests:** `@Modifying` / derived delete methods need an active transaction; annotate the test method with `@Transactional` when calling `deleteByUser`, `deleteOrphanedVins`, etc.
@@ -108,7 +109,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 - **Dependency scanning:** `cd Server && ./gradlew dependencyCheck` (OWASP); `cd Client && pnpm audit` or `pnpm audit:ci`.
 - **Optional live API smoke tests:** `cd Server && ./gradlew liveTest` (tagged `live`; needs real provider/Mailjet env vars).
 - **Gradle:** Uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` pinned at `11.15.0`. JDK 25 toolchain. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh`. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF).
-- **Known flaky tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs). `VehicleReadDaoTest` / `MaintenanceDashboardIntegrationTest` can fail intermittently on slow or UTC-timezone VMs—confirm with the targeted suites above before blaming unrelated changes. Client `local-date.spec.ts` may fail when the VM timezone is UTC.
+- **Known flaky or broken tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs). `VehicleReadDaoTest` and `MaintenanceDashboardIntegrationTest` fail until they use `h2FlywaySeed` / `integration-test-db` Flyway locations (they expect seed data but currently run schema-only migrations). Client `local-date.spec.ts` may fail when the VM timezone is UTC.
 
 ### Spotless + Spring Boot AOT gotcha
 
@@ -120,8 +121,8 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 - **Backend (Cloud Run):** Service `honest-car-server`, region `us-central1`. Image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Build from `Server/` with `docker build -t <image>:latest .`, push to Artifact Registry, then `gcloud run services update honest-car-server --region=us-central1 --image=<image>:latest` (Cloud Run may not pick up a repushed `:latest` tag automatically). Secrets and config come from Secret Manager / service env vars at deploy time—not baked into the image or a local `.env`.
 - **Native image container:** `ENTRYPOINT ./capstone-server`; `SPRING_PROFILES_ACTIVE=prod` and `PORT=8080` set in `Server/Dockerfile`. Do not set `PORT` manually on Cloud Run when the container port is 8080. `nativeCompile` is gated behind `NATIVE_IMAGE_BUILD=true` (set in the Dockerfile). Native AOT uses the `prod` profile; conditional beans (e.g. Mailjet) are fixed at AOT build time via placeholder env vars in `Server/build.gradle.kts`. GraalVM native images are built only in Docker—not via `./gradlew nativeCompile` on the host. Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile (Google Cloud Build's default builder does not enable BuildKit).
 - **Prod profile:** `server.port=${PORT:8080}`, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, `GCP_PROJECT_ID` for Cloud Logging trace correlation.
-- **Frontend (Firebase Hosting):** `firebase.json` serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting`.
-- **CI (only GitHub Actions in repo):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`.
+- **Frontend (Firebase Hosting):** `firebase.json` and `.firebaserc` live at the repo root; hosting serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting` (builds Client, then runs Firebase CLI from repo root).
+- **CI (frontend only; no Server workflow):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`. Server verification is local: `./gradlew test` (and `liveTest` when needed).
 
 ## Cursor Cloud Agent Setup
 
@@ -134,7 +135,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 
 ### Cloud Agent gotchas
 
-- **Injected `DB_*` secrets** override `/.env` at runtime and may point at a shared Supabase Postgres (Postgres 17.x, catalog `postgres`). Override on the `bootRun` command line to use local Postgres, e.g. prepend `DB_URL=jdbc:postgresql://localhost:5432/honestcar DB_USER=honestcar DB_PASS=honestcar`.
+- **Injected `DB_*` secrets** override repo-root `.env` at runtime and may point at a shared Supabase Postgres (Postgres 17.x, catalog `postgres`). Override on the `bootRun` command line to use local Postgres, e.g. prepend `DB_URL=jdbc:postgresql://localhost:5432/honestcar DB_USER=honestcar DB_PASS=honestcar`.
 - **Flyway checksum mismatch** on a reused local DB: drop and recreate `honestcar` if V1 was applied from an older branch (`sudo -u postgres psql -c "DROP DATABASE honestcar;"`, then recreate with owner `honestcar`).
-- **Signup requires email delivery:** `/api/auth/register` persists the user, then sends a verification code via Mailjet. The code is bcrypt-hashed in `email_verification_code` and cannot be recovered from the DB. With `MAILJET_ENABLED=false`, register returns **503** after creating an unverified user. Without a reachable inbox, seed a verified user in `user_detail` (`email_verified=true`, `user_pw` = BCrypt hash) and log in via `/api/auth/authenticate`.
+- **Signup requires email delivery:** `/api/auth/register` persists the user, then sends a verification code via Mailjet (`mailjet.enabled=true` creates the `MailjetClient` bean). The code is bcrypt-hashed in `email_verification_code` and cannot be recovered from the DB. With `MAILJET_ENABLED=false`, `MailjetEmailClient` is absent and register returns **503** (`EmailDeliveryException` → `"Unable to send verification email right now. Please try again later."`) after creating an unverified user. Without a reachable inbox, seed a verified user in `user_detail` (`email_verified=true`, `user_pw` = BCrypt hash) and log in via `/api/auth/authenticate`.
 - **First login POST may fail once** if the `XSRF-TOKEN` cookie has not been issued yet; a retry succeeds.

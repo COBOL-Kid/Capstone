@@ -22,7 +22,7 @@ Since then, I’ve reworked the codebase as I’ve grown as a developer. My prof
 | Frontend | Angular 22 SPA (`Client/`) |
 | Backend | Spring Boot 4.1 / Java 25 (`Server/`) |
 | Database | PostgreSQL 16+ (Flyway migrations) |
-| Production hosting | Firebase Hosting → Cloud Run (`honest-car-server`, GraalVM native image) |
+| Production hosting | Firebase Hosting → Cloud Run (`honest-car-server`, IBM Semeru Runtime 25 JVM) |
 | Email | Mailjet (verification codes) |
 | Vehicle data | Auto.dev, Vehicle Databases |
 
@@ -56,13 +56,11 @@ Example database URL: `jdbc:postgresql://localhost:5432/honestcar`
 | Service | Command | Port |
 |---------|---------|------|
 | Backend (JVM) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
-| Backend (native image) | `cd Server && docker build -t honest-car-server .` then `docker run -p 8080:8080 honest-car-server` | 8080 |
+| Backend (container) | `cd Server && docker build -t honest-car-server .` then `docker run -p 8080:8080 honest-car-server` | 8080 |
 | Frontend | `cd Client && pnpm start` | 4200 |
 | Health check | `curl http://localhost:8080/actuator/health` | — |
 
 Run the backend and frontend in separate terminals. With `SPRING_PROFILES_ACTIVE=dev`, Spring loads `.env` from the repo root (or `Server/.env`), sets `security.cookies.secure=false`, and defaults `app.public-url` to `http://localhost:4200`. The Angular dev server proxies `/api/**` to `http://localhost:8080`.
-
-**Note:** The first login POST may fail once if the `XSRF-TOKEN` cookie has not been issued yet; a retry succeeds.
 
 ## Testing and formatting
 
@@ -78,7 +76,7 @@ Optional live API smoke tests: `cd Server && ./gradlew liveTest` (requires real 
 ## Deployment
 
 - **Frontend:** Firebase Hosting serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run. Deploy manually with `pnpm --dir Client deploy:hosting`. Pushes to `main` also deploy via GitHub Actions.
-- **Backend:** GraalVM native image built from `Server/Dockerfile`, deployed to Cloud Run (`honest-car-server`, `us-central1`). Secrets and config come from GCP Secret Manager at deploy time—not from a local `.env`.
+- **Backend:** IBM Semeru Runtime 25 JVM container built from `Server/Dockerfile`, deployed to Cloud Run (`honest-car-server`, `us-central1`). Secrets and config come from GCP Secret Manager at deploy time—not from a local `.env`.
 
 Production URL defaults to `https://honest-car.co`.
 

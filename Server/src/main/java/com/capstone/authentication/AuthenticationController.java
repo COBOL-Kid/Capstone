@@ -23,6 +23,11 @@ public class AuthenticationController {
     this.authCookies = authCookies;
   }
 
+  @GetMapping("/csrf")
+  public ResponseEntity<Void> csrf() {
+    return ResponseEntity.noContent().build();
+  }
+
   @PostMapping("/register")
   public ResponseEntity<AuthenticationResponse> register(
       @Valid @RequestBody RegisterRequest request) {

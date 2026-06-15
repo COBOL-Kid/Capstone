@@ -45,6 +45,17 @@ class AuthenticationControllerIntegrationTest {
   }
 
   @Test
+  void csrfEndpointReturnsNoContentAndSetsXsrfCookie() throws Exception {
+    MockHttpServletResponse response =
+        mockMvc
+            .perform(get("/api/auth/csrf"))
+            .andExpect(status().isNoContent())
+            .andReturn()
+            .getResponse();
+    readCsrf(response);
+  }
+
+  @Test
   void registerReturns400ForInvalidPayload() throws Exception {
     MockHttpServletResponse bootstrap = bootstrapCsrf();
     mockMvc

@@ -4,18 +4,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.capstone.domain.VehicleDataMapper;
 import com.capstone.integration.testsupport.VehicleDataFixtures;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class VehicleDataProviderResponseContractTest {
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final JsonMapper jsonMapper = JsonMapper.builder().build();
   private final VehicleDataMapper vehicleDataMapper = new VehicleDataMapper();
 
   @Test
   void shouldDeserializeVinDecodeFixtureAndMapIdentity() throws Exception {
     VinDecodeResponse response =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("autodev-vin-decode.json"), VinDecodeResponse.class);
 
     assertEquals(VehicleDataFixtures.BURST_TEST_VIN, response.vin());
@@ -32,22 +32,22 @@ class VehicleDataProviderResponseContractTest {
   @Test
   void shouldDeserializeAllProviderFixtures() throws Exception {
     RepairEstimatesResponse repairEstimates =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("vdb-repair-estimates.json"), RepairEstimatesResponse.class);
     RepairCostResponse repairCosts =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("vdb-repair-costs.json"), RepairCostResponse.class);
     VehicleRecallsResponse recalls =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("vdb-vehicle-recalls.json"), VehicleRecallsResponse.class);
     OwnerManualResponse ownerManual =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("vdb-owner-manual.json"), OwnerManualResponse.class);
     VehicleWarrantyResponse warranty =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("vdb-vehicle-warranty.json"), VehicleWarrantyResponse.class);
     VehiclePhotosResponse photos =
-        objectMapper.readValue(
+        jsonMapper.readValue(
             VehicleDataFixtures.read("autodev-photos.json"), VehiclePhotosResponse.class);
 
     assertEquals("success", repairEstimates.status());

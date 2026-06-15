@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface CompletedRecallRepositoryJPA extends JpaRepository<CompletedRecall, Long> {
 
+  @Query("SELECT c FROM CompletedRecall c WHERE c.userVin = :userVin AND c.recall = :recall")
   Optional<CompletedRecall> findByUserVinAndRecall(UserVin userVin, Recall recall);
 
   @Modifying

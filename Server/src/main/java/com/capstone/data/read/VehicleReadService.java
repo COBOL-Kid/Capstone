@@ -24,9 +24,6 @@ import com.capstone.models.dto.VehicleDashboardResponse;
 import com.capstone.models.dto.VehicleDetailResponse;
 import com.capstone.models.dto.VehicleWarrantyResponse;
 import com.capstone.models.dto.WarrantyCoverageResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,11 +33,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class VehicleReadService {
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final TypeReference<LinkedHashMap<String, String>> COVERAGES_MAP =
       new TypeReference<>() {};
 
@@ -126,23 +126,22 @@ public class VehicleReadService {
     LocalDate today = LocalDate.now();
     try {
       String normalizedJson = normalizeCoveragesJson(coveragesJson);
-      Map<String, String> coverages = OBJECT_MAPPER.readValue(normalizedJson, COVERAGES_MAP);
+      Map<String, String> coverages = JSON.readValue(normalizedJson, COVERAGES_MAP);
       return coverages.entrySet().stream()
           .map(
               entry ->
                   WarrantyStatusCalculator.compute(
                       entry.getKey(), entry.getValue(), modelYear, currentMileage, today))
           .toList();
-    } catch (JsonProcessingException ex) {
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to deserialize warranty coverages", ex);
     }
   }
 
-  private static String normalizeCoveragesJson(String coveragesJson)
-      throws JsonProcessingException {
+  private static String normalizeCoveragesJson(String coveragesJson) {
     String trimmed = coveragesJson.trim();
     if (trimmed.startsWith("\"")) {
-      return OBJECT_MAPPER.readValue(trimmed, String.class);
+      return JSON.readValue(trimmed, String.class);
     }
     return trimmed;
   }

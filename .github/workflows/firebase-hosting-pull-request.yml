@@ -28,5 +28,5 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_AEB48 }}
-          projectId: honest-car-aeb48
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923 }}
+          projectId: honest-car-498923

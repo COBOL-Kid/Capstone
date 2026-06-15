@@ -179,4 +179,27 @@ describe('AuthService', () => {
       .expectOne(`${apiConfig.authUrl}/authenticate`)
       .flush('Invalid account credentials', { status: 401, statusText: 'Unauthorized' });
   });
+
+  it('surfaces server error text when registration fails with 500', () => {
+    service
+      .register({
+        firstname: 'Pat',
+        lastname: 'Driver',
+        email: 'pat@example.com',
+        password: 'Password1!',
+      })
+      .subscribe({
+        error: (error) => {
+          expect(error.message).toBe("Sometimes things just don't go as planned.");
+        },
+      });
+
+    const request = httpTesting.expectOne(`${apiConfig.authUrl}/register`);
+    request.flush("Sometimes things just don't go as planned.", {
+      status: 500,
+      statusText: 'Internal Server Error',
+    });
+
+    expect(service.isSignedIn()).toBe(false);
+  });
 });

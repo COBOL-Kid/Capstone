@@ -10,7 +10,7 @@
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "hc-server",
+          "serviceId": "honest-car-server",
           "region": "us-central1"
         }
       },

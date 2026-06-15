@@ -1,24 +1,24 @@
 package com.capstone.models;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @Converter
 public class MapStringJsonConverter implements AttributeConverter<Map<String, String>, String> {
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final TypeReference<Map<String, String>> STRING_MAP = new TypeReference<>() {};
 
   @Override
   public String convertToDatabaseColumn(Map<String, String> attribute) {
     try {
-      return OBJECT_MAPPER.writeValueAsString(attribute != null ? attribute : Map.of());
-    } catch (JsonProcessingException ex) {
+      return JSON.writeValueAsString(attribute != null ? attribute : Map.of());
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to serialize warranty coverages", ex);
     }
   }
@@ -29,8 +29,8 @@ public class MapStringJsonConverter implements AttributeConverter<Map<String, St
       return new LinkedHashMap<>();
     }
     try {
-      return new LinkedHashMap<>(OBJECT_MAPPER.readValue(dbData, STRING_MAP));
-    } catch (JsonProcessingException ex) {
+      return new LinkedHashMap<>(JSON.readValue(dbData, STRING_MAP));
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to deserialize warranty coverages", ex);
     }
   }

@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     java
-    id("org.springframework.boot") version "4.0.6"
+    id("org.springframework.boot") version "4.1.0"
     id("com.diffplug.spotless") version "8.6.0"
     id("org.owasp.dependencycheck") version "12.1.0"
     id("org.graalvm.buildtools.native") version "1.1.1"
@@ -43,7 +43,7 @@ dependencies {
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
-    runtimeOnly(libs.jjwt.jackson)
+    runtimeOnly(libs.jjwt.gson)
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -52,6 +52,7 @@ dependencies {
     }
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testRuntimeOnly("com.h2database:h2")
 
     add("nativeImageCompileOnly", sourceSets["main"].output)

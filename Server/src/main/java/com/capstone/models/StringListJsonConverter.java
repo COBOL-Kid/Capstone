@@ -1,24 +1,24 @@
 package com.capstone.models;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.ArrayList;
 import java.util.List;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @Converter
 public class StringListJsonConverter implements AttributeConverter<List<String>, String> {
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {};
 
   @Override
   public String convertToDatabaseColumn(List<String> attribute) {
     try {
-      return OBJECT_MAPPER.writeValueAsString(attribute != null ? attribute : List.of());
-    } catch (JsonProcessingException ex) {
+      return JSON.writeValueAsString(attribute != null ? attribute : List.of());
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to serialize image URLs", ex);
     }
   }
@@ -29,8 +29,8 @@ public class StringListJsonConverter implements AttributeConverter<List<String>,
       return new ArrayList<>();
     }
     try {
-      return new ArrayList<>(OBJECT_MAPPER.readValue(dbData, STRING_LIST));
-    } catch (JsonProcessingException ex) {
+      return new ArrayList<>(JSON.readValue(dbData, STRING_LIST));
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to deserialize image URLs", ex);
     }
   }

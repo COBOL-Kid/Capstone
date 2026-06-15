@@ -1,0 +1,32 @@
+{
+  "name": "hc-server-image-push",
+  "description": "docker image publish",
+  "substitutions": {
+    "_IMAGE": "$(body.message.data.tag)",
+    "_ACTION": "$(body.message.data.action)"
+  },
+  "filter": "_IMAGE.contains('honest-car-server') && (_ACTION == 'INSERT' || _ACTION == 'UPDATE')",
+  "pubsubConfig": {
+    "topic": "projects/honest-car-498923/topics/gcr"
+  },
+  "serviceAccount": "projects/honest-car-498923/serviceAccounts/629236952018-compute@developer.gserviceaccount.com",
+  "build": {
+    "options": {
+      "logging": "CLOUD_LOGGING_ONLY"
+    },
+    "steps": [
+      {
+        "name": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+        "entrypoint": "gcloud",
+        "args": [
+          "run",
+          "deploy",
+          "honest-car-server",
+          "--image=${_IMAGE}",
+          "--region=us-central1",
+          "--update-secrets=DB_URL=hc-db-url:latest,DB_USER=hc-db-user:latest,DB_PASS=hc-db-pw:latest,SECRET_KEY=hc-jwt-key:latest,JWT_EXPIRATION_MINUTES=jwt-exp-min:latest,JWT_REFRESH_EXPIRATION_DAYS=hc-jwt-exp-d:latest,COOKIE_SECURE=hc-cookie:latest,AUTODEV_BASE_URL=auto-dev-url:latest,AUTODEV_API_KEY=auto-dev-key:latest,AUTODEV_API_KEY_HEADER=auto-dev-header:latest,VEHICLE_DATA_BASE_URL=vdb-url:latest,VEHICLE_DATA_API_KEY=vdb-key:latest,VEHICLE_DATA_API_KEY_HEADER=vdb-header:latest,MAILJET_ENABLED=mailjet-on:latest,MAILJET_API_KEY_PUBLIC=Mailjet-public:latest,MAILJET_API_KEY_PRIVATE=Mailjet-private:latest,MAILJET_FROM_EMAIL=mailjet-email:latest,MAILJET_FROM_NAME=mailjet-from:latest"
+        ]
+      }
+    ]
+  }
+}

@@ -1,14 +1,14 @@
 package com.capstone.data.read;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 final class ImageUrlsParser {
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {};
 
   private ImageUrlsParser() {}
@@ -18,8 +18,8 @@ final class ImageUrlsParser {
       return List.of();
     }
     try {
-      return new ArrayList<>(OBJECT_MAPPER.readValue(json, STRING_LIST));
-    } catch (JsonProcessingException ex) {
+      return new ArrayList<>(JSON.readValue(json, STRING_LIST));
+    } catch (JacksonException ex) {
       throw new IllegalStateException("Failed to deserialize image URLs", ex);
     }
   }

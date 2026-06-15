@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserVinRepositoryJPA extends JpaRepository<UserVin, UserVinId> {
 
+  @Query("SELECT u FROM UserVin u WHERE u.user.userId = :userId AND u.vin.vin = :vin")
   Optional<UserVin> findByUserUserIdAndVinVin(Long userId, String vin);
 
   @Query(

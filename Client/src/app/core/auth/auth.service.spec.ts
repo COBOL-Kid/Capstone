@@ -168,6 +168,36 @@ describe('AuthService', () => {
     expect(service.isSignedIn()).toBe(true);
   });
 
+  it('keeps an active session when account hydration returns forbidden', () => {
+    service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
+
+    service.validateSession().subscribe((valid) => {
+      expect(valid).toBe(true);
+    });
+
+    httpTesting
+      .expectOne(`${apiConfig.accountUrl}/me`)
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(service.isSignedIn()).toBe(true);
+  });
+
+  it('clears the session when account hydration returns unauthorized during validation', () => {
+    service.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
+
+    service.validateSession().subscribe((valid) => {
+      expect(valid).toBe(false);
+    });
+
+    httpTesting
+      .expectOne(`${apiConfig.accountUrl}/me`)
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(service.isSignedIn()).toBe(false);
+  });
+
   it('maps invalid credential responses into a user-facing message', () => {
     service.login({ email: 'pat@example.com', password: 'wrong' }).subscribe({
       error: (error) => {

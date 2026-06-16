@@ -8,7 +8,6 @@ import io.jsonwebtoken.JwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -30,10 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
   private final UserRepositoryJPA userRepository;
+  private final AuthCookies authCookies;
 
-  public JwtAuthenticationFilter(JwtService jwtService, UserRepositoryJPA userRepository) {
+  public JwtAuthenticationFilter(
+      JwtService jwtService, UserRepositoryJPA userRepository, AuthCookies authCookies) {
     this.jwtService = jwtService;
     this.userRepository = userRepository;
+    this.authCookies = authCookies;
   }
 
   @Override
@@ -42,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @Nonnull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
-    String jwtToken = extractAccessToken(request);
+    String jwtToken = authCookies.readAccessToken(request).orElse(null);
     if (jwtToken == null || jwtToken.isBlank()) {
       filterChain.doFilter(request, response);
       return;
@@ -78,19 +80,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private static boolean isLocked(User user) {
     return user.getLockoutEnd() != null && user.getLockoutEnd().isAfter(LocalDateTime.now());
-  }
-
-  private static String extractAccessToken(HttpServletRequest request) {
-    Cookie[] cookies = request.getCookies();
-    if (cookies == null) {
-      return null;
-    }
-    for (Cookie cookie : cookies) {
-      if (AuthCookies.ACCESS_TOKEN_NAME.equals(cookie.getName())) {
-        return cookie.getValue();
-      }
-    }
-    return null;
   }
 
   private static AuthenticatedUser toAuthenticatedUser(Claims claims) {

@@ -211,8 +211,7 @@ class GlobalExceptionHandlerTest {
 
     assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     String cookies = String.join(";", response.getHeaders().get(HttpHeaders.SET_COOKIE));
-    assertTrue(cookies.contains("refreshToken="));
-    assertTrue(cookies.contains("accessToken="));
+    assertTrue(cookies.contains("__session="));
     assertTrue(cookies.contains("Max-Age=0"));
   }
 

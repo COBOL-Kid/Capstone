@@ -1,6 +1,7 @@
 package com.capstone.authentication;
 
 import com.capstone.configuration.JwtProperties;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import org.springframework.http.HttpStatus;
@@ -66,20 +67,17 @@ public class AuthenticationController {
   }
 
   @PostMapping("/refresh")
-  public ResponseEntity<AuthenticationResponse> refresh(
-      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
-    if (refreshToken == null || refreshToken.isEmpty()) {
-      throw new InvalidRefreshTokenException("Missing refresh token cookie");
-    }
+  public ResponseEntity<AuthenticationResponse> refresh(HttpServletRequest request) {
+    String refreshToken =
+        authCookies
+            .readRefreshToken(request)
+            .orElseThrow(() -> new InvalidRefreshTokenException("Missing refresh token cookie"));
     return sessionResponse(service.refreshToken(refreshToken));
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<?> logout(
-      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
-    if (refreshToken != null && !refreshToken.isEmpty()) {
-      service.logout(refreshToken);
-    }
+  public ResponseEntity<?> logout(HttpServletRequest request) {
+    authCookies.readRefreshToken(request).ifPresent(refreshToken -> service.logout(refreshToken));
     return ResponseEntity.ok().headers(authCookies.clearSessionCookies()).build();
   }
 

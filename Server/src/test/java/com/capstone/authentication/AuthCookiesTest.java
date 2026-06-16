@@ -10,7 +10,7 @@ import org.springframework.http.HttpHeaders;
 class AuthCookiesTest {
 
   @Test
-  void shouldSetSessionCookiesWithExpectedAttributes() {
+  void shouldSetSessionCookieWithExpectedAttributes() {
     CookieSecurityProperties properties = new CookieSecurityProperties();
     properties.setSecure(true);
     AuthCookies authCookies = new AuthCookies(properties);
@@ -18,38 +18,38 @@ class AuthCookiesTest {
     HttpHeaders headers =
         authCookies.setSessionCookies("access-value", "refresh-value", 3600, 604800);
 
-    String accessCookie =
+    String sessionCookie =
         headers.get(HttpHeaders.SET_COOKIE).stream()
-            .filter(cookie -> cookie.startsWith("accessToken="))
-            .findFirst()
-            .orElseThrow();
-    String refreshCookie =
-        headers.get(HttpHeaders.SET_COOKIE).stream()
-            .filter(cookie -> cookie.startsWith("refreshToken="))
+            .filter(cookie -> cookie.startsWith("__session="))
             .findFirst()
             .orElseThrow();
 
-    assertNotNull(accessCookie);
-    assertTrue(accessCookie.contains("accessToken=access-value"));
-    assertTrue(accessCookie.contains("HttpOnly"));
-    assertTrue(accessCookie.contains("Secure"));
-    assertTrue(accessCookie.contains("Path=/api"));
-    assertTrue(accessCookie.contains("SameSite=Strict"));
-    assertTrue(accessCookie.contains("Max-Age=3600"));
+    assertNotNull(sessionCookie);
+    assertTrue(sessionCookie.contains("HttpOnly"));
+    assertTrue(sessionCookie.contains("Secure"));
+    assertTrue(sessionCookie.contains("Path=/"));
+    assertTrue(sessionCookie.contains("SameSite=Strict"));
+    assertTrue(sessionCookie.contains("Max-Age=604800"));
 
-    assertNotNull(refreshCookie);
-    assertTrue(refreshCookie.contains("refreshToken=refresh-value"));
-    assertTrue(refreshCookie.contains("Path=/api/auth"));
-    assertTrue(refreshCookie.contains("Max-Age=604800"));
+    assertTrue(
+        headers.get(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(cookie -> cookie.startsWith("accessToken=") && cookie.contains("Max-Age=0")));
+    assertTrue(
+        headers.get(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(
+                cookie -> cookie.startsWith("refreshToken=") && cookie.contains("Max-Age=0")));
   }
 
   @Test
-  void shouldClearSessionCookiesWithExpectedAttributes() {
+  void shouldClearSessionAndLegacyCookies() {
     CookieSecurityProperties properties = new CookieSecurityProperties();
     AuthCookies authCookies = new AuthCookies(properties);
 
     HttpHeaders headers = authCookies.clearSessionCookies();
 
+    assertTrue(
+        headers.get(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(cookie -> cookie.startsWith("__session=") && cookie.contains("Max-Age=0")));
     assertTrue(
         headers.get(HttpHeaders.SET_COOKIE).stream()
             .anyMatch(cookie -> cookie.contains("accessToken=") && cookie.contains("Max-Age=0")));

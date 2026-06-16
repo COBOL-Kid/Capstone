@@ -108,12 +108,18 @@ export class AuthService {
   }
 
   validateSession(): Observable<boolean> {
-    const validateAccount = (): Observable<boolean> =>
+    const hydrateAccount = (): Observable<boolean> =>
       this.getCurrentAccount().pipe(
         map(() => true),
-        catchError(() => {
-          this.clearSession();
-          return of(false);
+        catchError((error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.clearSession();
+            return of(false);
+          }
+          // Keep cookie-backed sessions when account hydration fails for other
+          // reasons (for example a transient 403) so successful login is not
+          // immediately undone by the auth guard.
+          return of(this.sessionActive());
         }),
       );
 
@@ -121,11 +127,11 @@ export class AuthService {
       if (this.account() !== null) {
         return of(true);
       }
-      return validateAccount();
+      return hydrateAccount();
     }
 
     return this.refresh().pipe(
-      switchMap(() => validateAccount()),
+      switchMap(() => hydrateAccount()),
       catchError(() => of(false)),
     );
   }

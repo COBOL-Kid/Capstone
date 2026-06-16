@@ -37,8 +37,8 @@ class AuthenticationControllerTest {
 
     assertEquals(HttpStatus.OK, result.getStatusCode());
     String cookies = String.join(";", result.getHeaders().get(HttpHeaders.SET_COOKIE));
-    assertTrue(cookies.contains("refreshToken"));
-    assertTrue(cookies.contains("accessToken"));
+    assertTrue(cookies.contains("__session"));
+    assertTrue(cookies.contains("accessToken=;"));
     assertEquals(Boolean.TRUE, result.getBody().getEmailVerified());
   }
 

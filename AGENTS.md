@@ -23,6 +23,7 @@
 - Access and refresh tokens are HttpOnly cookies (`accessToken`, `refreshToken`); JWTs are not stored in `localStorage`.
 - Spring Security uses CSRF SPA mode (`SecurityConfig`); Angular sends the `XSRF-TOKEN` cookie on mutating requests.
 - SPA bootstrap on load: `AppBootstrapService` (`provideAppInitializer` in `app.config.ts`) calls `GET /api/auth/csrf`, then `validateSession()`, before the app renders—issues the CSRF cookie and hydrates navbar auth state on cold visits.
+- Bootstrap loading splash: branded static HTML inside `<app-root>` in `Client/src/index.html` with `Client/public/bootstrap-splash.css` linked in `<head>` (not bundled `styles.css`) so first paint shows a loading screen during JS download and app-initializer HTTP calls; Angular replaces it when the root `App` component renders.
 - Login rate limit: 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
 - No server-side CORS configuration (same-origin in prod via Firebase Hosting rewrites; dev proxy in Angular).
 

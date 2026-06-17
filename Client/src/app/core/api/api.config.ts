@@ -11,3 +11,11 @@ export const apiConfig = {
 export function resolveBackendOrigin(origin: string): string {
   return origin;
 }
+
+export function isSameBackendOrigin(url: string): boolean {
+  try {
+    return new URL(url, backendOrigin).origin === backendOrigin;
+  } catch {
+    return false;
+  }
+}

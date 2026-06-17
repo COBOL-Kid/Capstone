@@ -65,6 +65,13 @@ export class MaintenanceDetailModalComponent implements AfterViewInit {
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
+    this.requestClose();
+  }
+
+  protected requestClose(): void {
+    if (this.isSubmitting()) {
+      return;
+    }
     this.close.emit();
   }
 

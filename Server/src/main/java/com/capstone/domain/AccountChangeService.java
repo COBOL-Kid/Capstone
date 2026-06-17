@@ -6,6 +6,7 @@ import com.capstone.authentication.AuthenticationService;
 import com.capstone.authentication.PasswordPolicy;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.AccountChangeRequestRepositoryJPA;
+import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.email.EmailDeliveryException;
 import com.capstone.email.EmailNormalizer;
@@ -39,6 +40,7 @@ public class AccountChangeService {
 
   private final UserRepositoryJPA userRepository;
   private final AccountChangeRequestRepositoryJPA changeRequestRepository;
+  private final RefreshTokenRepositoryJPA refreshTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailVerificationProperties properties;
   private final Optional<MailjetEmailClient> mailjetEmailClient;
@@ -47,12 +49,14 @@ public class AccountChangeService {
   public AccountChangeService(
       UserRepositoryJPA userRepository,
       AccountChangeRequestRepositoryJPA changeRequestRepository,
+      RefreshTokenRepositoryJPA refreshTokenRepository,
       PasswordEncoder passwordEncoder,
       EmailVerificationProperties properties,
       Optional<MailjetEmailClient> mailjetEmailClient,
       AuthenticationService authenticationService) {
     this.userRepository = userRepository;
     this.changeRequestRepository = changeRequestRepository;
+    this.refreshTokenRepository = refreshTokenRepository;
     this.passwordEncoder = passwordEncoder;
     this.properties = properties;
     this.mailjetEmailClient = mailjetEmailClient;
@@ -111,7 +115,10 @@ public class AccountChangeService {
         applyEmailChange(user, pending.getNewEmail());
         session = authenticationService.createSession(user);
       }
-      case PASSWORD -> user.setUserPw(pending.getNewPasswordHash());
+      case PASSWORD -> {
+        user.setUserPw(pending.getNewPasswordHash());
+        refreshTokenRepository.deleteByUser(user);
+      }
       case SMS -> user.setUserSms(pending.getNewUserSms());
     }
 
@@ -129,7 +136,7 @@ public class AccountChangeService {
         "changeType",
         pending.getChangeType().name());
 
-    return new AccountChangeVerificationResult(toResponse(user), session);
+    return new AccountChangeVerificationResult(toResponse(user), session, pending.getChangeType());
   }
 
   @Transactional

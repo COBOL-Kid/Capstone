@@ -1,7 +1,8 @@
 package com.capstone.domain;
 
 import com.capstone.authentication.AuthenticationResponse;
+import com.capstone.models.AccountChangeType;
 import com.capstone.models.dto.AccountResponse;
 
 public record AccountChangeVerificationResult(
-    AccountResponse account, AuthenticationResponse session) {}
+    AccountResponse account, AuthenticationResponse session, AccountChangeType changeType) {}

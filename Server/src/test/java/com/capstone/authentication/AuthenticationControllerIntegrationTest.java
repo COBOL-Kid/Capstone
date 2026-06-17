@@ -1,13 +1,20 @@
 package com.capstone.authentication;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.EmailNormalizer;
 import com.capstone.support.IntegrationTestProperties;
 import com.capstone.support.MailjetTestSupport;
 import com.mailjet.client.MailjetClient;
+import com.mailjet.client.errors.MailjetException;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +37,7 @@ class AuthenticationControllerIntegrationTest {
   @MockitoBean private MailjetClient mailjetClient;
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepositoryJPA userRepository;
 
   @DynamicPropertySource
   static void h2CreateDropProperties(DynamicPropertyRegistry registry) {
@@ -91,6 +99,30 @@ class AuthenticationControllerIntegrationTest {
                 .content(body))
         .andExpect(status().isConflict())
         .andExpect(content().string("Unable to complete registration"));
+  }
+
+  @Test
+  void registerPersistsUnverifiedUserWhenEmailDeliveryFails() throws Exception {
+    when(mailjetClient.post(any())).thenThrow(new MailjetException("Mailjet unavailable"));
+
+    String email = "mail-fail-" + System.nanoTime() + "@example.com";
+    String normalizedEmail = EmailNormalizer.normalize(email);
+    String body =
+        """
+        {"firstname":"Pat","lastname":"Driver","email":"%s","password":"Password1!"}
+        """
+            .formatted(email);
+    MockHttpServletResponse bootstrap = bootstrapCsrf();
+
+    mockMvc
+        .perform(
+            withCsrf(
+                bootstrap,
+                post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body)))
+        .andExpect(status().isServiceUnavailable());
+
+    assertTrue(userRepository.existsByUserEmail(normalizedEmail));
+    assertFalse(userRepository.findByUserEmail(normalizedEmail).orElseThrow().isEmailVerified());
   }
 
   private MvcResult performRegister(String body) throws Exception {

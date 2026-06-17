@@ -46,7 +46,7 @@ public class EmailVerificationService {
     this.verificationEmailComposer = verificationEmailComposer;
   }
 
-  @Transactional
+  @Transactional(noRollbackFor = EmailDeliveryException.class)
   public void sendRegistrationCode(User user) {
     String plainCode = issueCode(user, null);
     sendVerificationEmail(user, plainCode);

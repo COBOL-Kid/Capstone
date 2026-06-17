@@ -53,4 +53,30 @@ describe('unauthorizedInterceptor', () => {
 
     expect(authService.isSignedIn()).toBe(false);
   });
+
+  it('does not clear the session for 403 responses', () => {
+    authService.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
+    expect(authService.isSignedIn()).toBe(true);
+
+    http.get(`${apiConfig.accountUrl}/me`).subscribe({ error: () => undefined });
+    httpTesting
+      .expectOne(`${apiConfig.accountUrl}/me`)
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(authService.isSignedIn()).toBe(true);
+  });
+
+  it('does not clear the session for external 401 responses', () => {
+    authService.login({ email: 'pat@example.com', password: 'password' }).subscribe();
+    httpTesting.expectOne(`${apiConfig.authUrl}/authenticate`).flush({ emailVerified: true });
+    expect(authService.isSignedIn()).toBe(true);
+
+    http.get('https://evil.example.com/api/account/me').subscribe({ error: () => undefined });
+    httpTesting
+      .expectOne('https://evil.example.com/api/account/me')
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(authService.isSignedIn()).toBe(true);
+  });
 });

@@ -47,6 +47,10 @@ export class VehiclePhotoModalComponent implements AfterViewInit {
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
+    this.requestClose();
+  }
+
+  protected requestClose(): void {
     if (this.savingUrl()) {
       return;
     }

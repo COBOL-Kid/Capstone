@@ -156,7 +156,7 @@ export class HomePageComponent {
   }
 
   protected resendVerificationEmail(): void {
-    if (this.isResendingVerification()) {
+    if (this.isResendingVerification() || this.isVerifyingEmail()) {
       return;
     }
 
@@ -174,7 +174,7 @@ export class HomePageComponent {
   }
 
   protected submitVerificationCode(code: string): void {
-    if (this.isVerifyingEmail()) {
+    if (this.isVerifyingEmail() || this.isResendingVerification()) {
       return;
     }
 

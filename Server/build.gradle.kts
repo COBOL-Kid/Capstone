@@ -39,7 +39,7 @@ dependencies {
 
     implementation("com.mailjet:mailjet-client:6.0.1")
 
-    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.15.0")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:12.4.0")
     runtimeOnly("org.postgresql:postgresql")
 
     implementation(libs.jjwt.api)

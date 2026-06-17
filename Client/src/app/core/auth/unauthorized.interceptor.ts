@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
-import { backendOrigin } from '../api/api.config';
+import { isSameBackendOrigin } from '../api/api.config';
 import { AuthService } from './auth.service';
 
 export const unauthorizedInterceptor: HttpInterceptorFn = (req, next) => {
@@ -13,7 +13,7 @@ export const unauthorizedInterceptor: HttpInterceptorFn = (req, next) => {
       if (
         error instanceof HttpErrorResponse &&
         error.status === 401 &&
-        req.url.startsWith(backendOrigin) &&
+        isSameBackendOrigin(req.url) &&
         authService.isSignedIn() &&
         !req.url.includes('/api/auth/authenticate') &&
         !req.url.includes('/api/auth/register')

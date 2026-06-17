@@ -7,6 +7,7 @@ import com.capstone.configuration.JwtProperties;
 import com.capstone.domain.AccountChangeService;
 import com.capstone.domain.AccountChangeVerificationResult;
 import com.capstone.domain.AccountService;
+import com.capstone.models.AccountChangeType;
 import com.capstone.models.dto.*;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -95,6 +96,9 @@ public class AccountController {
                   session.getToken(), session.getRefreshToken(), accessMaxAge, refreshMaxAge))
           .body(body);
     }
+    if (result.changeType() == AccountChangeType.PASSWORD) {
+      return ResponseEntity.ok().headers(authCookies.clearSessionCookies()).body(body);
+    }
     return ResponseEntity.ok(body);
   }
 
@@ -125,15 +129,15 @@ public class AccountController {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
     accountService.deleteAccount(user, request);
-    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    return ResponseEntity.noContent().headers(authCookies.clearSessionCookies()).build();
   }
 
   private VerifyAccountChangeResponse toVerifyResponse(AccountChangeVerificationResult result) {
     AuthenticationResponse session = result.session();
     if (session == null) {
-      return new VerifyAccountChangeResponse(result.account(), null, null);
+      return new VerifyAccountChangeResponse(result.account(), null, null, result.changeType());
     }
     return new VerifyAccountChangeResponse(
-        result.account(), session.getToken(), session.getEmailVerified());
+        result.account(), session.getToken(), session.getEmailVerified(), result.changeType());
   }
 }

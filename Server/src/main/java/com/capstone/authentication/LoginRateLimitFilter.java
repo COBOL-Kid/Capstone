@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -44,6 +45,8 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
       return;
     }
 
+    pruneExpiredEntries();
+
     String clientIp = request.getRemoteAddr();
     AttemptWindow windowState =
         attemptsByIp.computeIfAbsent(clientIp, ignored -> new AttemptWindow());
@@ -54,10 +57,21 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         response.sendError(429, "Too many login attempts. Please try again later.");
         return;
       }
-      windowState.increment();
     }
 
     filterChain.doFilter(request, response);
+
+    if (response.getStatus() == HttpStatus.UNAUTHORIZED.value()) {
+      synchronized (windowState) {
+        windowState.resetIfExpired(window);
+        windowState.increment();
+      }
+    }
+  }
+
+  private void pruneExpiredEntries() {
+    Instant now = Instant.now();
+    attemptsByIp.entrySet().removeIf(entry -> entry.getValue().isExpired(window, now));
   }
 
   private static boolean isAuthenticateRequest(HttpServletRequest request) {
@@ -70,10 +84,14 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private Instant windowStart = Instant.now();
 
     private void resetIfExpired(Duration window) {
-      if (Instant.now().isAfter(windowStart.plus(window))) {
+      if (isExpired(window, Instant.now())) {
         attempts = 0;
         windowStart = Instant.now();
       }
+    }
+
+    private boolean isExpired(Duration window, Instant now) {
+      return now.isAfter(windowStart.plus(window));
     }
 
     private int attempts() {

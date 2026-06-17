@@ -1,5 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { NEVER, of, throwError } from 'rxjs';
@@ -88,15 +89,53 @@ describe('HomePageComponent', () => {
   }
 
   it('shows a verification banner and disables add controls for unverified users', () => {
-    const { fixture } = createFixture(undefined, false);
+    const { fixture, vinService } = createFixture(undefined, false);
 
     expect(fixture.nativeElement.textContent).toContain('Verify your email');
+    expect(fixture.nativeElement.textContent).toContain('No vehicles yet');
+    expect(fixture.nativeElement.textContent).not.toContain('Failed to load vehicles.');
+    expect(vinService.getUserVehicles).not.toHaveBeenCalled();
     const addButton = fixture.nativeElement.querySelector('.home__add-button') as HTMLButtonElement;
     const emptyAddButton = fixture.nativeElement.querySelector(
       '.home__empty .hc-btn',
     ) as HTMLButtonElement;
     expect(addButton?.disabled ?? true).toBe(true);
     expect(emptyAddButton?.disabled ?? true).toBe(true);
+  });
+
+  it('shows empty state instead of error when vehicle fetch returns email verification 403', async () => {
+    const vinService = {
+      getUserVehicles: vi.fn().mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 403,
+              error: 'Email address must be verified before continuing',
+            }),
+        ),
+      ),
+      addVehicle: vi.fn(),
+    };
+    const authService = createAuthService(true);
+
+    TestBed.configureTestingModule({
+      imports: [HomePageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: VinService, useValue: vinService },
+        { provide: AuthService, useValue: authService },
+      ],
+    });
+
+    TestBed.inject(UserVehiclesStore).reset();
+    const fixture = TestBed.createComponent(HomePageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(vinService.getUserVehicles).toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('No vehicles yet');
+    expect(fixture.nativeElement.textContent).not.toContain('Failed to load vehicles.');
   });
 
   it('does not show the verification banner or disable add controls before account state loads', async () => {
@@ -121,7 +160,35 @@ describe('HomePageComponent', () => {
   });
 
   it('refreshes account state after successful email verification', async () => {
-    const { fixture, authService } = createFixture(undefined, false);
+    const account = signal(accountDetails(false));
+    const authService = {
+      account,
+      isEmailVerified: computed(() => account()?.emailVerified === true),
+      getCurrentAccount: vi.fn().mockImplementation((options?: { forceRefresh?: boolean }) => {
+        if (options?.forceRefresh) {
+          account.set(accountDetails(true));
+        }
+        return of(account()!);
+      }),
+      verifyEmailCode: vi.fn().mockReturnValue(of({ token: 'verified-token' })),
+      resendEmailVerification: vi.fn().mockReturnValue(of({ emailVerified: false })),
+    };
+    const vinService = {
+      getUserVehicles: vi.fn().mockReturnValue(of([])),
+      addVehicle: vi.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [HomePageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: VinService, useValue: vinService },
+        { provide: AuthService, useValue: authService },
+      ],
+    });
+
+    TestBed.inject(UserVehiclesStore).reset();
+    const fixture = TestBed.createComponent(HomePageComponent);
     fixture.detectChanges();
 
     fixture.componentInstance['openVerificationPanel']();
@@ -135,6 +202,11 @@ describe('HomePageComponent', () => {
     expect(authService.verifyEmailCode).toHaveBeenCalledWith('123456');
     expect(authService.getCurrentAccount).toHaveBeenCalledWith({ forceRefresh: true });
     expect(fixture.componentInstance['isVerificationPanelOpen']()).toBe(false);
+    expect(vinService.getUserVehicles).toHaveBeenCalled();
+    const emptyAddButton = fixture.nativeElement.querySelector(
+      '.home__empty .hc-btn',
+    ) as HTMLButtonElement;
+    expect(emptyAddButton.disabled).toBe(false);
   });
 
   it('keeps the add modal open with trim context when trim selection is required', async () => {

@@ -7,8 +7,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, EMPTY, finalize, Subject, switchMap } from 'rxjs';
+import { catchError, EMPTY, finalize, of, Subject, switchMap } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
@@ -48,7 +49,13 @@ export class HomePageComponent {
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly vehiclesResource = rxResource({
-    stream: () => this.vinService.getUserVehicles(),
+    params: () => this.authService.account()?.emailVerified ?? null,
+    stream: ({ params: emailVerified }) => {
+      if (emailVerified !== true) {
+        return of([] as UserVehicleResponse[]);
+      }
+      return this.vinService.getUserVehicles();
+    },
     defaultValue: [] as UserVehicleResponse[],
   });
 
@@ -78,6 +85,14 @@ export class HomePageComponent {
   protected readonly error = computed(() => {
     const err = this.vehiclesResource.error();
     if (!err) {
+      return null;
+    }
+    if (
+      err instanceof HttpErrorResponse &&
+      err.status === 403 &&
+      typeof err.error === 'string' &&
+      err.error.includes('Email address must be verified')
+    ) {
       return null;
     }
     return 'Failed to load vehicles.';

@@ -10,6 +10,7 @@
 - Angular backend mutations must use HttpClient (not `fetch`) so XSRF and credentials interceptors apply.
 - Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
 - Production backend uses IBM Semeru Runtime 25 JVM on ICR UBI minimal images (`icr.io/appcafe/ibm-semeru-runtimes`), not GraalVM native image.
+- Keep empty-state "Add a vehicle" button when the garage is empty; show the header (+) only after the first vehicle is added.
 
 ## Repository Overview
 
@@ -20,7 +21,9 @@
 
 ## Authentication & Security
 
-- Access and refresh tokens are HttpOnly cookies (`accessToken`, `refreshToken`); JWTs are not stored in `localStorage`.
+- Auth tokens are HttpOnly cookies; JWTs are not stored in `localStorage`. Production/Firebase uses a single `__session` cookie (Base64 JSON with access + refresh tokens) because Firebase Hosting forwards only `__session` to Cloud Run on GET requests. Local dev still accepts legacy `accessToken` / `refreshToken` cookies via the Angular proxy.
+- `validateSession()` clears the session only on **401** from `/api/account/me`; **403** or other hydration failures do not wipe a cookie-backed session from login/refresh.
+- `EmailVerifiedFilter` returns 403 for unverified `Role.USER` requests (e.g. `GET /api/vin`); unverified signups still reach `/home` with the verification banner. Home page skips `GET /api/vin` until `account.emailVerified === true` (`rxResource` `params`).
 - Spring Security uses CSRF SPA mode (`SecurityConfig`); Angular sends the `XSRF-TOKEN` cookie on mutating requests.
 - SPA bootstrap on load: `AppBootstrapService` (`provideAppInitializer` in `app.config.ts`) calls `GET /api/auth/csrf`, then `validateSession()`, before the app renders—issues the CSRF cookie and hydrates navbar auth state on cold visits.
 - Bootstrap loading splash: branded static HTML inside `<app-root>` in `Client/src/index.html` with `Client/public/bootstrap-splash.css` linked in `<head>` (not bundled `styles.css`) so first paint shows a loading screen during JS download and app-initializer HTTP calls; Angular replaces it when the root `App` component renders.
@@ -120,7 +123,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 - **JVM container:** `ENTRYPOINT java -jar /app/app.jar` on `icr.io/appcafe/ibm-semeru-runtimes:open-25-jre-ubi-minimal`; build stage uses `open-25-jdk-ubi-minimal` and `./gradlew bootJar`. Only `SPRING_PROFILES_ACTIVE=prod` is set in the Dockerfile—do not bake `ENV PORT=8080`; Cloud Run injects `PORT` at runtime and prod binds via `server.port=${PORT:8080}` (`EXPOSE 8080` is informational). UBI minimal images need `USER root` before `microdnf`; builder stage installs `findutils` (Gradle needs `xargs`). Apply Spring Boot BOM to `developmentOnly` so `bootJar` resolves devtools. Conditional beans (e.g. Mailjet) resolve at runtime from deploy-time env vars. Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile (Google Cloud Build's default builder does not enable BuildKit).
 - **Prod profile:** `server.port=${PORT:8080}`, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, `GCP_PROJECT_ID` for Cloud Logging trace correlation.
 - **Frontend (Firebase Hosting):** `firebase.json` and `.firebaserc` live at the repo root; hosting serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting` (builds Client, then runs Firebase CLI from repo root).
-- **CI (frontend only; no Server workflow):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`. Server verification is local: `./gradlew test` (and `liveTest` when needed).
+- **CI (frontend only; no Server workflow):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`. PR preview channels deploy **Client only**; `/api/**` still hits shared Cloud Run—Server fixes require a separate Cloud Run image deploy. Server verification is local: `./gradlew test` (and `liveTest` when needed).
 
 ## Cursor Cloud Agent Setup
 

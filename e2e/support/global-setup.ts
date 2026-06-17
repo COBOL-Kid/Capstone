@@ -1,5 +1,28 @@
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+
 const BACKEND_URL = "http://localhost:8080/actuator/health";
 const FRONTEND_URL = "http://localhost:4200/";
+const SEED_SCRIPT = resolve(__dirname, "../scripts/seed-e2e-data.sql");
+
+function seedDatabaseIfAvailable(): void {
+  if (!existsSync(SEED_SCRIPT)) {
+    return;
+  }
+
+  try {
+    execSync(
+      `PGPASSWORD=honestcar psql -U honestcar -d honestcar -h localhost -v ON_ERROR_STOP=1 -f "${SEED_SCRIPT}"`,
+      { stdio: "pipe" },
+    );
+  } catch (error) {
+    console.warn(
+      "E2E seed skipped (run manually if garage/auth tests fail):",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
 
 export default async function globalSetup(): Promise<void> {
   const failures: string[] = [];
@@ -41,4 +64,6 @@ export default async function globalSetup(): Promise<void> {
       ].join("\n"),
     );
   }
+
+  seedDatabaseIfAvailable();
 }

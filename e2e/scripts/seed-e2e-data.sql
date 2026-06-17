@@ -10,21 +10,39 @@
 -- Safe to re-run: clears prior demo rows by email/VIN before inserting.
 
 DELETE FROM completed_recall
-WHERE user_id IN (SELECT user_id FROM user_detail WHERE user_email = 'test.user@example.com');
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email IN ('test.user@example.com', 'empty.garage@example.com',
+                                       'unverified.user@example.com', 'password.change@example.com'));
 
 DELETE FROM completed_maintenance
-WHERE user_id IN (SELECT user_id FROM user_detail WHERE user_email = 'test.user@example.com');
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email IN ('test.user@example.com', 'empty.garage@example.com',
+                                       'unverified.user@example.com', 'password.change@example.com'));
 
 DELETE FROM user_vin
-WHERE user_id IN (SELECT user_id FROM user_detail WHERE user_email = 'test.user@example.com');
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email IN ('test.user@example.com', 'empty.garage@example.com',
+                                       'unverified.user@example.com', 'password.change@example.com'));
 
-DELETE FROM user_detail WHERE user_email = 'test.user@example.com';
+DELETE FROM email_verification_code
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email IN ('unverified.user@example.com', 'password.change@example.com'));
+
+DELETE FROM account_change_request
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email = 'password.change@example.com');
+
+DELETE FROM refresh_token
+WHERE user_id IN (SELECT user_id FROM user_detail
+                  WHERE user_email IN ('test.user@example.com', 'empty.garage@example.com',
+                                       'unverified.user@example.com', 'password.change@example.com'));
+
+DELETE FROM user_detail
+WHERE user_email IN ('test.user@example.com', 'empty.garage@example.com',
+                     'unverified.user@example.com', 'password.change@example.com');
 
 DELETE FROM vin
 WHERE vin_num IN ('4T1C11AK5LU123456', '2HGFC2F59JH543210');
-
-DELETE FROM vehicle_type
-WHERE source_vin IN ('4T1C11AK5LU123456', '2HGFC2F59JH543210');
 
 DELETE FROM maint_labor_line WHERE maint_mileage_id BETWEEN 1 AND 7;
 DELETE FROM maint_part_line WHERE maint_mileage_id BETWEEN 1 AND 7;
@@ -37,6 +55,9 @@ WHERE (vehicle_year, vehicle_make, vehicle_model) IN (
     ('2020', 'Toyota', 'Camry'),
     ('2018', 'Honda', 'Civic')
 );
+
+DELETE FROM vehicle_type
+WHERE source_vin IN ('4T1C11AK5LU123456', '2HGFC2F59JH543210');
 
 INSERT INTO user_detail (user_id, user_email, first_name, last_name, user_sms, user_pw, role,
                          failed_login_attempts, lockout_end, email_verified, email_verified_at,
@@ -140,7 +161,28 @@ INSERT INTO completed_recall (completed_recall_id, user_id, vin_num, recall_id, 
 VALUES (1, 1, '4T1C11AK5LU123456', 2, '2022-09-18', 'City Toyota', 0.00,
         'Software update completed during routine service');
 
-ALTER TABLE user_detail ALTER COLUMN user_id RESTART WITH 2;
+INSERT INTO user_detail (user_id, user_email, first_name, last_name, user_sms, user_pw, role,
+                         failed_login_attempts, lockout_end, email_verified, email_verified_at,
+                         created_at, updated_at)
+VALUES (2, 'empty.garage@example.com', 'Empty', 'Garage', NULL,
+        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL, TRUE,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (3, 'unverified.user@example.com', 'Unverified', 'User', NULL,
+        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL, FALSE,
+        NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (4, 'password.change@example.com', 'Password', 'Change', '+15559876543',
+        '$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq', 'USER', 0, NULL, TRUE,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO refresh_token (token, expiry_date, user_id)
+VALUES ('e2e-unverified-refresh-token', CURRENT_TIMESTAMP + INTERVAL '30 days', 3);
+
+INSERT INTO email_verification_code (user_id, code_hash, expires_at, sign_in_challenge_hash, created_at,
+                                     failed_attempts)
+VALUES (3, '$2a$10$.9ABP0s9xuhY8m31.jNs6eagUOnLtizizZmnd6gdnCjVFq5cUvCC2',
+        CURRENT_TIMESTAMP + INTERVAL '30 minutes', NULL, CURRENT_TIMESTAMP, 0);
+
+ALTER TABLE user_detail ALTER COLUMN user_id RESTART WITH 5;
 ALTER TABLE vehicle_type ALTER COLUMN vehicle_type_id RESTART WITH 3;
 ALTER TABLE maint_mileage ALTER COLUMN maint_mileage_id RESTART WITH 8;
 ALTER TABLE maint_labor_line ALTER COLUMN maint_labor_line_id RESTART WITH 8;

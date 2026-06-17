@@ -184,6 +184,10 @@ export class AuthService {
       })
       .pipe(
         tap((response) => {
+          if (response.changeType === 'PASSWORD') {
+            this.clearSession();
+            return;
+          }
           this.activateSession();
           this.account.set(response.account);
         }),

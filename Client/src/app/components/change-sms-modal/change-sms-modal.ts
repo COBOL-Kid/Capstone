@@ -63,6 +63,13 @@ export class ChangeSmsModalComponent implements AfterViewInit {
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
+    this.requestClose();
+  }
+
+  protected requestClose(): void {
+    if (this.isSubmitting() || this.isVerifying() || this.isResending()) {
+      return;
+    }
     this.close.emit();
   }
 
@@ -98,7 +105,7 @@ export class ChangeSmsModalComponent implements AfterViewInit {
   }
 
   protected verifyCode(code: string): void {
-    if (this.isVerifying()) {
+    if (this.isVerifying() || this.isResending()) {
       return;
     }
 
@@ -120,7 +127,7 @@ export class ChangeSmsModalComponent implements AfterViewInit {
   }
 
   protected resendCode(): void {
-    if (this.isResending()) {
+    if (this.isResending() || this.isVerifying()) {
       return;
     }
 

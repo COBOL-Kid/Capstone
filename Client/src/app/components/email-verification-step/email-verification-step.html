@@ -35,12 +35,16 @@
   </label>
 
   <div class="email-verification-step__actions">
-    <button [disabled]="isSubmitting()" class="hc-btn hc-btn--primary" type="submit">
+    <button
+      [disabled]="isSubmitting() || isResending()"
+      class="hc-btn hc-btn--primary"
+      type="submit"
+    >
       {{ isSubmitting() ? 'Verifying…' : submitLabel() }}
     </button>
     <button
       (click)="onResend()"
-      [disabled]="isResending()"
+      [disabled]="isResending() || isSubmitting()"
       class="hc-btn hc-btn--secondary"
       type="button"
     >

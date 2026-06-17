@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
@@ -26,7 +27,9 @@ export class LandingPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authModalCloseDelayMs = 240;
+  private authModalCloseTimer: ReturnType<typeof window.setTimeout> | null = null;
   private readonly routeData = toSignal(this.route.data, {
     initialValue: this.route.snapshot.data,
   });
@@ -42,6 +45,13 @@ export class LandingPageComponent {
         this.isAuthModalClosing.set(false);
       }
     });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.authModalCloseTimer !== null) {
+        window.clearTimeout(this.authModalCloseTimer);
+        this.authModalCloseTimer = null;
+      }
+    });
   }
 
   protected closeAuthModal(): void {
@@ -50,7 +60,8 @@ export class LandingPageComponent {
     }
 
     this.isAuthModalClosing.set(true);
-    window.setTimeout(() => {
+    this.authModalCloseTimer = window.setTimeout(() => {
+      this.authModalCloseTimer = null;
       const destination = this.authService.isSignedIn() ? '/home' : '/';
       void this.router.navigate([destination]);
     }, this.authModalCloseDelayMs);

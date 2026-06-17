@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { VehiclePhotoModalComponent } from './vehicle-photo-modal';
@@ -102,5 +102,24 @@ describe('VehiclePhotoModalComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Unable to update photo');
     expect(fixture.nativeElement.querySelector('.vehicle-photo-modal__tile')).not.toBeNull();
+  });
+
+  it('does not close from backdrop while save is in flight', () => {
+    const { fixture, vinService } = createFixture();
+    const close = vi.fn();
+
+    vinService.updateSelectedPhoto.mockReturnValue(NEVER);
+    fixture.componentInstance.close.subscribe(close);
+
+    const tiles = fixture.nativeElement.querySelectorAll(
+      '.vehicle-photo-modal__tile',
+    ) as NodeListOf<HTMLButtonElement>;
+    tiles[1].click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.hc-overlay-backdrop') as HTMLDivElement).click();
+    fixture.detectChanges();
+
+    expect(close).not.toHaveBeenCalled();
   });
 });

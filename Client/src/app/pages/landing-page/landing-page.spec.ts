@@ -116,4 +116,24 @@ describe('LandingPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/']);
     vi.useRealTimers();
   });
+
+  it('does not navigate after destroy when the close timer is pending', () => {
+    vi.useFakeTimers();
+    const router = configureRoute({ authMode: 'sign-in' }, { signedIn: false });
+
+    const fixture = TestBed.createComponent(LandingPageComponent);
+    fixture.detectChanges();
+
+    const closeButton = fixture.nativeElement.querySelector(
+      '.hc-dialog__close',
+    ) as HTMLButtonElement;
+    closeButton.click();
+    fixture.detectChanges();
+    fixture.destroy();
+
+    vi.advanceTimersByTime(240);
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });

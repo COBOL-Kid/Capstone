@@ -120,7 +120,7 @@ export class VehicleDetailPageComponent {
   protected readonly hasWarrantyInformation = computed(() => this.vehicleWarranty() !== null);
   protected readonly hasOwnersManual = computed(() => {
     const url = this.vehicle()?.ownersManual;
-    return url != null && url !== '';
+    return isSafeHttpUrl(url);
   });
   protected readonly informationUnavailableMessage =
     'information not yet available for this vehicle';

@@ -97,7 +97,7 @@ public class VehicleDataProviderClient {
   public RepairEstimatesResponse getRepairEstimates(
       String year, String make, String model, String trim) {
     String[] ymmt = normalizeYmmt(year, make, model, trim);
-    return getVehicleDatabasesByPathSegmentsTolerant(
+    return getVehicleDatabasesByPathSegments(
         "getRepairEstimatesByYearMakeModelTrim",
         "/repair-estimates/{year}/{make}/{model}/{trim}",
         RepairEstimatesResponse.class,
@@ -109,7 +109,7 @@ public class VehicleDataProviderClient {
 
   public OwnerManualResponse getOwnerManual(String year, String make, String model) {
     String[] ymm = normalizeYmm(year, make, model);
-    return getVehicleDatabasesByPathSegmentsTolerant(
+    return getVehicleDatabasesByPathSegments(
         "getOwnerManualByYearMakeModel",
         "/owner-manual/{year}/{make}/{model}",
         OwnerManualResponse.class,
@@ -120,7 +120,7 @@ public class VehicleDataProviderClient {
 
   public RepairCostResponse getRepairCosts(String year, String make, String model) {
     String[] ymm = normalizeYmm(year, make, model);
-    return getVehicleDatabasesByPathSegmentsTolerant(
+    return getVehicleDatabasesByPathSegments(
         "getRepairCostsByYearMakeModel",
         "/vehicle-repairs/v2/{year}/{make}/{model}",
         RepairCostResponse.class,
@@ -131,7 +131,7 @@ public class VehicleDataProviderClient {
 
   public VehicleRecallsResponse getRecalls(String year, String make, String model) {
     String[] ymm = normalizeYmm(year, make, model);
-    return getVehicleDatabasesByPathSegmentsTolerant(
+    return getVehicleDatabasesByPathSegments(
         "getRecallsByYearMakeModel",
         "/vehicle-recalls/{year}/{make}/{model}",
         VehicleRecallsResponse.class,
@@ -185,7 +185,8 @@ public class VehicleDataProviderClient {
         responseType,
         autoDevApiKey,
         autoDevApiKeyHeader,
-        notFoundMeansInvalidVin);
+        notFoundMeansInvalidVin,
+        false);
   }
 
   private <T> T getVehicleDatabases(
@@ -200,29 +201,11 @@ public class VehicleDataProviderClient {
         responseType,
         vehicleDatabasesApiKey,
         vehicleDatabasesApiKeyHeader,
-        false);
+        false,
+        true);
   }
 
   private <T> T getVehicleDatabasesByPathSegments(
-      String operation, String path, Class<T> responseType, String... pathSegments) {
-    vehicleDatabasesRateLimiter.acquire(operation);
-    String url =
-        UriComponentsBuilder.fromUriString(vehicleDatabasesBaseUrl)
-            .path(path)
-            .buildAndExpand((Object[]) pathSegments)
-            .toUriString();
-    return executeGet(
-        "vehicle-databases",
-        operation,
-        url,
-        responseType,
-        headers(vehicleDatabasesApiKey, vehicleDatabasesApiKeyHeader),
-        false,
-        false,
-        String.join("/", pathSegments));
-  }
-
-  private <T> T getVehicleDatabasesByPathSegmentsTolerant(
       String operation, String path, Class<T> responseType, String... pathSegments) {
     vehicleDatabasesRateLimiter.acquire(operation);
     String url =
@@ -250,7 +233,8 @@ public class VehicleDataProviderClient {
       Class<T> responseType,
       String apiKey,
       String apiKeyHeader,
-      boolean notFoundMeansInvalidVin) {
+      boolean notFoundMeansInvalidVin,
+      boolean allowBadRequestAsEmpty) {
     String url =
         UriComponentsBuilder.fromUriString(baseUrl).path(path).buildAndExpand(vin).toUriString();
     return executeGet(
@@ -260,7 +244,7 @@ public class VehicleDataProviderClient {
         responseType,
         headers(apiKey, apiKeyHeader),
         notFoundMeansInvalidVin,
-        false,
+        allowBadRequestAsEmpty,
         LogRedaction.maskVin(vin));
   }
 

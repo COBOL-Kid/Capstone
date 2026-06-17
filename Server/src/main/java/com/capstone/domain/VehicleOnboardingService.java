@@ -460,11 +460,17 @@ public class VehicleOnboardingService {
         vehicleDataExecutor.submit(
             () ->
                 prefetchScope.call(() -> vehicleDataProviderClient.getRecalls(year, make, model)));
+    Future<VehicleWarrantyResponse> vehicleWarranty =
+        vehicleDataExecutor.submit(
+            () ->
+                prefetchScope.call(
+                    () -> vehicleDataProviderClient.getVehicleWarranty(year, make, model)));
 
     RepairEstimatesResponse repairEstimatesResponse = await(repairEstimates);
     OwnerManualResponse ownerManualResponse = await(ownerManual);
     RepairCostResponse repairCostResponse = await(repairCosts);
     VehicleRecallsResponse recallsResponse = await(recalls);
+    VehicleWarrantyResponse warrantyResponse = await(vehicleWarranty);
     List<String> photoUrls = await(photos);
 
     SupplementalVehicleData supplemental =
@@ -473,7 +479,7 @@ public class VehicleOnboardingService {
             repairEstimatesResponse,
             repairCostResponse,
             recallsResponse,
-            null);
+            warrantyResponse);
     return new NewVehicleTypePrefetch(supplemental, photoUrls);
   }
 

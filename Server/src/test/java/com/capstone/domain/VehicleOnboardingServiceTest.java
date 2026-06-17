@@ -587,6 +587,12 @@ class VehicleOnboardingServiceTest {
                 "success",
                 new VehicleRecallsResponse.VehicleRecallsData(
                     null, "2021", "Toyota", "4RUNNER", List.of())));
+    when(providerClient.getVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenReturn(vehicleWarrantyResponse());
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(false);
+    when(vehicleWarrantyRepository.save(any(VehicleWarranty.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     when(vehicleTypeRepository.save(any(VehicleType.class)))
         .thenAnswer(
             invocation -> {
@@ -625,13 +631,13 @@ class VehicleOnboardingServiceTest {
     verify(providerClient).getOwnerManual("2021", "Toyota", "4RUNNER");
     verify(providerClient).getRepairCosts("2021", "Toyota", "4RUNNER");
     verify(providerClient).getRecalls("2021", "Toyota", "4RUNNER");
-    verify(providerClient, never()).getVehicleWarranty(any(), any(), any());
-    verify(vehicleWarrantyRepository, never()).save(any());
+    verify(providerClient).getVehicleWarranty("2021", "Toyota", "4RUNNER");
+    verify(vehicleWarrantyRepository).save(any(VehicleWarranty.class));
   }
 
   @Test
   void shouldTrackPrefetchConcurrencyDuringFallbackOnboarding() throws Exception {
-    CountDownLatch allVdbCallsStarted = new CountDownLatch(4);
+    CountDownLatch allVdbCallsStarted = new CountDownLatch(5);
     CountDownLatch releaseVdbCalls = new CountDownLatch(1);
     CapturingRequestMetrics metrics = new CapturingRequestMetrics();
 
@@ -686,6 +692,15 @@ class VehicleOnboardingServiceTest {
                         "success",
                         new VehicleRecallsResponse.VehicleRecallsData(
                             null, "2021", "Toyota", "4RUNNER", List.of()))));
+    when(providerClient.getVehicleWarranty("2021", "Toyota", "4RUNNER"))
+        .thenAnswer(
+            invocation ->
+                blockForPrefetchMetrics(
+                    metrics, allVdbCallsStarted, releaseVdbCalls, vehicleWarrantyResponse()));
+    when(vehicleWarrantyRepository.existsById(new VehicleWarrantyId("2021", "Toyota", "4RUNNER")))
+        .thenReturn(false);
+    when(vehicleWarrantyRepository.save(any(VehicleWarranty.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     when(vehicleTypeRepository.save(any(VehicleType.class)))
         .thenAnswer(
             invocation -> {
@@ -725,7 +740,7 @@ class VehicleOnboardingServiceTest {
     assertTrue(allVdbCallsStarted.await(5, TimeUnit.SECONDS));
     assertNotNull(metrics.lastPrefetch());
     assertTrue(
-        metrics.lastPrefetch().maxInFlight() >= 4,
+        metrics.lastPrefetch().maxInFlight() >= 5,
         "expected fallback prefetch to track parallel VDB calls, peak="
             + metrics.lastPrefetch().maxInFlight());
 

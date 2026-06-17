@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserDeletionService {
 
   private final UserRepositoryJPA userRepository;
+  private final AccountChangeRequestRepositoryJPA accountChangeRequestRepository;
   private final RefreshTokenRepositoryJPA refreshTokenRepository;
   private final EmailVerificationCodeRepositoryJPA emailVerificationCodeRepository;
   private final CompletedMaintenanceRepositoryJPA completedMaintenanceRepository;
@@ -19,6 +20,7 @@ public class UserDeletionService {
 
   public UserDeletionService(
       UserRepositoryJPA userRepository,
+      AccountChangeRequestRepositoryJPA accountChangeRequestRepository,
       RefreshTokenRepositoryJPA refreshTokenRepository,
       EmailVerificationCodeRepositoryJPA emailVerificationCodeRepository,
       CompletedMaintenanceRepositoryJPA completedMaintenanceRepository,
@@ -26,6 +28,7 @@ public class UserDeletionService {
       UserVinRepositoryJPA userVinRepository,
       VinRepositoryJPA vinRepository) {
     this.userRepository = userRepository;
+    this.accountChangeRequestRepository = accountChangeRequestRepository;
     this.refreshTokenRepository = refreshTokenRepository;
     this.emailVerificationCodeRepository = emailVerificationCodeRepository;
     this.completedMaintenanceRepository = completedMaintenanceRepository;
@@ -46,6 +49,7 @@ public class UserDeletionService {
     }
     emailVerificationCodeRepository.deleteByUser(user);
     refreshTokenRepository.deleteByUser(user);
+    accountChangeRequestRepository.deleteByUser(user);
     userRepository.delete(user);
   }
 }

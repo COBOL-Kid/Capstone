@@ -363,6 +363,24 @@ class VehicleDataProviderClientTest {
   }
 
   @Test
+  void shouldReturnNullWhenVinBasedEndpointReturns400() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    when(restTemplate.exchange(
+            eq("https://api.vehicledatabases.com/owner-manual/JTENU5JR6M5962554"),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(OwnerManualResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(
+                HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    assertNull(client.getOwnerManual("JTENU5JR6M5962554"));
+  }
+
+  @Test
   void shouldReturnNullWhenFallbackEndpointReturns400() {
     RestTemplate restTemplate = mock(RestTemplate.class);
 

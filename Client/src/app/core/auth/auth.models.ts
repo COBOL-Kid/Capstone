@@ -69,6 +69,7 @@ export interface VerifyAccountChangeResponse {
   account: AccountDetails;
   token?: string;
   emailVerified?: boolean;
+  changeType: AccountChangeType;
 }
 
 export interface ChangePasswordRequest {

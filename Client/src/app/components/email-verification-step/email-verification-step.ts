@@ -32,7 +32,7 @@ export class EmailVerificationStepComponent {
   });
 
   protected submit(): void {
-    if (this.isSubmitting() || this.form.invalid) {
+    if (this.isSubmitting() || this.isResending() || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -41,7 +41,7 @@ export class EmailVerificationStepComponent {
   }
 
   protected onResend(): void {
-    if (this.isResending()) {
+    if (this.isResending() || this.isSubmitting()) {
       return;
     }
 

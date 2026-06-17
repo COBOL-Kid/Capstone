@@ -100,7 +100,11 @@ export class AccountDrawerComponent {
   }
 
   onPasswordChanged(): void {
-    this.toastService.success('Password updated.');
+    this.toastService.success('Password updated. Please sign in with your new password.');
+    this.activeChangeModal.set(null);
+    this.resumeChangeOnVerifyStep.set(false);
+    this.close();
+    void this.router.navigate(['/sign-in']);
   }
 
   logout(): void {

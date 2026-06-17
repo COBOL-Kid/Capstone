@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   ElementRef,
   HostListener,
   inject,
@@ -77,6 +78,13 @@ export class AuthModalComponent implements AfterViewInit {
   });
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    effect(() => {
+      this.mode();
+      this.resetModalState();
+    });
+  }
 
   ngAfterViewInit(): void {
     this.dialog()?.nativeElement.focus();
@@ -258,10 +266,15 @@ export class AuthModalComponent implements AfterViewInit {
   }
 
   protected switchMode(): void {
+    this.resetModalState();
+    this.modeChange.emit(this.alternateMode());
+  }
+
+  private resetModalState(): void {
     this.serverError.set(null);
     this.step.set('credentials');
     this.verificationChallenge.set(null);
     this.form.reset();
-    this.modeChange.emit(this.alternateMode());
+    this.applyModeValidators();
   }
 }

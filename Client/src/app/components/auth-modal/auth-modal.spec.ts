@@ -84,6 +84,31 @@ describe('AuthModalComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Invalid account credentials');
   });
 
+  it('resets server errors and verification step when routed mode changes', () => {
+    const authService = configure();
+    authService.login.mockReturnValue(
+      throwError(() => ({ message: 'Invalid account credentials', fieldMessages: [] })),
+    );
+
+    const fixture = TestBed.createComponent(AuthModalComponent);
+    fixture.componentRef.setInput('mode', 'sign-in');
+    fixture.detectChanges();
+
+    setInputValue(fixture.nativeElement, 'email', 'pat@example.com');
+    setInputValue(fixture.nativeElement, 'password', 'wrong');
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Invalid account credentials');
+
+    fixture.componentRef.setInput('mode', 'sign-up');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Invalid account credentials');
+    expect(fixture.componentInstance['step']()).toBe('credentials');
+  });
+
   it('switches to code entry when sign-in requires verification', () => {
     const authService = configure();
     authService.login.mockReturnValue(

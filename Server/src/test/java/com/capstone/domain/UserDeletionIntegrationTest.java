@@ -3,9 +3,12 @@ package com.capstone.domain;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.capstone.data.AccountChangeRequestRepositoryJPA;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.data.UserVinRepositoryJPA;
+import com.capstone.models.AccountChangeRequest;
+import com.capstone.models.AccountChangeType;
 import com.capstone.models.RefreshToken;
 import com.capstone.models.User;
 import com.capstone.support.IntegrationTestProperties;
@@ -35,6 +38,7 @@ class UserDeletionIntegrationTest {
   @Autowired private UserRepositoryJPA userRepository;
   @Autowired private UserVinRepositoryJPA userVinRepository;
   @Autowired private RefreshTokenRepositoryJPA refreshTokenRepository;
+  @Autowired private AccountChangeRequestRepositoryJPA accountChangeRequestRepository;
   @Autowired private EntityManager entityManager;
 
   @Test
@@ -56,5 +60,27 @@ class UserDeletionIntegrationTest {
     assertTrue(userVinRepository.findVinNumbersForUser(SEED_USER_ID).isEmpty());
     assertFalse(refreshTokenRepository.findByToken("delete-flow-token").isPresent());
     assertFalse(userVinRepository.findByUserUserIdAndVinVin(SEED_USER_ID, vin).isPresent());
+  }
+
+  @Test
+  @Transactional
+  void deleteUserAndRelatedDataRemovesPendingAccountChangeRequest() {
+    User user = userRepository.findById(SEED_USER_ID).orElseThrow();
+
+    AccountChangeRequest pending = new AccountChangeRequest();
+    pending.setUser(user);
+    pending.setChangeType(AccountChangeType.EMAIL);
+    pending.setNewEmail("pending-" + user.getUserEmail());
+    pending.setCodeHash("hash");
+    pending.setExpiresAt(Instant.now().plusSeconds(300));
+    pending.setCreatedAt(Instant.now());
+    accountChangeRequestRepository.saveAndFlush(pending);
+    entityManager.detach(pending);
+
+    userDeletionService.deleteUserAndRelatedData(user);
+    entityManager.flush();
+
+    assertFalse(userRepository.findById(SEED_USER_ID).isPresent());
+    assertFalse(accountChangeRequestRepository.findByUser(user).isPresent());
   }
 }

@@ -1,4 +1,4 @@
-<div (click)="close.emit()" aria-hidden="true" class="hc-overlay-backdrop"></div>
+<div (click)="requestClose()" aria-hidden="true" class="hc-overlay-backdrop"></div>
 
 <section
   #dialog
@@ -9,7 +9,7 @@
   tabindex="-1"
 >
   <button
-    (click)="close.emit()"
+    (click)="requestClose()"
     [disabled]="savingUrl() !== null"
     aria-label="Close vehicle photos dialog"
     class="hc-dialog__close"

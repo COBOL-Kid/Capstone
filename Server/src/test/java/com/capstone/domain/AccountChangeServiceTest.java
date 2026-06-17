@@ -9,6 +9,7 @@ import com.capstone.authentication.AuthenticationResponse;
 import com.capstone.authentication.AuthenticationService;
 import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.AccountChangeRequestRepositoryJPA;
+import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
@@ -30,6 +31,7 @@ class AccountChangeServiceTest {
 
   private UserRepositoryJPA userRepository;
   private AccountChangeRequestRepositoryJPA changeRequestRepository;
+  private RefreshTokenRepositoryJPA refreshTokenRepository;
   private PasswordEncoder passwordEncoder;
   private EmailVerificationProperties properties;
   private MailjetEmailClient mailjetEmailClient;
@@ -40,6 +42,7 @@ class AccountChangeServiceTest {
   void setUp() {
     userRepository = mock(UserRepositoryJPA.class);
     changeRequestRepository = mock(AccountChangeRequestRepositoryJPA.class);
+    refreshTokenRepository = mock(RefreshTokenRepositoryJPA.class);
     passwordEncoder = mock(PasswordEncoder.class);
     properties = new EmailVerificationProperties();
     mailjetEmailClient = mock(MailjetEmailClient.class);
@@ -48,6 +51,7 @@ class AccountChangeServiceTest {
         new AccountChangeService(
             userRepository,
             changeRequestRepository,
+            refreshTokenRepository,
             passwordEncoder,
             properties,
             Optional.of(mailjetEmailClient),
@@ -126,6 +130,8 @@ class AccountChangeServiceTest {
 
     assertEquals("encoded-new-password", user.getUserPw());
     assertNull(result.session());
+    assertEquals(AccountChangeType.PASSWORD, result.changeType());
+    verify(refreshTokenRepository).deleteByUser(user);
     verify(authenticationService, never()).createSession(any());
   }
 

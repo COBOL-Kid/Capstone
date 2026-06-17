@@ -1,6 +1,7 @@
 package com.capstone.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.capstone.authentication.AuthCookies;
@@ -17,6 +18,7 @@ import com.capstone.models.dto.*;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 class AccountControllerTest {
@@ -93,7 +95,7 @@ class AccountControllerTest {
     AuthenticationResponse session =
         AuthenticationResponse.verifiedSession("fresh-token", "refresh-token");
     AccountChangeVerificationResult verificationResult =
-        new AccountChangeVerificationResult(accountResponse, session);
+        new AccountChangeVerificationResult(accountResponse, session, AccountChangeType.EMAIL);
 
     when(accountChangeService.initiateChange(authenticatedUser, initiateRequest))
         .thenReturn(initiated);
@@ -128,11 +130,34 @@ class AccountControllerTest {
     assertEquals(
         HttpStatus.NO_CONTENT,
         controller.changePassword(authenticatedUser, passwordRequest).getStatusCode());
-    assertEquals(
-        HttpStatus.NO_CONTENT,
-        controller.deleteAccount(authenticatedUser, deleteRequest).getStatusCode());
+    var deleteResponse = controller.deleteAccount(authenticatedUser, deleteRequest);
+    assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
+    assertTrue(
+        deleteResponse.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(cookie -> cookie.contains("__session=")));
     verify(accountService).changePassword(authenticatedUser, passwordRequest);
     verify(accountService).deleteAccount(authenticatedUser, deleteRequest);
+  }
+
+  @Test
+  void shouldClearSessionCookiesAfterPasswordChangeVerification() {
+    AccountChangeService accountChangeService = mock(AccountChangeService.class);
+    AccountController controller = controller(mock(AccountService.class), accountChangeService);
+    AuthenticatedUser authenticatedUser = user();
+    AccountResponse accountResponse = account();
+    AccountChangeVerificationResult verificationResult =
+        new AccountChangeVerificationResult(accountResponse, null, AccountChangeType.PASSWORD);
+
+    when(accountChangeService.verifyChange(authenticatedUser, "123456"))
+        .thenReturn(verificationResult);
+
+    var response =
+        controller.verifyChange(authenticatedUser, new VerifyAccountChangeRequest("123456"));
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertTrue(
+        response.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(cookie -> cookie.contains("__session=") && cookie.contains("Max-Age=0")));
   }
 
   private AccountController controller(

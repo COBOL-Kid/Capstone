@@ -778,3 +778,66 @@ describe('VehicleDetailPageComponent with owners manual', () => {
     openSpy.mockRestore();
   });
 });
+
+describe('VehicleDetailPageComponent with unsafe owners manual url', () => {
+  it('disables owner manual button for javascript urls', async () => {
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin: 'JTENU5JR6M5962554' })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: {
+            loadVehiclePage: vi.fn(() =>
+              of({
+                detail: {
+                  vin: 'JTENU5JR6M5962554',
+                  vehicleTypeId: 7,
+                  vehicleMake: 'Toyota',
+                  vehicleModel: '4RUNNER',
+                  vehicleTrim: 'SRS Prem',
+                  vehicleYear: '2021',
+                  vehicleStyle: 'SUV',
+                  sourceVin: null,
+                  origin: null,
+                  body: null,
+                  engineDescription: null,
+                  transmissionStyle: null,
+                  driveType: null,
+                  ownersManual: 'javascript:alert(1)',
+                  currentMileage: 45000,
+                  availableImageUrls: ['https://example.com/photo-1.jpg'],
+                  selectedImageUrl: 'https://example.com/photo-1.jpg',
+                },
+                upcomingIntervals: [],
+                completedMaintenance: [],
+                uncompletedRecalls: [],
+                completedRecalls: [],
+                miscMaintenanceCosts: [],
+                vehicleWarranty: null,
+              }),
+            ),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const manualButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes("Owner's manual"));
+
+    expect(manualButton).toBeDefined();
+    expect(manualButton!.disabled).toBe(true);
+  });
+});

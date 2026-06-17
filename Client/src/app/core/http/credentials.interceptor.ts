@@ -1,9 +1,9 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
-import { backendOrigin } from '../api/api.config';
+import { isSameBackendOrigin } from '../api/api.config';
 
 export const credentialsInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith(backendOrigin)) {
+  if (!isSameBackendOrigin(req.url)) {
     return next(req);
   }
 

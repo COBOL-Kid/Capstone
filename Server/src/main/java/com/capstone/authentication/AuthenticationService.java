@@ -4,6 +4,7 @@ import com.capstone.configuration.JwtProperties;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.DuplicateEmailException;
+import com.capstone.email.EmailDeliveryException;
 import com.capstone.email.EmailNormalizer;
 import com.capstone.email.EmailVerificationService;
 import com.capstone.logging.AuditLog;
@@ -58,7 +59,7 @@ public class AuthenticationService {
     this.emailVerificationService = emailVerificationService;
   }
 
-  @Transactional
+  @Transactional(noRollbackFor = EmailDeliveryException.class)
   public AuthenticationResponse register(RegisterRequest request) {
     String email = EmailNormalizer.normalize(request.getEmail());
     if (repository.existsByUserEmail(email)) {

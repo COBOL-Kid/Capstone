@@ -11,6 +11,12 @@
 - Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
 - Production backend uses IBM Semeru Runtime 25 JVM on ICR UBI minimal images (`icr.io/appcafe/ibm-semeru-runtimes`), not GraalVM native image.
 - Keep empty-state "Add a vehicle" button when the garage is empty; show the header (+) only after the first vehicle is added.
+- Password change must revoke all refresh tokens and clear the session so the user signs in again everywhere.
+
+## Learned Workspace Facts
+
+- Vehicle Databases supplemental GETs treat HTTP 400 as no data (`null`); `probeRepairEstimatesByVin` 400 still signals trim selection (`TrimSelectionRequired`), not empty data.
+- Angular overlay modals use `requestClose()` to block backdrop/Escape/close while submit, verify, or resend is in progress.
 
 ## Repository Overview
 

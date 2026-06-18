@@ -8,6 +8,7 @@ import {
   openAddVehicleModal,
   submitAddVehicleForm,
   waitForAppReady,
+  waitForGarageReady,
 } from "../../fixtures/ui.helpers";
 
 test.describe("Garage / home page", () => {
@@ -118,7 +119,7 @@ test.describe("Garage / home page", () => {
 test.describe("Add vehicle modal", () => {
   test("VIN-001: add vehicle modal opens from header", async ({ page }) => {
     await page.goto("/home");
-    await waitForAppReady(page);
+    await waitForGarageReady(page);
 
     await openAddVehicleModal(page);
     await expect(page.getByLabel("VIN")).toBeVisible();
@@ -127,7 +128,7 @@ test.describe("Add vehicle modal", () => {
 
   test("VIN-002: add vehicle form validation", async ({ page }) => {
     await page.goto("/home");
-    await waitForAppReady(page);
+    await waitForGarageReady(page);
     await openAddVehicleModal(page);
 
     await submitAddVehicleForm(page);

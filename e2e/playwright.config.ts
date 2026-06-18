@@ -17,10 +17,12 @@ const authenticatedTestIgnore = [/not-found\.spec\.ts/];
 
 export default defineConfig({
   testDir: "./tests",
+  // Serial execution: authenticated fixtures share seeded users; password login
+  // revokes refresh tokens (deleteByUser), so parallel workers invalidate each other.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [["list"], ["html", { open: "never" }]],
   timeout: 45_000,
   expect: { timeout: 10_000 },

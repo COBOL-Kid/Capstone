@@ -45,6 +45,8 @@ cd e2e
 pnpm test
 ```
 
+Tests always run with **one worker** (`--workers=1`). Authenticated specs log in as shared seed users (`test.user@example.com`, etc.); password login revokes that user's refresh tokens, so parallel browser contexts race and flake (garage never loads, add-vehicle button timeouts). Do not raise worker count without giving each worker its own seed user.
+
 Other commands:
 
 | Script             | Purpose                          |
@@ -88,6 +90,7 @@ Global setup re-runs the seed script before each test run so `AUTH-012` and main
 - Bootstrap issues `XSRF-TOKEN`; mutating API calls require `X-XSRF-TOKEN`.
 - Sessions use the HttpOnly `__session` cookie.
 - Authenticated tests log in via API in a fresh browser context before each test (Playwright `storageState` files were removed because Angular bootstrap calls `/api/auth/refresh`, which rotates refresh tokens and left later tests unauthenticated).
+- The suite runs serially (`workers: 1`) so two tests never authenticate as the same seed user at the same time.
 - Unverified tests use a seeded refresh token (`e2e-unverified-refresh-token`) because password login requires Mailjet for email verification.
 
 ## Coverage notes

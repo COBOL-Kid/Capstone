@@ -2,7 +2,7 @@ import {
   authenticatedTest as test,
   expect,
 } from "../../fixtures/authenticated.fixture";
-import { waitForAppReady } from "../../fixtures/ui.helpers";
+import { waitForAppReady, waitForGarageReady } from "../../fixtures/ui.helpers";
 
 test("ERR-001: 401 from account hydration clears session", async ({ page }) => {
   await page.goto("/home");
@@ -45,11 +45,7 @@ test("ERR-002: 403 account hydration does not wipe session", async ({
   await page.reload();
   await waitForAppReady(page);
   await page.goto("/home");
-
-  await expect(page).toHaveURL(/\/home$/);
-  await expect(
-    page.getByRole("heading", { name: "My Vehicles" }),
-  ).toBeVisible();
+  await waitForGarageReady(page);
 });
 
 test("ERR-006: browser refresh on protected routes rehydrates", async ({

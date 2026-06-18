@@ -8,11 +8,13 @@ import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.AccountChangeRequestRepositoryJPA;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.EmailContent;
 import com.capstone.email.EmailDeliveryException;
 import com.capstone.email.EmailNormalizer;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
 import com.capstone.email.MailjetEmailClient;
+import com.capstone.email.VerificationEmailComposer;
 import com.capstone.logging.AuditLog;
 import com.capstone.models.AccountChangeRequest;
 import com.capstone.models.AccountChangeType;
@@ -44,6 +46,7 @@ public class AccountChangeService {
   private final PasswordEncoder passwordEncoder;
   private final EmailVerificationProperties properties;
   private final Optional<MailjetEmailClient> mailjetEmailClient;
+  private final VerificationEmailComposer verificationEmailComposer;
   private final AuthenticationService authenticationService;
 
   public AccountChangeService(
@@ -53,6 +56,7 @@ public class AccountChangeService {
       PasswordEncoder passwordEncoder,
       EmailVerificationProperties properties,
       Optional<MailjetEmailClient> mailjetEmailClient,
+      VerificationEmailComposer verificationEmailComposer,
       AuthenticationService authenticationService) {
     this.userRepository = userRepository;
     this.changeRequestRepository = changeRequestRepository;
@@ -60,6 +64,7 @@ public class AccountChangeService {
     this.passwordEncoder = passwordEncoder;
     this.properties = properties;
     this.mailjetEmailClient = mailjetEmailClient;
+    this.verificationEmailComposer = verificationEmailComposer;
     this.authenticationService = authenticationService;
   }
 
@@ -269,30 +274,11 @@ public class AccountChangeService {
         mailjetEmailClient.orElseThrow(
             () -> new EmailDeliveryException("Email delivery is not configured"));
     String name = user.getFirstName() != null ? user.getFirstName() : user.getUserEmail();
-    String changeLabel =
-        switch (changeType) {
-          case EMAIL -> "email address";
-          case PASSWORD -> "password";
-          case SMS -> "SMS phone number";
-        };
-    String subject = "Confirm your Honest Car account change";
-    String text =
-        "Your verification code to change your "
-            + changeLabel
-            + " is "
-            + plainCode
-            + ". It expires in "
-            + properties.getCodeExpirationMinutes()
-            + " minutes.";
-    String html =
-        "<p>Your verification code to change your <strong>"
-            + changeLabel
-            + "</strong> is <strong>"
-            + plainCode
-            + "</strong>. It expires in "
-            + properties.getCodeExpirationMinutes()
-            + " minutes.</p>";
-    client.sendEmail(user.getUserEmail(), name, subject, text, html);
+    EmailContent content =
+        verificationEmailComposer.composeAccountChange(
+            name, plainCode, properties.getCodeExpirationMinutes(), changeType);
+    client.sendEmail(
+        user.getUserEmail(), name, content.subject(), content.textPart(), content.htmlPart());
   }
 
   private User loadCurrentUser(AuthenticatedUser principal) {

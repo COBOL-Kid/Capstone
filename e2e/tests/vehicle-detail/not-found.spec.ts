@@ -5,7 +5,7 @@ import {
 import { SEEDED_VINS } from "../../fixtures/test-data";
 import { waitForAppReady } from "../../fixtures/ui.helpers";
 
-test.fixme("VEH-003: not-found vehicle shows message", async ({ page }) => {
+test("VEH-003: not-found vehicle shows message", async ({ page }) => {
   await page.goto(`/vehicles/${SEEDED_VINS.camry}`);
   await waitForAppReady(page);
 

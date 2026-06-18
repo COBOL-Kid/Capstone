@@ -18,6 +18,7 @@ import {
   AuthErrorMessage,
   AuthModalMode,
 } from '../../core/auth/auth.models';
+import { localDateIsoFromTimestamp } from '../../core/date/local-date';
 import { ToastService } from '../../core/toast/toast.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal';
 import { ChangeEmailModalComponent } from '../change-email-modal/change-email-modal';
@@ -40,6 +41,7 @@ type AccountChangeModal = AccountChangeType | null;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountDrawerComponent {
+  protected readonly formatAccountDate = localDateIsoFromTimestamp;
   readonly isOpen = signal(false);
   readonly isClosing = signal(false);
   readonly status = signal<AccountDrawerStatus>('signed-out');

@@ -14,6 +14,7 @@ import com.capstone.data.UserRepositoryJPA;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
 import com.capstone.email.MailjetEmailClient;
+import com.capstone.email.VerificationEmailComposer;
 import com.capstone.models.AccountChangeRequest;
 import com.capstone.models.AccountChangeType;
 import com.capstone.models.Role;
@@ -35,6 +36,7 @@ class AccountChangeServiceTest {
   private PasswordEncoder passwordEncoder;
   private EmailVerificationProperties properties;
   private MailjetEmailClient mailjetEmailClient;
+  private VerificationEmailComposer verificationEmailComposer;
   private AuthenticationService authenticationService;
   private AccountChangeService service;
 
@@ -46,6 +48,7 @@ class AccountChangeServiceTest {
     passwordEncoder = mock(PasswordEncoder.class);
     properties = new EmailVerificationProperties();
     mailjetEmailClient = mock(MailjetEmailClient.class);
+    verificationEmailComposer = new VerificationEmailComposer();
     authenticationService = mock(AuthenticationService.class);
     service =
         new AccountChangeService(
@@ -55,6 +58,7 @@ class AccountChangeServiceTest {
             passwordEncoder,
             properties,
             Optional.of(mailjetEmailClient),
+            verificationEmailComposer,
             authenticationService);
   }
 
@@ -86,6 +90,32 @@ class AccountChangeServiceTest {
             eq("Confirm your Honest Car account change"),
             contains("email address"),
             contains("email address"));
+  }
+
+  @Test
+  void shouldInitiatePasswordChangeWithBrandedEmail() {
+    User user = storedUser();
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(passwordEncoder.matches("current-secret", "encoded-old")).thenReturn(true);
+    when(passwordEncoder.encode(anyString())).thenReturn("encoded-code", "encoded-new-password");
+
+    service.initiateChange(
+        authenticatedPrincipal(),
+        new InitiateAccountChangeRequest(
+            AccountChangeType.PASSWORD, null, "current-secret", "New-secret1!", null));
+
+    ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
+    verify(mailjetEmailClient)
+        .sendEmail(
+            eq("driver@example.com"),
+            eq("Pat"),
+            eq("Confirm your Honest Car account change"),
+            contains("change your password"),
+            htmlCaptor.capture());
+    String html = htmlCaptor.getValue();
+    assertTrue(html.contains("Confirm your password change"));
+    assertTrue(html.contains("Honest Car"));
+    assertTrue(html.contains("#2f6fb4"));
   }
 
   @Test

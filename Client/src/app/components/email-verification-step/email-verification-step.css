@@ -9,7 +9,12 @@
 
 .email-verification-step__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
-  align-items: center;
+  align-items: stretch;
+}
+
+.email-verification-step__actions .hc-btn {
+  flex: 1 1 0;
+  min-width: 0;
 }

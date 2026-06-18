@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { VehicleDetailPageComponent } from './vehicle-detail-page';
@@ -839,5 +840,56 @@ describe('VehicleDetailPageComponent with unsafe owners manual url', () => {
 
     expect(manualButton).toBeDefined();
     expect(manualButton!.disabled).toBe(true);
+  });
+});
+
+describe('VehicleDetailPageComponent error states', () => {
+  const vin = 'JTENU5JR6M5962554';
+
+  async function createFixture(loadVehiclePage: ReturnType<typeof vi.fn>) {
+    await TestBed.configureTestingModule({
+      imports: [VehicleDetailPageComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ vin })),
+          },
+        },
+        {
+          provide: VehiclePageDataService,
+          useValue: { loadVehiclePage },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VehicleDetailPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('shows not-found message on 404', async () => {
+    const loadVehiclePage = vi.fn(() =>
+      throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found' })),
+    );
+    const fixture = await createFixture(loadVehiclePage);
+
+    const errorEl = fixture.nativeElement.querySelector('.vehicle-detail__status--error');
+    expect(errorEl?.textContent).toContain('Vehicle not found.');
+    expect(fixture.nativeElement.querySelector('.vehicle-detail__skeleton')).toBeNull();
+  });
+
+  it('shows load failure message on 500', async () => {
+    const loadVehiclePage = vi.fn(() =>
+      throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' })),
+    );
+    const fixture = await createFixture(loadVehiclePage);
+
+    const errorEl = fixture.nativeElement.querySelector('.vehicle-detail__status--error');
+    expect(errorEl?.textContent).toContain('Failed to load vehicle.');
+    expect(fixture.nativeElement.querySelector('.vehicle-detail__skeleton')).toBeNull();
   });
 });

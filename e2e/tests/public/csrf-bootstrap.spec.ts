@@ -5,16 +5,17 @@ import { waitForAppReady } from "../../fixtures/ui.helpers";
 test("ERR-003: bootstrap obtains CSRF before logout mutation", async ({
   page,
 }) => {
-  const csrfRequests: string[] = [];
-  const logoutRequests: string[] = [];
+  const csrfRequests: { url: string; time: number }[] = [];
+  const logoutRequests: { url: string; time: number }[] = [];
 
   page.on("request", (request) => {
     const url = request.url();
+    const time = Date.now();
     if (url.includes("/api/auth/csrf")) {
-      csrfRequests.push(url);
+      csrfRequests.push({ url, time });
     }
     if (url.includes("/api/auth/logout")) {
-      logoutRequests.push(url);
+      logoutRequests.push({ url, time });
     }
   });
 
@@ -35,7 +36,7 @@ test("ERR-003: bootstrap obtains CSRF before logout mutation", async ({
 
   expect(csrfRequests.length).toBeGreaterThan(0);
   expect(logoutRequests.length).toBe(1);
-  expect(csrfRequests[0]!.localeCompare(logoutRequests[0]!)).toBeLessThan(0);
+  expect(csrfRequests[0]!.time).toBeLessThanOrEqual(logoutRequests[0]!.time);
 });
 
 test("ERR-004: generic 500 shows friendly message", async ({ page }) => {

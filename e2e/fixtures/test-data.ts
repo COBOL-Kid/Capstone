@@ -1,3 +1,7 @@
+/** Bcrypt hash for `Password123!` — matches seeded E2E users in seed-e2e-data.sql. */
+export const SEEDED_PASSWORD_BCRYPT_HASH =
+  "$2y$10$Zy4xFp/QwJaDF5kkE5ob1uzhr8YD3VsqTuV8bFLr.jSeyfEgBUyjq";
+
 export const TEST_USER = {
   email: "test.user@example.com",
   password: "Password123!",
@@ -26,6 +30,9 @@ export const PASSWORD_CHANGE_USER = {
   firstName: "Password",
   lastName: "Change",
 };
+
+export const PASSWORD_CHANGE_REFRESH_TOKEN =
+  "e2e-password-change-refresh-token";
 
 export const SEEDED_VINS = {
   camry: "4T1C11AK5LU123456",

@@ -11,9 +11,10 @@ import com.capstone.configuration.EmailVerificationProperties;
 import com.capstone.data.AccountChangeRequestRepositoryJPA;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
+import com.capstone.email.EmailDeliveryGateway;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
-import com.capstone.email.MailjetEmailClient;
+import com.capstone.email.VerificationCodeGenerator;
 import com.capstone.email.VerificationEmailComposer;
 import com.capstone.models.AccountChangeRequest;
 import com.capstone.models.AccountChangeType;
@@ -35,7 +36,8 @@ class AccountChangeServiceTest {
   private RefreshTokenRepositoryJPA refreshTokenRepository;
   private PasswordEncoder passwordEncoder;
   private EmailVerificationProperties properties;
-  private MailjetEmailClient mailjetEmailClient;
+  private EmailDeliveryGateway emailDeliveryGateway;
+  private VerificationCodeGenerator verificationCodeGenerator;
   private VerificationEmailComposer verificationEmailComposer;
   private AuthenticationService authenticationService;
   private AccountChangeService service;
@@ -47,7 +49,9 @@ class AccountChangeServiceTest {
     refreshTokenRepository = mock(RefreshTokenRepositoryJPA.class);
     passwordEncoder = mock(PasswordEncoder.class);
     properties = new EmailVerificationProperties();
-    mailjetEmailClient = mock(MailjetEmailClient.class);
+    emailDeliveryGateway = mock(EmailDeliveryGateway.class);
+    verificationCodeGenerator = mock(VerificationCodeGenerator.class);
+    when(verificationCodeGenerator.generate()).thenReturn("123456");
     verificationEmailComposer = new VerificationEmailComposer();
     authenticationService = mock(AuthenticationService.class);
     service =
@@ -57,7 +61,8 @@ class AccountChangeServiceTest {
             refreshTokenRepository,
             passwordEncoder,
             properties,
-            Optional.of(mailjetEmailClient),
+            emailDeliveryGateway,
+            verificationCodeGenerator,
             verificationEmailComposer,
             authenticationService);
   }
@@ -83,7 +88,7 @@ class AccountChangeServiceTest {
         ArgumentCaptor.forClass(AccountChangeRequest.class);
     verify(changeRequestRepository).save(captor.capture());
     assertEquals("new.driver@example.com", captor.getValue().getNewEmail());
-    verify(mailjetEmailClient)
+    verify(emailDeliveryGateway)
         .sendEmail(
             eq("driver@example.com"),
             eq("Pat"),
@@ -105,7 +110,7 @@ class AccountChangeServiceTest {
             AccountChangeType.PASSWORD, null, "current-secret", "New-secret1!", null));
 
     ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
-    verify(mailjetEmailClient)
+    verify(emailDeliveryGateway)
         .sendEmail(
             eq("driver@example.com"),
             eq("Pat"),
@@ -265,7 +270,7 @@ class AccountChangeServiceTest {
 
     assertEquals(AccountChangeType.PASSWORD, response.changeType());
     verify(changeRequestRepository).save(pending);
-    verify(mailjetEmailClient).sendEmail(any(), any(), any(), any(), any());
+    verify(emailDeliveryGateway).sendEmail(any(), any(), any(), any(), any());
   }
 
   @Test

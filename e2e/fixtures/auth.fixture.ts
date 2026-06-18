@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { APIRequestContext, test as base } from "@playwright/test";
 import {
   EMPTY_GARAGE_USER,
@@ -96,9 +96,21 @@ export async function logoutViaApi(request: APIRequestContext): Promise<void> {
 }
 
 export function resetUnverifiedRefreshToken(): void {
-  execSync(
-    `PGPASSWORD=honestcar psql -h localhost -U honestcar -d honestcar -v ON_ERROR_STOP=1 -c "DELETE FROM refresh_token WHERE user_id = 3; INSERT INTO refresh_token (token, expiry_date, user_id) VALUES ('${UNVERIFIED_REFRESH_TOKEN}', CURRENT_TIMESTAMP + INTERVAL '30 days', 3);"`,
-    { stdio: "pipe" },
+  execFileSync(
+    "psql",
+    [
+      "-h",
+      "localhost",
+      "-U",
+      "honestcar",
+      "-d",
+      "honestcar",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      `DELETE FROM refresh_token WHERE user_id = 3; INSERT INTO refresh_token (token, expiry_date, user_id) VALUES ('${UNVERIFIED_REFRESH_TOKEN}', CURRENT_TIMESTAMP + INTERVAL '30 days', 3);`,
+    ],
+    { env: { ...process.env, PGPASSWORD: "honestcar" }, stdio: "pipe" },
   );
 }
 

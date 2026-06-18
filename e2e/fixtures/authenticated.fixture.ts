@@ -4,7 +4,12 @@ import {
   loginViaApi,
   resetUnverifiedRefreshToken,
 } from "./auth.fixture";
-import { EMPTY_GARAGE_USER, TEST_USER } from "./test-data";
+import { resetPasswordChangeUser, resetUnverifiedUser } from "./db.helpers";
+import {
+  EMPTY_GARAGE_USER,
+  PASSWORD_CHANGE_USER,
+  TEST_USER,
+} from "./test-data";
 
 export const authenticatedTest = base.extend({
   context: async ({ browser }, use) => {
@@ -26,9 +31,19 @@ export const emptyGarageTest = base.extend({
 
 export const unverifiedTest = base.extend({
   context: async ({ browser }, use) => {
-    resetUnverifiedRefreshToken();
+    resetUnverifiedUser();
     const context = await browser.newContext();
     await loginUnverifiedViaRefreshToken(context.request);
+    await use(context);
+    await context.close();
+  },
+});
+
+export const passwordChangeTest = base.extend({
+  context: async ({ browser }, use) => {
+    resetPasswordChangeUser();
+    const context = await browser.newContext();
+    await loginViaApi(context.request, PASSWORD_CHANGE_USER);
     await use(context);
     await context.close();
   },

@@ -169,6 +169,9 @@ test("GAR-007: delete vehicle server failure keeps vehicle", async ({
   await expect(
     page.getByRole("dialog", { name: "Delete Vehicle" }),
   ).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    /error occurred deleting|Sometimes things just don't go as planned/i,
+  );
   await expect(
     page.getByRole("heading", { name: VEHICLE_LABELS.camry }),
   ).toBeVisible();
@@ -193,4 +196,8 @@ test("GAR-006: delete vehicle happy path removes card", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: VEHICLE_LABELS.camry }),
   ).toHaveCount(0);
+  await page.goto(`/vehicles/${SEEDED_VINS.camry}`);
+  await expect(page.locator(".vehicle-detail__status--error")).toContainText(
+    "Vehicle not found.",
+  );
 });

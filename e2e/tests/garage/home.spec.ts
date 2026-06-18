@@ -32,6 +32,10 @@ test.describe("Garage / home page", () => {
     ).toBeVisible();
     await expect(page.getByText("45200 miles")).toBeVisible();
     await expect(page.getByText("78500 miles")).toBeVisible();
+    await expect(page.getByText("SE").first()).toBeVisible();
+    await expect(
+      page.locator("article.vehicle-card img").first(),
+    ).toBeVisible();
   });
 
   test("GAR-003: non-empty garage shows header add button", async ({
@@ -54,6 +58,9 @@ test.describe("Garage / home page", () => {
 
     await navigateToVehicleDetail(page, VEHICLE_LABELS.camry);
     await expect(page).toHaveURL(new RegExp(`/vehicles/${SEEDED_VINS.camry}$`));
+    await expect(
+      page.getByRole("heading", { name: VEHICLE_LABELS.camry, level: 1 }),
+    ).toBeVisible();
   });
 
   test("GAR-005: delete vehicle cancel path keeps vehicle", async ({

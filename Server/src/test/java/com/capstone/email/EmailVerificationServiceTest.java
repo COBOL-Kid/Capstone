@@ -25,15 +25,16 @@ class EmailVerificationServiceTest {
         mock(EmailVerificationCodeRepositoryJPA.class);
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    EmailVerificationProperties properties = properties();
-    MailjetEmailClient mailjetEmailClient = mock(MailjetEmailClient.class);
+    EmailDeliveryGateway emailDeliveryGateway = mock(EmailDeliveryGateway.class);
+    VerificationCodeGenerator verificationCodeGenerator = mock(VerificationCodeGenerator.class);
     EmailVerificationService service =
         new EmailVerificationService(
             codeRepository,
             userRepository,
             passwordEncoder,
-            properties,
-            Optional.of(mailjetEmailClient),
+            properties(),
+            emailDeliveryGateway,
+            verificationCodeGenerator,
             verificationEmailComposer);
 
     User user = user();
@@ -61,7 +62,8 @@ class EmailVerificationServiceTest {
             userRepository,
             passwordEncoder,
             properties(),
-            Optional.of(mock(MailjetEmailClient.class)),
+            mock(EmailDeliveryGateway.class),
+            mock(VerificationCodeGenerator.class),
             verificationEmailComposer);
 
     User user = user();
@@ -80,24 +82,27 @@ class EmailVerificationServiceTest {
         mock(EmailVerificationCodeRepositoryJPA.class);
     UserRepositoryJPA userRepository = mock(UserRepositoryJPA.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    MailjetEmailClient mailjetEmailClient = mock(MailjetEmailClient.class);
+    EmailDeliveryGateway emailDeliveryGateway = mock(EmailDeliveryGateway.class);
+    VerificationCodeGenerator verificationCodeGenerator = mock(VerificationCodeGenerator.class);
     EmailVerificationService service =
         new EmailVerificationService(
             codeRepository,
             userRepository,
             passwordEncoder,
             properties(),
-            Optional.of(mailjetEmailClient),
+            emailDeliveryGateway,
+            verificationCodeGenerator,
             verificationEmailComposer);
 
     User user = user();
-    when(passwordEncoder.encode(anyString())).thenReturn("encoded-code");
+    when(verificationCodeGenerator.generate()).thenReturn("123456");
+    when(passwordEncoder.encode("123456")).thenReturn("encoded-code");
 
     service.sendRegistrationCode(user);
 
     verify(codeRepository).deleteByUser(user);
     verify(codeRepository).save(any(EmailVerificationCode.class));
-    verify(mailjetEmailClient)
+    verify(emailDeliveryGateway)
         .sendEmail(
             eq(user.getUserEmail()),
             anyString(),

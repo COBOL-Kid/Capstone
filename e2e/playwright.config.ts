@@ -6,14 +6,21 @@ const authenticatedTestMatch = [
   /\/garage\/home\.spec\.ts/,
   /\/vehicle-detail\//,
   /\/vehicle-onboarding\//,
-  /\/account\//,
+  /\/account\/drawer\.spec\.ts/,
   /\/maintenance\//,
   /\/recalls\//,
   /\/auth\/(logout|session)\.spec\.ts/,
   /\/errors\/resilience\.spec\.ts/,
+  /\/errors\/offline\.spec\.ts/,
+  /\/errors\/auth-routing\.spec\.ts/,
 ];
 
 const authenticatedTestIgnore = [/not-found\.spec\.ts/];
+
+const destructiveTestMatch = [
+  /\/account\/(password-change|account-change)\.spec\.ts/,
+  /\/auth\/signup\.spec\.ts/,
+];
 
 export default defineConfig({
   testDir: "./tests",
@@ -37,6 +44,7 @@ export default defineConfig({
       name: "chromium",
       testIgnore: [
         ...authenticatedTestMatch,
+        ...destructiveTestMatch,
         /unverified\.spec\.ts/,
         /empty-garage\.spec\.ts/,
       ],
@@ -49,6 +57,7 @@ export default defineConfig({
         /unverified\.spec\.ts/,
         /empty-garage\.spec\.ts/,
         ...authenticatedTestIgnore,
+        ...destructiveTestMatch,
       ],
       use: { ...devices["Desktop Chrome"] },
     },
@@ -63,6 +72,11 @@ export default defineConfig({
     {
       name: "chromium-unverified",
       testMatch: /unverified\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "chromium-destructive",
+      testMatch: destructiveTestMatch,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

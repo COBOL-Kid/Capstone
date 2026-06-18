@@ -56,7 +56,7 @@ export default async function globalSetup(): Promise<void> {
         ...failures.map((message) => `- ${message}`),
         "",
         "Start the local stack in separate terminals:",
-        "  Terminal A: cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun",
+        "  Terminal A: cd Server && E2E_STUB_EMAIL=true E2E_FIXED_VERIFICATION_CODE=123456 SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun",
         "  Terminal B: cd Client && pnpm start",
         "",
         "Seed the database before running garage tests:",

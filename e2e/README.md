@@ -16,13 +16,15 @@ Playwright browser tests for the Honest Car SPA against the local Angular dev se
    | `test.user@example.com`       | `Password123!` | Verified user with Camry + Civic            |
    | `empty.garage@example.com`    | `Password123!` | Verified user, empty garage                 |
    | `unverified.user@example.com` | `Password123!` | Unverified user; verification code `123456` |
-   | `password.change@example.com` | `Password123!` | Reserved for destructive account tests      |
+   | `password.change@example.com` | `Password123!` | Destructive account-change tests            |
 
-3. **Backend** (port 8080):
+3. **Backend** (port 8080) with E2E email stub enabled for signup/account-change specs:
 
    ```bash
-   cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+   cd Server && E2E_STUB_EMAIL=true E2E_FIXED_VERIFICATION_CODE=123456 SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
    ```
+
+   The stub registers a no-op email client and always issues verification code `123456` in dev. Never enable `security.e2e.stub-email` in production.
 
 4. **Frontend** (port 4200, proxies `/api/**` to the backend):
 
@@ -65,23 +67,24 @@ Other commands:
 | `support/global-setup.ts`           | Health checks for `:8080`/`:4200` and re-seeds Postgres                      |
 | `scripts/seed-e2e-data.sql`         | Idempotent Postgres seed for all E2E users                                   |
 | `tests/public/`                     | Public pages, CSRF bootstrap, signed-out account drawer                      |
-| `tests/auth/`                       | Login, logout, session, auth guards                                          |
+| `tests/auth/`                       | Login, logout, session, signup, auth guards                                  |
 | `tests/garage/`                     | Garage/home flows (verified, empty, unverified)                              |
-| `tests/vehicle-detail/`             | Vehicle detail page and modals                                               |
+| `tests/vehicle-detail/`             | Vehicle detail page, modals, unavailable states                              |
 | `tests/vehicle-onboarding/`         | Add-vehicle flows (seed + route mocks)                                       |
 | `tests/maintenance/`                | Maintenance complete/incomplete flows                                        |
 | `tests/recalls/`                    | Recall complete/incomplete flows                                             |
-| `tests/account/`                    | Account drawer and change modals                                             |
-| `tests/errors/`                     | Session resilience and error handling                                        |
+| `tests/account/`                    | Account drawer, change modals, password revoke                               |
+| `tests/errors/`                     | Session resilience, offline, auth routing                                    |
 
 ## Playwright projects
 
-| Project                  | Auth                                         | Scope                                                 |
-| ------------------------ | -------------------------------------------- | ----------------------------------------------------- |
-| `chromium`               | None                                         | Public pages, sign-in/sign-up, auth guard             |
-| `chromium-authenticated` | Per-test API login (`authenticated.fixture`) | Garage, vehicle detail, maintenance, recalls, account |
-| `chromium-empty-garage`  | Per-test API login as empty-garage user      | Empty garage, add/delete vehicle, VEH-003 (fixme)     |
-| `chromium-unverified`    | Per-test refresh-token login + seed reset    | Verification banner (serial)                          |
+| Project                  | Auth                                         | Scope                                                        |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------ |
+| `chromium`               | None                                         | Public pages, sign-in/sign-up, auth guard                    |
+| `chromium-authenticated` | Per-test API login (`authenticated.fixture`) | Garage, vehicle detail, maintenance, recalls, account drawer |
+| `chromium-empty-garage`  | Per-test API login as empty-garage user      | Empty garage, add/delete vehicle, VEH-003                    |
+| `chromium-unverified`    | Per-test refresh-token login + seed reset    | Verification banner (serial)                                 |
+| `chromium-destructive`   | Per-test login + DB reset for change user    | Signup, account-change happy paths, password revoke          |
 
 Global setup re-runs the seed script before each test run so `AUTH-012` and maintenance/recall serial suites start from a known DB state.
 
@@ -91,18 +94,18 @@ Global setup re-runs the seed script before each test run so `AUTH-012` and main
 - Sessions use the HttpOnly `__session` cookie.
 - Authenticated tests log in via API in a fresh browser context before each test (Playwright `storageState` files were removed because Angular bootstrap calls `/api/auth/refresh`, which rotates refresh tokens and left later tests unauthenticated).
 - The suite runs serially (`workers: 1`) so two tests never authenticate as the same seed user at the same time.
-- Unverified tests use a seeded refresh token (`e2e-unverified-refresh-token`) because password login requires Mailjet for email verification.
+- Unverified tests use a seeded refresh token (`e2e-unverified-refresh-token`) because password login requires the E2E email stub for sign-in verification codes.
 
 ## Coverage notes
 
 - **P0/P1** scenarios from the regression doc are implemented with UI assertions; provider-dependent onboarding uses seeded VINs or Playwright route mocks.
 - **P2** (rate limits, responsive/a11y smoke, live providers) are not in the default suite.
-- **Fixme (app bug):** `VEH-003` and `VEH-004` — vehicle detail page stays on the loading skeleton after API 404/500 even though error state is set in the component.
 - Re-run the seed script manually if you run tests without global setup or need to reset after local DB experiments.
 
 ## Troubleshooting
 
 - **Global setup error:** Start both Server and Client before running tests.
+- **Signup/account-change failures:** Ensure `E2E_STUB_EMAIL=true` and `E2E_FIXED_VERIFICATION_CODE=123456` on the backend.
 - **Login or garage failures:** Re-run the seed script.
 - **Unverified failures after a prior run:** Re-run the seed script to reset `unverified.user@example.com`.
 - **Vehicle onboarding against local Postgres:** JDBC URL needs `?stringtype=unspecified` on Postgres.

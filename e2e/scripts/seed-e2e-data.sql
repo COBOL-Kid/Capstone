@@ -175,7 +175,8 @@ VALUES (2, 'empty.garage@example.com', 'Empty', 'Garage', NULL,
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO refresh_token (token, expiry_date, user_id)
-VALUES ('e2e-unverified-refresh-token', CURRENT_TIMESTAMP + INTERVAL '30 days', 3);
+VALUES ('e2e-unverified-refresh-token', CURRENT_TIMESTAMP + INTERVAL '30 days', 3),
+       ('e2e-password-change-refresh-token', CURRENT_TIMESTAMP + INTERVAL '30 days', 4);
 
 INSERT INTO email_verification_code (user_id, code_hash, expires_at, sign_in_challenge_hash, created_at,
                                      failed_attempts)

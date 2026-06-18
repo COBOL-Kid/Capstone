@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { TEST_USER } from "../../fixtures/test-data";
+import { resetUnverifiedUser } from "../../fixtures/db.helpers";
+import { TEST_USER, UNVERIFIED_USER } from "../../fixtures/test-data";
 import {
   openAccountDrawer,
   signInViaUI,
@@ -82,6 +83,54 @@ test.describe("Authentication", () => {
       /account already exists/i,
     );
   });
+
+  test("AUTH-011: unverified login shows verification challenge", async ({
+    page,
+  }) => {
+    resetUnverifiedUser();
+
+    await page.goto("/sign-in");
+    await waitForAppReady(page);
+
+    await page.getByLabel("Email").fill(UNVERIFIED_USER.email);
+    await page.getByLabel("Password").fill(UNVERIFIED_USER.password);
+    await page.getByRole("button", { name: "Sign In", exact: true }).click();
+
+    await expect(
+      page.getByText(/We sent a 6-digit verification code/i),
+    ).toBeVisible();
+    await expect(page.getByLabel("Verification code")).toBeVisible();
+
+    await page.getByRole("button", { name: "Back to sign in" }).click();
+    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(page.getByLabel("Password")).toBeVisible();
+  });
+});
+
+test("ADD-005: sign-in prevents duplicate submit while pending", async ({
+  page,
+}) => {
+  let authenticateCalls = 0;
+  await page.route("**/api/auth/authenticate", async (route) => {
+    authenticateCalls += 1;
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+
+  await page.goto("/sign-in");
+  await waitForAppReady(page);
+  await page.getByLabel("Email").fill(TEST_USER.email);
+  await page.getByLabel("Password").fill(TEST_USER.password);
+  const signInButton = page.getByRole("button", {
+    name: "Sign In",
+    exact: true,
+  });
+  await signInButton.click();
+  await expect(
+    page.getByRole("button", { name: "Please wait...", exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/home$/, { timeout: 15_000 });
+  expect(authenticateCalls).toBe(1);
 });
 
 test.describe("Auth guard", () => {

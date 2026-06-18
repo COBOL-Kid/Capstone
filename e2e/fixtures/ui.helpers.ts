@@ -129,3 +129,54 @@ export async function openRecallCompleteForm(page: Page): Promise<Locator> {
   await dialog.getByRole("button", { name: "Mark complete" }).click();
   return dialog;
 }
+
+export async function closeDialogViaBackdrop(
+  page: Page,
+  dialogName: string | RegExp,
+): Promise<void> {
+  const dialog = page.getByRole("dialog", { name: dialogName });
+  await page
+    .locator(".hc-overlay-backdrop")
+    .click({ position: { x: 5, y: 5 } });
+  await expect(dialog).toBeHidden();
+}
+
+export async function submitVerificationCode(
+  page: Page,
+  code: string,
+  submitLabel = "Verify email",
+): Promise<void> {
+  await page.getByLabel("Verification code").fill(code);
+  await page.getByRole("button", { name: submitLabel, exact: true }).click();
+}
+
+export async function assertNoAuthTokensInWebStorage(
+  page: Page,
+): Promise<void> {
+  const storage = await page.evaluate(() => {
+    const keys = [...Object.keys(localStorage), ...Object.keys(sessionStorage)];
+    const suspicious = keys.filter(
+      (key) =>
+        /token|jwt|access|refresh|session/i.test(key) &&
+        !key.toLowerCase().includes("xsrf"),
+    );
+    return { suspicious, localStorage, sessionStorage };
+  });
+  expect(storage.suspicious).toEqual([]);
+}
+
+export function mockSlowRoute(
+  page: Page,
+  urlPattern: string | RegExp,
+  delayMs: number,
+  method?: string,
+): Promise<void> {
+  return page.route(urlPattern, async (route) => {
+    if (method && route.request().method() !== method) {
+      await route.continue();
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await route.continue();
+  });
+}

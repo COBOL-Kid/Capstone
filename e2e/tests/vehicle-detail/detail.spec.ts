@@ -26,6 +26,9 @@ test.describe("Vehicle detail page", () => {
     await expect(page.getByText("45,200 mi")).toBeVisible();
     await expect(page.getByText("Trim")).toBeVisible();
     await expect(page.getByText("4-Door Sedan")).toBeVisible();
+    await expect(page.getByText("2.5L 4-Cylinder")).toBeVisible();
+    await expect(page.getByText("Automatic")).toBeVisible();
+    await expect(page.getByText("FWD")).toBeVisible();
   });
 
   test("VEH-002: back to vehicles link returns to garage", async ({ page }) => {
@@ -106,6 +109,7 @@ test.describe("Vehicle detail page", () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("Oil Change")).toBeVisible();
     await expect(dialog.getByText("Independent shop").first()).toBeVisible();
+    await expect(dialog.getByText("Dealer").first()).toBeVisible();
     await dialog
       .getByRole("button", { name: "Close maintenance costs dialog" })
       .click();

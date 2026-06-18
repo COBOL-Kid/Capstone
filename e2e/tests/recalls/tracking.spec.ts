@@ -61,6 +61,7 @@ test("REC-003: open recall detail modal", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: "Recall" })).toBeVisible();
   const recallDialog = page.getByRole("dialog", { name: "Recall" });
   await expect(recallDialog.getByText("23V123000")).toBeVisible();
+  await expect(recallDialog.getByText(/2023-03-15/)).toBeVisible();
   await expect(
     recallDialog.getByText("Dealers will replace the fuel pump"),
   ).toBeVisible();
@@ -139,5 +140,111 @@ test("REC-007: recall mutation failure shows alert", async ({ page }) => {
 
   await expect(page.getByRole("alert")).toContainText(
     /Unable to mark recall complete/i,
+  );
+});
+
+test("REC-006: recall complete validation keeps modal open", async ({
+  page,
+}) => {
+  await page.goto(camryUrl);
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+
+  await vehicleDetailToggle(page)
+    .getByRole("button", { name: "Recalls" })
+    .click();
+  await page
+    .getByRole("button", { name: /FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP/ })
+    .click();
+  const dialog = await openRecallCompleteForm(page);
+  await dialog.getByLabel("Completed date").fill("");
+  await dialog.getByRole("button", { name: "Confirm complete" }).click();
+
+  await expect(dialog).toBeVisible();
+});
+
+test("REC-008: empty open recalls state", async ({ page }) => {
+  await page.route(
+    `**/api/vin/${SEEDED_VINS.camry}/dashboard`,
+    async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+      const body = await route.fetch().then((r) => r.json());
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...body, uncompletedRecalls: [] }),
+      });
+    },
+  );
+
+  await page.goto(camryUrl);
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+
+  await vehicleDetailToggle(page)
+    .getByRole("button", { name: "Recalls" })
+    .click();
+  await expect(page.getByText("In the clear")).toBeVisible();
+});
+
+test("REC-009: empty completed recalls state", async ({ page }) => {
+  await page.route(
+    `**/api/vin/${SEEDED_VINS.camry}/dashboard`,
+    async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+      const body = await route.fetch().then((r) => r.json());
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...body, completedRecalls: [] }),
+      });
+    },
+  );
+
+  await page.goto(camryUrl);
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+
+  await vehicleDetailToggle(page)
+    .getByRole("button", { name: "Recalls" })
+    .click();
+  await page.getByText("Completed recalls").click();
+  await expect(page.getByText("Nothing logged yet")).toBeVisible();
+});
+
+test("REC-007b: recall uncomplete failure shows alert", async ({ page }) => {
+  await page.route("**/api/recall/completed/**", async (route) => {
+    if (route.request().method() === "DELETE") {
+      await route.fulfill({
+        status: 500,
+        contentType: "text/plain",
+        body: "Sometimes things just don't go as planned.",
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto(camryUrl);
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+
+  await vehicleDetailToggle(page)
+    .getByRole("button", { name: "Recalls" })
+    .click();
+  await page.getByText("Completed recalls").click();
+  await page
+    .getByRole("button", { name: /ELECTRICAL SYSTEM:SOFTWARE/ })
+    .click();
+  await page.getByRole("button", { name: "Mark incomplete" }).click();
+
+  await expect(page.getByRole("alert")).toContainText(
+    /Unable to mark recall incomplete/i,
   );
 });

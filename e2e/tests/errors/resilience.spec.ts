@@ -2,7 +2,12 @@ import {
   authenticatedTest as test,
   expect,
 } from "../../fixtures/authenticated.fixture";
-import { waitForAppReady, waitForGarageReady } from "../../fixtures/ui.helpers";
+import { SEEDED_VINS } from "../../fixtures/test-data";
+import {
+  waitForAppReady,
+  waitForGarageReady,
+  waitForVehicleDetailSettled,
+} from "../../fixtures/ui.helpers";
 
 test("ERR-001: 401 from account hydration clears session", async ({ page }) => {
   await page.goto("/home");
@@ -61,5 +66,20 @@ test("ERR-006: browser refresh on protected routes rehydrates", async ({
   await waitForAppReady(page);
   await expect(
     page.getByRole("heading", { name: "My Vehicles" }),
+  ).toBeVisible();
+});
+
+test("ERR-006 extension: browser refresh on vehicle detail rehydrates", async ({
+  page,
+}) => {
+  await page.goto(`/vehicles/${SEEDED_VINS.camry}`);
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+
+  await page.reload();
+  await waitForAppReady(page);
+  await waitForVehicleDetailSettled(page);
+  await expect(
+    page.getByRole("heading", { name: "2020 Toyota Camry", level: 1 }),
   ).toBeVisible();
 });

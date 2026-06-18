@@ -2,6 +2,7 @@ import {
   authenticatedTest as test,
   expect,
 } from "../../fixtures/authenticated.fixture";
+import { SEEDED_VINS, VEHICLE_LABELS } from "../../fixtures/test-data";
 import {
   submitAddVehicleForm,
   waitForAppReady,
@@ -140,4 +141,176 @@ test("VIN-007: trim selection required flow", async ({ page }) => {
     "Vehicle added to your garage.",
   );
   await expect(page).toHaveURL(/\/vehicles\/1HGBH41JXMN109186$/);
+});
+
+test("VIN-004: duplicate vehicle association navigates without duplicate card", async ({
+  page,
+}) => {
+  let postCount = 0;
+  await page.route("**/api/vin**", async (route) => {
+    if (route.request().method() === "POST") {
+      postCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          vin: SEEDED_VINS.camry,
+          currentMileage: 45_200,
+          vehicleTypeId: 1,
+          make: "Toyota",
+          model: "Camry",
+          trim: "SE",
+          year: "2020",
+          availableImageUrls: [],
+          selectedImageUrl: "",
+          createdVin: false,
+          createdAssociation: false,
+          createdVehicleType: false,
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/home");
+  await waitForAppReady(page);
+  await page.getByRole("button", { name: "Add new vehicle" }).click();
+  await page.getByLabel("VIN").fill(SEEDED_VINS.camry);
+  await page.getByLabel("Current Mileage").fill("45200");
+  await submitAddVehicleForm(page);
+
+  expect(postCount).toBe(1);
+  await expect(page.locator(".hc-toast--success")).toContainText(
+    "Vehicle added to your garage.",
+  );
+  await expect(page).toHaveURL(new RegExp(`/vehicles/${SEEDED_VINS.camry}$`));
+  await expect(
+    page.getByRole("heading", { name: "2020 Toyota Camry", level: 1 }),
+  ).toHaveCount(1);
+});
+
+test("VIN-008: trim options loading failure shows error", async ({ page }) => {
+  await page.route("**/api/vin**", async (route) => {
+    const url = route.request().url();
+    if (url.includes("/trim-options")) {
+      await route.fulfill({
+        status: 500,
+        contentType: "text/plain",
+        body: "Sometimes things just don't go as planned.",
+      });
+      return;
+    }
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          requiresTrimSelection: true,
+          year: "2020",
+          make: "Honda",
+          model: "Accord",
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/home");
+  await waitForAppReady(page);
+  await page.getByRole("button", { name: "Add new vehicle" }).click();
+  await page.getByLabel("VIN").fill("1HGBH41JXMN109186");
+  await page.getByLabel("Current Mileage").fill("12000");
+  await submitAddVehicleForm(page);
+  await page.getByRole("button", { name: "Continue anyways" }).click();
+
+  await expect(page.getByText(/Unable to load trim options/i)).toBeVisible();
+  await expect(page.locator("#add-vehicle-trim")).toHaveValue("");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByText(/Select a trim to continue/i)).toBeVisible();
+});
+
+test("VIN-009: limited-data warning appears before trim selection", async ({
+  page,
+}) => {
+  await page.route("**/api/vin**", async (route) => {
+    const url = route.request().url();
+    if (url.includes("/trim-options")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ trims: ["LX", "EX"] }),
+      });
+      return;
+    }
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          requiresTrimSelection: true,
+          year: "2020",
+          make: "Honda",
+          model: "Accord",
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/home");
+  await waitForAppReady(page);
+  await page.getByRole("button", { name: "Add new vehicle" }).click();
+  await page.getByLabel("VIN").fill("1HGBH41JXMN109186");
+  await page.getByLabel("Current Mileage").fill("12000");
+  await submitAddVehicleForm(page);
+
+  await expect(
+    page.getByText("Full vehicle details may not be available"),
+  ).toBeVisible();
+});
+
+test("VIN-010: cannot close add modal while submitting", async ({ page }) => {
+  await page.route("**/api/vin", async (route) => {
+    if (route.request().method() === "POST") {
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          vin: "1HGBH41JXMN109186",
+          currentMileage: 12000,
+          vehicleTypeId: 99,
+          make: "Honda",
+          model: "Accord",
+          trim: "EX",
+          year: "2020",
+          availableImageUrls: [],
+          selectedImageUrl: "",
+          createdVin: true,
+          createdAssociation: true,
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/home");
+  await waitForAppReady(page);
+  await page.getByRole("button", { name: "Add new vehicle" }).click();
+  await page.getByLabel("VIN").fill("1HGBH41JXMN109186");
+  await page.getByLabel("Current Mileage").fill("12000");
+  await submitAddVehicleForm(page);
+
+  const closeButton = page.getByRole("button", {
+    name: "Close add vehicle dialog",
+  });
+  await expect(closeButton).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("dialog", { name: "Add a vehicle" }),
+  ).toBeVisible();
 });

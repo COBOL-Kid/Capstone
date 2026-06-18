@@ -9,11 +9,9 @@ import com.capstone.models.User;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,13 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EmailVerificationService {
 
-  private static final SecureRandom RANDOM = new SecureRandom();
-
   private final EmailVerificationCodeRepositoryJPA verificationCodeRepository;
   private final UserRepositoryJPA userRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailVerificationProperties properties;
-  private final Optional<MailjetEmailClient> mailjetEmailClient;
+  private final EmailDeliveryGateway emailDeliveryGateway;
+  private final VerificationCodeGenerator verificationCodeGenerator;
   private final VerificationEmailComposer verificationEmailComposer;
 
   public EmailVerificationService(
@@ -36,13 +33,15 @@ public class EmailVerificationService {
       UserRepositoryJPA userRepository,
       PasswordEncoder passwordEncoder,
       EmailVerificationProperties properties,
-      Optional<MailjetEmailClient> mailjetEmailClient,
+      EmailDeliveryGateway emailDeliveryGateway,
+      VerificationCodeGenerator verificationCodeGenerator,
       VerificationEmailComposer verificationEmailComposer) {
     this.verificationCodeRepository = verificationCodeRepository;
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.properties = properties;
-    this.mailjetEmailClient = mailjetEmailClient;
+    this.emailDeliveryGateway = emailDeliveryGateway;
+    this.verificationCodeGenerator = verificationCodeGenerator;
     this.verificationEmailComposer = verificationEmailComposer;
   }
 
@@ -92,7 +91,7 @@ public class EmailVerificationService {
 
   private String issueCode(User user, String signInChallengeHash) {
     verificationCodeRepository.deleteByUser(user);
-    String plainCode = generateCode();
+    String plainCode = verificationCodeGenerator.generate();
     EmailVerificationCode verificationCode = new EmailVerificationCode();
     verificationCode.setUser(user);
     verificationCode.setCodeHash(passwordEncoder.encode(plainCode));
@@ -158,19 +157,11 @@ public class EmailVerificationService {
   }
 
   private void sendVerificationEmail(User user, String plainCode) {
-    MailjetEmailClient client =
-        mailjetEmailClient.orElseThrow(
-            () -> new EmailDeliveryException("Email delivery is not configured"));
     String name = user.getFirstName() != null ? user.getFirstName() : user.getUserEmail();
     EmailContent content =
         verificationEmailComposer.compose(name, plainCode, properties.getCodeExpirationMinutes());
-    client.sendEmail(
+    emailDeliveryGateway.sendEmail(
         user.getUserEmail(), name, content.subject(), content.textPart(), content.htmlPart());
-  }
-
-  private static String generateCode() {
-    int value = RANDOM.nextInt(900_000) + 100_000;
-    return Integer.toString(value);
   }
 
   private static String hashChallenge(String challenge) {

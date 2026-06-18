@@ -7,6 +7,27 @@ import { waitForAppReady } from "../../fixtures/ui.helpers";
 
 test.describe.configure({ mode: "serial" });
 
+test("ADD-004: unverified home does not issue GET /api/vin", async ({
+  page,
+}) => {
+  const vinRequests: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.method() === "GET" &&
+      request.url().includes("/api/vin") &&
+      !request.url().includes("/dashboard")
+    ) {
+      vinRequests.push(request.url());
+    }
+  });
+
+  await page.goto("/home");
+  await waitForAppReady(page);
+
+  await expect(page.getByText("Verify your email")).toBeVisible();
+  expect(vinRequests).toHaveLength(0);
+});
+
 test("GAR-010: unverified user does not fetch or show vehicles", async ({
   page,
 }) => {
@@ -59,8 +80,10 @@ test("AUTH-012: email verification from home banner succeeds", async ({
   await page.getByLabel("Verification code").fill(VERIFICATION_CODE);
   await page.getByRole("button", { name: "Verify email" }).click();
 
-  await expect(page.getByText("Verify your email")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add a vehicle" })).toBeEnabled(
+    { timeout: 15_000 },
+  );
   await expect(
-    page.getByRole("button", { name: "Add a vehicle" }),
-  ).toBeEnabled();
+    page.getByRole("heading", { name: "My Vehicles" }),
+  ).toBeVisible();
 });

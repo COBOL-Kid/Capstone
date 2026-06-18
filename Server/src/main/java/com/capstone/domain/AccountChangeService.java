@@ -9,11 +9,11 @@ import com.capstone.data.AccountChangeRequestRepositoryJPA;
 import com.capstone.data.RefreshTokenRepositoryJPA;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.email.EmailContent;
-import com.capstone.email.EmailDeliveryException;
+import com.capstone.email.EmailDeliveryGateway;
 import com.capstone.email.EmailNormalizer;
 import com.capstone.email.ExpiredEmailVerificationCodeException;
 import com.capstone.email.InvalidEmailVerificationCodeException;
-import com.capstone.email.MailjetEmailClient;
+import com.capstone.email.VerificationCodeGenerator;
 import com.capstone.email.VerificationEmailComposer;
 import com.capstone.logging.AuditLog;
 import com.capstone.models.AccountChangeRequest;
@@ -23,7 +23,6 @@ import com.capstone.models.dto.AccountChangeInitiatedResponse;
 import com.capstone.models.dto.AccountResponse;
 import com.capstone.models.dto.InitiateAccountChangeRequest;
 import com.capstone.models.dto.PendingAccountChangeResponse;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -37,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccountChangeService {
 
-  private static final SecureRandom RANDOM = new SecureRandom();
   private static final Pattern SMS_PATTERN = Pattern.compile("^$|^(?=.*\\d)[+0-9() .-]+$");
 
   private final UserRepositoryJPA userRepository;
@@ -45,7 +43,8 @@ public class AccountChangeService {
   private final RefreshTokenRepositoryJPA refreshTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailVerificationProperties properties;
-  private final Optional<MailjetEmailClient> mailjetEmailClient;
+  private final EmailDeliveryGateway emailDeliveryGateway;
+  private final VerificationCodeGenerator verificationCodeGenerator;
   private final VerificationEmailComposer verificationEmailComposer;
   private final AuthenticationService authenticationService;
 
@@ -55,7 +54,8 @@ public class AccountChangeService {
       RefreshTokenRepositoryJPA refreshTokenRepository,
       PasswordEncoder passwordEncoder,
       EmailVerificationProperties properties,
-      Optional<MailjetEmailClient> mailjetEmailClient,
+      EmailDeliveryGateway emailDeliveryGateway,
+      VerificationCodeGenerator verificationCodeGenerator,
       VerificationEmailComposer verificationEmailComposer,
       AuthenticationService authenticationService) {
     this.userRepository = userRepository;
@@ -63,7 +63,8 @@ public class AccountChangeService {
     this.refreshTokenRepository = refreshTokenRepository;
     this.passwordEncoder = passwordEncoder;
     this.properties = properties;
-    this.mailjetEmailClient = mailjetEmailClient;
+    this.emailDeliveryGateway = emailDeliveryGateway;
+    this.verificationCodeGenerator = verificationCodeGenerator;
     this.verificationEmailComposer = verificationEmailComposer;
     this.authenticationService = authenticationService;
   }
@@ -229,7 +230,7 @@ public class AccountChangeService {
   }
 
   private String issueCode(AccountChangeRequest pending) {
-    String plainCode = generateCode();
+    String plainCode = verificationCodeGenerator.generate();
     pending.setCodeHash(passwordEncoder.encode(plainCode));
     pending.setExpiresAt(
         Instant.now().plus(Duration.ofMinutes(properties.getCodeExpirationMinutes())));
@@ -270,14 +271,11 @@ public class AccountChangeService {
   }
 
   private void sendVerificationEmail(User user, String plainCode, AccountChangeType changeType) {
-    MailjetEmailClient client =
-        mailjetEmailClient.orElseThrow(
-            () -> new EmailDeliveryException("Email delivery is not configured"));
     String name = user.getFirstName() != null ? user.getFirstName() : user.getUserEmail();
     EmailContent content =
         verificationEmailComposer.composeAccountChange(
             name, plainCode, properties.getCodeExpirationMinutes(), changeType);
-    client.sendEmail(
+    emailDeliveryGateway.sendEmail(
         user.getUserEmail(), name, content.subject(), content.textPart(), content.htmlPart());
   }
 
@@ -308,10 +306,5 @@ public class AccountChangeService {
       return null;
     }
     return value.trim();
-  }
-
-  private static String generateCode() {
-    int value = RANDOM.nextInt(900_000) + 100_000;
-    return Integer.toString(value);
   }
 }

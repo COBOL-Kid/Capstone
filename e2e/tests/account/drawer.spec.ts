@@ -5,6 +5,7 @@ import {
 import { TEST_USER } from "../../fixtures/test-data";
 import {
   closeAccountDrawer,
+  closeDialogViaBackdrop,
   openAccountDrawer,
   waitForAppReady,
 } from "../../fixtures/ui.helpers";
@@ -19,6 +20,7 @@ test("ACCT-001: account drawer opens for signed-in user", async ({ page }) => {
     page.getByText(`${TEST_USER.firstName} ${TEST_USER.lastName}`),
   ).toBeVisible();
   await expect(page.getByText(TEST_USER.email)).toBeVisible();
+  await expect(page.getByText("+15551234567")).toBeVisible();
   await expect(page.getByText("Member Since")).toBeVisible();
   await expect(page.getByText("Last Updated")).toBeVisible();
   await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
@@ -38,6 +40,14 @@ test("ACCT-003: account drawer closes via close button", async ({ page }) => {
   await openAccountDrawer(page);
   await closeAccountDrawer(page);
   await expect(page.getByRole("dialog", { name: "Account" })).toBeHidden();
+});
+
+test("ACCT-003b: account drawer closes via backdrop", async ({ page }) => {
+  await page.goto("/home");
+  await waitForAppReady(page);
+
+  await openAccountDrawer(page);
+  await closeDialogViaBackdrop(page, "Account");
 });
 
 test("ACCT-006: change SMS validation blocks invalid input", async ({

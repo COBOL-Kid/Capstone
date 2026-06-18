@@ -11,6 +11,35 @@ async function mutatingHeaders(
   };
 }
 
+export async function registerUserViaApi(
+  request: APIRequestContext,
+  user: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  },
+): Promise<void> {
+  const xsrfToken = await bootstrapCsrf(request);
+  const response = await request.post("/api/auth/register", {
+    headers: {
+      "Content-Type": "application/json",
+      "X-XSRF-TOKEN": xsrfToken,
+    },
+    data: {
+      firstname: user.firstName,
+      lastname: user.lastName,
+      email: user.email,
+      password: user.password,
+    },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Register failed: ${response.status()} ${await response.text()}`,
+    );
+  }
+}
+
 export async function addVehicleViaApi(
   request: APIRequestContext,
   vin: string,

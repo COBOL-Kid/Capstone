@@ -9,7 +9,7 @@
 - Prefer GCP-native observability (Cloud Logging, Error Reporting, trace correlation); no third-party APM or Sentry unless asked.
 - Angular backend mutations must use HttpClient (not `fetch`) so XSRF and credentials interceptors apply.
 - Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
-- Production backend uses IBM Semeru Runtime 25 JVM on ICR UBI minimal images (`icr.io/appcafe/ibm-semeru-runtimes`), not GraalVM native image.
+- Production backend uses IBM Semeru Runtime 25 JVM on ICR UBI minimal images (`icr.io/appcafe/ibm-semeru-runtimes`), not GraalVM native image; deploy to Cloud Run via GCP Cloud Build source deploy, not manual image push.
 - Keep empty-state "Add a vehicle" button when the garage is empty; show the header (+) only after the first vehicle is added.
 - Password change must revoke all refresh tokens and clear the session so the user signs in again everywhere.
 
@@ -17,6 +17,7 @@
 
 - Vehicle Databases supplemental GETs treat HTTP 400 as no data (`null`); `probeRepairEstimatesByVin` 400 still signals trim selection (`TrimSelectionRequired`), not empty data.
 - Angular overlay modals use `requestClose()` to block backdrop/Escape/close while submit, verify, or resend is in progress.
+- Playwright E2E regression suite lives in standalone `e2e/` (not `Client/`); run with `workers: 1` because authenticated tests share `test.user@example.com` and password login revokes all refresh tokens for that user.
 
 ## Repository Overview
 

@@ -131,10 +131,7 @@ export class VehicleDetailPageComponent {
     }
     return warranty.coverages.filter((coverage) => coverage.estimatedExpirationDate != null);
   });
-  protected readonly isLoading = computed(() => {
-    const status = this.pageResource.status();
-    return status === 'loading' || status === 'reloading';
-  });
+  protected readonly isLoading = computed(() => this.pageResource.isLoading());
   protected readonly error = computed(() => {
     const err = this.pageResource.error();
     if (!err) {
@@ -155,6 +152,9 @@ export class VehicleDetailPageComponent {
     });
 
     effect(() => {
+      if (this.pageResource.error()) {
+        return;
+      }
       const data = this.pageResource.value();
       if (!data) {
         return;

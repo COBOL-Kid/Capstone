@@ -2,7 +2,11 @@
   <div class="vehicle-detail__content hc-page-shell__inner">
     <a class="vehicle-detail__back" routerLink="/home">← Back to vehicles</a>
 
-    @if (isLoading()) {
+    @if (error(); as message) {
+      <div class="vehicle-detail__status vehicle-detail__status--error hc-state-message">
+        {{ message }}
+      </div>
+    } @else if (isLoading()) {
       <span class="hc-sr-only" role="status">Loading vehicle…</span>
       <div aria-hidden="true" class="vehicle-detail__skeleton">
         <div class="hc-skeleton vehicle-detail__skeleton-title"></div>
@@ -16,10 +20,6 @@
           </div>
         </div>
         <div class="hc-skeleton vehicle-detail__skeleton-section"></div>
-      </div>
-    } @else if (error(); as message) {
-      <div class="vehicle-detail__status vehicle-detail__status--error hc-state-message">
-        {{ message }}
       </div>
     } @else if (vehicle(); as v) {
       <h1 class="vehicle-detail__title" id="vehicle-detail-title">

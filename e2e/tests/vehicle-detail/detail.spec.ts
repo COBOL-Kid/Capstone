@@ -150,7 +150,7 @@ test.describe("Vehicle detail page", () => {
     await expectToast(page, "Vehicle photo updated.");
   });
 
-  test.fixme("VEH-004: vehicle detail load failure", async ({ page }) => {
+  test("VEH-004: vehicle detail load failure", async ({ page }) => {
     await page.route("**/dashboard", async (route) => {
       if (!route.request().url().includes(SEEDED_VINS.camry)) {
         await route.continue();

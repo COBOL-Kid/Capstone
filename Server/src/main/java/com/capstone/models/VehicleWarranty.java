@@ -1,9 +1,14 @@
 package com.capstone.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "vehicle_warranty")
@@ -14,8 +19,8 @@ public class VehicleWarranty {
   @Column(name = "fetched_at", nullable = false)
   private Instant fetchedAt;
 
-  @Convert(converter = MapStringJsonConverter.class)
-  @Column(name = "coverages", nullable = false, columnDefinition = "json")
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "coverages", nullable = false)
   private Map<String, String> coverages = new LinkedHashMap<>();
 
   public VehicleWarranty() {}

@@ -6,6 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { localDateIsoFromTimestamp } from '../../core/date/local-date';
 import { AccountDrawerComponent } from './account-drawer';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/toast/toast.service';
@@ -160,6 +161,10 @@ describe('AccountDrawerComponent', () => {
     expect(text).toContain('Change Email');
     expect(text).toContain('Change SMS');
     expect(text).toContain('Change Password');
+    expect(text).toContain(localDateIsoFromTimestamp(accountDetails.createdAt));
+    expect(text).toContain(localDateIsoFromTimestamp(accountDetails.updatedAt));
+    expect(text).not.toContain(accountDetails.createdAt);
+    expect(text).not.toContain(accountDetails.updatedAt);
   });
 
   it('initiates password change and completes verification through the modal', () => {

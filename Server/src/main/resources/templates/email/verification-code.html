@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
-    <title>Verify your Honest Car account</title>
+    <title>{{pageTitle}}</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
       rel="stylesheet"
@@ -37,8 +37,7 @@
         line-height: 1px;
       "
     >
-      Your Honest Car verification code is {{verificationCode}} — it expires in
-      {{expirationMinutes}} minutes.
+      {{preheaderLead}} {{verificationCode}} — it expires in {{expirationMinutes}} minutes.
       &#8203;&zwnj;&#8203;&zwnj;&#8203;&zwnj;&#8203;&zwnj;&#8203;&zwnj;&#8203;&zwnj;&#8203;&zwnj;
     </div>
 
@@ -154,7 +153,7 @@
                           color: #2f6fb4;
                         "
                       >
-                        Account verification
+                        {{badgeLabel}}
                       </p>
                       <h1
                         style="
@@ -166,11 +165,10 @@
                           color: #0b2545;
                         "
                       >
-                        Verify your email
+                        {{heading}}
                       </h1>
                       <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.5; color: #4a5e7a">
-                        Hi {{recipientName}}, enter this code in the Honest Car app to finish
-                        verifying your account.
+                        Hi {{recipientName}}, {{introMessage}}
                       </p>
 
                       <!-- Code cells (the hero) -->

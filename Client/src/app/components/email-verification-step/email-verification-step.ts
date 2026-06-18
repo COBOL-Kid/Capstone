@@ -8,6 +8,7 @@ import { AuthErrorMessage } from '../../core/auth/auth.models';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './email-verification-step.html',
+  styleUrl: './email-verification-step.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmailVerificationStepComponent {

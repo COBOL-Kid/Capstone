@@ -170,6 +170,32 @@ public class VehicleDataProviderClient {
     return getAutoDev("getPhotos", "/photos/{vin}", vin, VehiclePhotosResponse.class, false);
   }
 
+  public AutoDevListingsResponse getListings(
+      String year, String make, String model, int page, String trim, int minMiles, int maxMiles) {
+    UriComponentsBuilder builder =
+        UriComponentsBuilder.fromUriString(autoDevBaseUrl)
+            .path("/listings")
+            .queryParam("vehicle.make", make.trim())
+            .queryParam("vehicle.model", model.trim())
+            .queryParam("vehicle.year", year.trim())
+            .queryParam("retailListing.miles", minMiles + "-" + maxMiles)
+            .queryParam("page", page)
+            .queryParam("includes", "total");
+    if (trim != null && !trim.isBlank()) {
+      builder.queryParam("vehicle.trim", trim.trim());
+    }
+    String url = builder.build().toUriString();
+    return executeGet(
+        "autodev",
+        "getListings",
+        url,
+        AutoDevListingsResponse.class,
+        headers(autoDevApiKey, autoDevApiKeyHeader),
+        false,
+        false,
+        year + "/" + make + "/" + model + "/page=" + page);
+  }
+
   private <T> T getAutoDev(
       String operation,
       String path,

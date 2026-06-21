@@ -1,5 +1,8 @@
 package com.capstone.integration;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -71,6 +74,33 @@ class VehicleDataProviderClientHttpTest {
     VehiclePhotosResponse response = client.getPhotos(VIN);
 
     assertEquals(2, response.retailPhotos().size());
+  }
+
+  @Test
+  void shouldFetchListingsOverHttp() {
+    mockServer
+        .expect(
+            requestTo(
+                allOf(
+                    startsWith(VehicleDataProviderMockSupport.AUTO_DEV_BASE + "/listings?"),
+                    containsString("vehicle.make=Toyota"),
+                    containsString("vehicle.model=4RUNNER"),
+                    containsString("vehicle.year=2021"),
+                    containsString("retailListing.miles=35000-200000"),
+                    containsString("vehicle.trim=SRS%20Prem"),
+                    containsString("page=1"),
+                    containsString("includes=total"))))
+        .andRespond(
+            withSuccess(
+                VehicleDataFixtures.read("autodev-listings.json"), MediaType.APPLICATION_JSON));
+
+    AutoDevListingsResponse response =
+        client.getListings("2021", "Toyota", "4RUNNER", 1, "SRS Prem", 35000, 200000);
+
+    assertEquals(661, response.total());
+    assertEquals(1, response.listings().size());
+    assertEquals("1FA6P8JZ1L5552492", response.listings().getFirst().vin());
+    assertEquals(179148, response.listings().getFirst().retailListing().price());
   }
 
   @Test

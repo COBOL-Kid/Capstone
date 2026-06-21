@@ -88,6 +88,90 @@ class VehicleDataProviderClientTest {
   }
 
   @Test
+  void shouldFetchListingsFromAutoDevEndpoint() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    AutoDevListingsResponse providerResponse = new AutoDevListingsResponse(661, List.of());
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(AutoDevListingsResponse.class)))
+        .thenReturn(ResponseEntity.ok(providerResponse));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    AutoDevListingsResponse response =
+        client.getListings("2020", "Ford", "Mustang", 2, "GT Premium", 35000, 200000);
+
+    assertSame(providerResponse, response);
+    ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<HttpEntity<?>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
+    verify(restTemplate)
+        .exchange(
+            urlCaptor.capture(),
+            eq(HttpMethod.GET),
+            entityCaptor.capture(),
+            eq(AutoDevListingsResponse.class));
+    String url = urlCaptor.getValue();
+    assertTrue(url.startsWith(AUTO_DEV_BASE + "/listings?"), url);
+    assertTrue(url.contains("vehicle.make=Ford"), url);
+    assertTrue(url.contains("vehicle.model=Mustang"), url);
+    assertTrue(url.contains("vehicle.year=2020"), url);
+    assertTrue(url.contains("retailListing.miles=35000-200000"), url);
+    assertTrue(
+        url.contains("vehicle.trim=GT Premium") || url.contains("vehicle.trim=GT%20Premium"), url);
+    assertTrue(url.contains("page=2"), url);
+    assertTrue(url.contains("includes=total"), url);
+    assertEquals(AUTO_DEV_KEY, entityCaptor.getValue().getHeaders().getFirst(AUTO_DEV_KEY_HEADER));
+  }
+
+  @Test
+  void shouldOmitTrimQueryParamWhenTrimIsBlank() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    AutoDevListingsResponse providerResponse = new AutoDevListingsResponse(10, List.of());
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(AutoDevListingsResponse.class)))
+        .thenReturn(ResponseEntity.ok(providerResponse));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    client.getListings("2021", "Toyota", "4RUNNER", 1, "  ", 0, 200000);
+
+    ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+    verify(restTemplate)
+        .exchange(
+            urlCaptor.capture(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(AutoDevListingsResponse.class));
+    String url = urlCaptor.getValue();
+    assertTrue(url.contains("retailListing.miles=0-200000"), url);
+    assertFalse(url.contains("vehicle.trim="), url);
+  }
+
+  @Test
+  void shouldReturnNullWhenListingsEndpointReturns404() {
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            org.mockito.ArgumentMatchers.any(),
+            eq(AutoDevListingsResponse.class)))
+        .thenThrow(
+            HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null));
+
+    VehicleDataProviderClient client = client(restTemplate);
+
+    assertNull(client.getListings("2021", "Toyota", "4RUNNER", 1, "SRS Prem", 35000, 200000));
+  }
+
+  @Test
   void shouldFetchRecallsFromVehicleDatabasesEndpoint() {
     RestTemplate restTemplate = mock(RestTemplate.class);
     VehicleRecallsResponse providerResponse =

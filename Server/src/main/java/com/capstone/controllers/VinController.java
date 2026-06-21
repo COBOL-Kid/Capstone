@@ -6,6 +6,7 @@ import static com.capstone.models.dto.VinValidation.VIN_PATTERN;
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.VehicleDashboardService;
+import com.capstone.domain.VehicleListingsService;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.models.User;
@@ -32,16 +33,19 @@ public class VinController {
   final VinService vinService;
   final VehicleOnboardingService vehicleOnboardingService;
   final VehicleDashboardService vehicleDashboardService;
+  final VehicleListingsService vehicleListingsService;
   final UserRepositoryJPA userRepository;
 
   public VinController(
       VinService vinService,
       VehicleOnboardingService vehicleOnboardingService,
       VehicleDashboardService vehicleDashboardService,
+      VehicleListingsService vehicleListingsService,
       UserRepositoryJPA userRepository) {
     this.vinService = vinService;
     this.vehicleOnboardingService = vehicleOnboardingService;
     this.vehicleDashboardService = vehicleDashboardService;
+    this.vehicleListingsService = vehicleListingsService;
     this.userRepository = userRepository;
   }
 
@@ -72,6 +76,28 @@ public class VinController {
     return vehicleDashboardService
         .findDashboardForUser(user.userId(), vin)
         .<ResponseEntity<?>>map(dashboard -> new ResponseEntity<>(dashboard, HttpStatus.OK))
+        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
+  @GetMapping("/{vin}/listings")
+  public ResponseEntity<?> getVehicleListings(
+      @AuthenticationPrincipal AuthenticatedUser user,
+      @PathVariable("vin")
+          @Pattern(
+              regexp = VIN_PATTERN,
+              flags = Pattern.Flag.CASE_INSENSITIVE,
+              message = VIN_MESSAGE)
+          String vin,
+      @RequestParam(value = "page", defaultValue = "1") int page) {
+    if (user == null) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
+    if (page < 1) {
+      return new ResponseEntity<>("page must be a positive integer", HttpStatus.BAD_REQUEST);
+    }
+    return vehicleListingsService
+        .findListingsForUserVin(user.userId(), vin, page)
+        .<ResponseEntity<?>>map(listings -> new ResponseEntity<>(listings, HttpStatus.OK))
         .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 

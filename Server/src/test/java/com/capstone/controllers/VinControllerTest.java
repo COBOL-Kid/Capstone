@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.capstone.authentication.AuthenticatedUser;
 import com.capstone.data.UserRepositoryJPA;
 import com.capstone.domain.VehicleDashboardService;
+import com.capstone.domain.VehicleListingsService;
 import com.capstone.domain.VehicleOnboardingService;
 import com.capstone.domain.VinService;
 import com.capstone.models.Role;
@@ -92,6 +93,51 @@ class VinControllerTest {
   }
 
   @Test
+  void shouldReturnVehicleListingsForCurrentUserVin() {
+    VehicleListingsService listingsService = mock(VehicleListingsService.class);
+    VinController controller =
+        controller(
+            mock(VinService.class),
+            mock(VehicleOnboardingService.class),
+            mock(VehicleDashboardService.class),
+            listingsService);
+    AuthenticatedUser user = user();
+    VehicleListingsResponse listings =
+        new VehicleListingsResponse(
+            "JTENU5JR6M5962554", "2021", "Toyota", "4RUNNER", 1, 661, List.of());
+
+    when(listingsService.findListingsForUserVin(1L, "JTENU5JR6M5962554", 1))
+        .thenReturn(Optional.of(listings));
+    when(listingsService.findListingsForUserVin(1L, "MISSINGVIN1234567", 1))
+        .thenReturn(Optional.empty());
+
+    var foundResponse = controller.getVehicleListings(user, "JTENU5JR6M5962554", 1);
+    var missingResponse = controller.getVehicleListings(user, "MISSINGVIN1234567", 1);
+
+    assertEquals(HttpStatus.OK, foundResponse.getStatusCode());
+    assertEquals(listings, foundResponse.getBody());
+    assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
+    assertEquals(
+        HttpStatus.UNAUTHORIZED,
+        controller.getVehicleListings(null, "JTENU5JR6M5962554", 1).getStatusCode());
+  }
+
+  @Test
+  void shouldRequirePositivePageForVehicleListings() {
+    VinController controller =
+        controller(
+            mock(VinService.class),
+            mock(VehicleOnboardingService.class),
+            mock(VehicleDashboardService.class),
+            mock(VehicleListingsService.class));
+    AuthenticatedUser user = user();
+
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        controller.getVehicleListings(user, "JTENU5JR6M5962554", 0).getStatusCode());
+  }
+
+  @Test
   void shouldReturnVehicleDetailForCurrentUser() {
     VinService vinService = mock(VinService.class);
     VinController controller =
@@ -148,6 +194,7 @@ class VinControllerTest {
             mock(VinService.class),
             onboardingService,
             mock(VehicleDashboardService.class),
+            mock(VehicleListingsService.class),
             userRepository);
     AuthenticatedUser authUser = user();
     User user = new User();
@@ -216,6 +263,7 @@ class VinControllerTest {
             mock(VinService.class),
             onboardingService,
             mock(VehicleDashboardService.class),
+            mock(VehicleListingsService.class),
             userRepository);
     AuthenticatedUser authUser = user();
     User user = new User();
@@ -315,8 +363,21 @@ class VinControllerTest {
       VinService vinService,
       VehicleOnboardingService onboardingService,
       VehicleDashboardService dashboardService) {
+    return controller(
+        vinService, onboardingService, dashboardService, mock(VehicleListingsService.class));
+  }
+
+  private VinController controller(
+      VinService vinService,
+      VehicleOnboardingService onboardingService,
+      VehicleDashboardService dashboardService,
+      VehicleListingsService listingsService) {
     return new VinController(
-        vinService, onboardingService, dashboardService, mock(UserRepositoryJPA.class));
+        vinService,
+        onboardingService,
+        dashboardService,
+        listingsService,
+        mock(UserRepositoryJPA.class));
   }
 
   private AuthenticatedUser user() {

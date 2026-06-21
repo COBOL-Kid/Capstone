@@ -4,6 +4,7 @@ Client/.DS_Store
 Client/Thumbs.db
 
 # IDEs and editors
+.cursor/
 .idea/
 .vscode/
 

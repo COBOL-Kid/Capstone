@@ -7,6 +7,6 @@ public record VehicleListingsResponse(
     String year,
     String make,
     String model,
-    int page,
     Integer total,
+    VehicleListingsPricingSummary pricingSummary,
     List<VehicleListingResponse> listings) {}

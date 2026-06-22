@@ -123,34 +123,41 @@
                 </div>
               }
             </dl>
-            <span
-              class="vehicle-detail__manual-btn-wrap"
-              [attr.title]="!hasOwnersManual() ? informationUnavailableMessage : null"
-            >
-              <button
-                (click)="openOwnersManual()"
-                [class.vehicle-detail__manual-btn--unavailable]="!hasOwnersManual()"
-                [disabled]="!hasOwnersManual()"
-                class="vehicle-detail__manual-btn"
-                type="button"
+            <div class="vehicle-detail__specs-actions">
+              <span
+                class="vehicle-detail__manual-btn-wrap"
+                [attr.title]="!hasOwnersManual() ? informationUnavailableMessage : null"
               >
-                Owner's manual
-              </button>
-            </span>
+                <button
+                  (click)="openOwnersManual()"
+                  [class.vehicle-detail__manual-btn--unavailable]="!hasOwnersManual()"
+                  [disabled]="!hasOwnersManual()"
+                  class="vehicle-detail__manual-btn"
+                  type="button"
+                >
+                  Owner's manual
+                </button>
+              </span>
+              <span
+                class="vehicle-detail__manual-btn-wrap"
+                [attr.title]="!hasWarrantyInformation() ? informationUnavailableMessage : null"
+              >
+                <button
+                  (click)="openWarrantyModal()"
+                  [class.vehicle-detail__manual-btn--unavailable]="!hasWarrantyInformation()"
+                  [disabled]="!hasWarrantyInformation()"
+                  class="vehicle-detail__manual-btn"
+                  type="button"
+                >
+                  Warranty information
+                </button>
+              </span>
+            </div>
           </div>
 
-          <span
-            class="vehicle-detail__costs-btn-wrap"
-            [attr.title]="!hasWarrantyInformation() ? informationUnavailableMessage : null"
-          >
-            <button
-              (click)="openWarrantyModal()"
-              [class.vehicle-detail__costs-btn--unavailable]="!hasWarrantyInformation()"
-              [disabled]="!hasWarrantyInformation()"
-              class="vehicle-detail__costs-btn"
-              type="button"
-            >
-              Warranty information
+          <span class="vehicle-detail__costs-btn-wrap">
+            <button (click)="openListingsModal()" class="vehicle-detail__costs-btn" type="button">
+              Current Market Value
             </button>
           </span>
 
@@ -490,6 +497,10 @@
 
   @if (isWarrantyModalOpen() && vehicleWarranty(); as warranty) {
     <app-warranty-modal (close)="closeWarrantyModal()" [warranty]="warranty" />
+  }
+
+  @if (isListingsModalOpen() && vehicle(); as v) {
+    <app-vehicle-listings-modal (close)="closeListingsModal()" [vin]="v.vin" />
   }
 
   @if (isMaintenanceCostsModalOpen() && vehicle(); as v) {

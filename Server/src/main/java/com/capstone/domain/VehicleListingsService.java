@@ -6,8 +6,10 @@ import com.capstone.integration.VehicleDataProviderClient;
 import com.capstone.models.dto.VehicleDetailResponse;
 import com.capstone.models.dto.VehicleListingHistoryResponse;
 import com.capstone.models.dto.VehicleListingResponse;
+import com.capstone.models.dto.VehicleListingsPricingSummary;
 import com.capstone.models.dto.VehicleListingsResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class VehicleListingsService {
   static final int LISTINGS_MILEAGE_TOLERANCE = 10_000;
   static final int LISTINGS_MILES_UPPER_BOUND = 200_000;
   static final int LISTINGS_HIGH_MILEAGE_WINDOW_MIN = 190_000;
+  private static final int LISTINGS_PAGE = 1;
 
   private final VehicleReadService vehicleReadService;
   private final VehicleDataProviderClient vehicleDataProviderClient;
@@ -31,14 +34,11 @@ public class VehicleListingsService {
   }
 
   @Transactional(readOnly = true)
-  public Optional<VehicleListingsResponse> findListingsForUserVin(
-      long userId, String vin, int page) {
-    return vehicleReadService
-        .findVehicleDetail(userId, vin)
-        .map(detail -> fetchAndMapListings(detail, page));
+  public Optional<VehicleListingsResponse> findListingsForUserVin(long userId, String vin) {
+    return vehicleReadService.findVehicleDetail(userId, vin).map(this::fetchAndMapListings);
   }
 
-  private VehicleListingsResponse fetchAndMapListings(VehicleDetailResponse detail, int page) {
+  private VehicleListingsResponse fetchAndMapListings(VehicleDetailResponse detail) {
     AutoDevListingsResponse providerResponse;
     int minMiles;
     int maxMiles = LISTINGS_MILES_UPPER_BOUND;
@@ -54,7 +54,7 @@ public class VehicleListingsService {
               detail.vehicleYear(),
               detail.vehicleMake(),
               detail.vehicleModel(),
-              page,
+              LISTINGS_PAGE,
               detail.vehicleTrim(),
               minMiles,
               maxMiles);
@@ -76,9 +76,30 @@ public class VehicleListingsService {
         detail.vehicleYear(),
         detail.vehicleMake(),
         detail.vehicleModel(),
-        page,
         providerResponse != null ? providerResponse.total() : null,
+        computePricingSummary(listings),
         listings);
+  }
+
+  private VehicleListingsPricingSummary computePricingSummary(
+      List<VehicleListingResponse> listings) {
+    List<Integer> prices =
+        listings.stream()
+            .map(VehicleListingResponse::price)
+            .filter(Objects::nonNull)
+            .sorted()
+            .toList();
+
+    if (prices.isEmpty()) {
+      return new VehicleListingsPricingSummary(null, null, null, 0);
+    }
+
+    int minPrice = prices.getFirst();
+    int maxPrice = prices.getLast();
+    long priceSum = prices.stream().mapToLong(Integer::longValue).sum();
+    int averagePrice = (int) Math.round((double) priceSum / prices.size());
+
+    return new VehicleListingsPricingSummary(minPrice, maxPrice, averagePrice, prices.size());
   }
 
   private VehicleListingResponse toListingResponse(AutoDevListingsResponse.Listing listing) {

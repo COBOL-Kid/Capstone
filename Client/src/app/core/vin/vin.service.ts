@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
+import { VehicleListingsResponse } from '../listings/listings.models';
 import {
   AddVehicleResult,
   AddVinRequest,
@@ -48,6 +49,10 @@ export class VinService {
 
   getVehicleDashboard(vin: string): Observable<VehicleDashboardResponse> {
     return this.http.get<VehicleDashboardResponse>(`${this.baseUrl}/${vin}/dashboard`);
+  }
+
+  getVehicleListings(vin: string): Observable<VehicleListingsResponse> {
+    return this.http.get<VehicleListingsResponse>(`${this.baseUrl}/${vin}/listings`);
   }
 
   updateMileage(vin: string, request: UpdateMileageRequest): Observable<VehicleDetailResponse> {

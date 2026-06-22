@@ -119,6 +119,60 @@ describe('VinService', () => {
     );
   });
 
+  it('loads vehicle listings', () => {
+    const listings = {
+      vin: 'JTENU5JR6M5962554',
+      year: '2021',
+      make: 'Toyota',
+      model: '4RUNNER',
+      total: 661,
+      pricingSummary: {
+        minPrice: 179148,
+        maxPrice: 179148,
+        averagePrice: 179148,
+        pricedListingCount: 1,
+      },
+      listings: [
+        {
+          vin: '1FA6P8JZ1L5552492',
+          createdAt: '2026-05-19 00:31:18',
+          year: '2020',
+          make: 'Ford',
+          model: 'Mustang',
+          style: 'GT Premium 2dr Coupe',
+          price: 179148,
+          miles: 8,
+          dealer: 'Earth Motorcars',
+          city: 'Carrollton',
+          state: 'TX',
+          zip: '75006',
+          primaryImage: 'https://retail.photos.vin/1FA6P8JZ1L5552492-1.jpg',
+          vdp: 'https://example.com/vdp',
+          carfaxUrl: 'https://www.carfax.com/VehicleHistory/p/Report.cfx?vin=1FA6P8JZ1L5552492',
+          used: true,
+          cpo: false,
+          photoCount: 105,
+          latitude: 32.971378,
+          longitude: -96.844514,
+          history: {
+            accidents: false,
+            accidentCount: 0,
+            oneOwner: false,
+            ownerCount: 0,
+            usageType: 'Vehicle Use',
+          },
+        },
+      ],
+    };
+
+    service.getVehicleListings('JTENU5JR6M5962554').subscribe((response) => {
+      expect(response).toEqual(listings);
+    });
+
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    request.flush(listings);
+  });
+
   it('loads vehicle dashboard', () => {
     const dashboard = {
       detail: {

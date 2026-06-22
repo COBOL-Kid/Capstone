@@ -10,6 +10,16 @@ test.describe.configure({ mode: "serial" });
 test("GAR-010: unverified user does not fetch or show vehicles", async ({
   page,
 }) => {
+  const vinRequests: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.url().includes("/api/vin") &&
+      request.method() === "GET"
+    ) {
+      vinRequests.push(request.url());
+    }
+  });
+
   await page.goto("/home");
   await waitForAppReady(page);
 
@@ -20,6 +30,7 @@ test("GAR-010: unverified user does not fetch or show vehicles", async ({
   await expect(
     page.getByRole("heading", { name: "2020 Toyota Camry" }),
   ).toHaveCount(0);
+  expect(vinRequests).toHaveLength(0);
 });
 
 test("VIN-011: unverified user cannot add vehicle", async ({ page }) => {

@@ -32,6 +32,7 @@ import { MaintenanceDetailModalComponent } from '../../components/maintenance-de
 import { MaintenanceCostsModalComponent } from '../../components/maintenance-costs-modal/maintenance-costs-modal';
 import { RecallDetailModalComponent } from '../../components/recall-detail-modal/recall-detail-modal';
 import { WarrantyModalComponent } from '../../components/warranty-modal/warranty-modal';
+import { VehicleListingsModalComponent } from '../../components/vehicle-listings-modal/vehicle-listings-modal';
 import { VehiclePhotoModalComponent } from '../../components/vehicle-photo-modal/vehicle-photo-modal';
 import {
   formatWarrantyCoverageLabelForSpecs,
@@ -50,6 +51,7 @@ type ActiveSection = 'maintenance' | 'recalls';
     MaintenanceCostsModalComponent,
     RecallDetailModalComponent,
     WarrantyModalComponent,
+    VehicleListingsModalComponent,
     VehiclePhotoModalComponent,
   ],
   templateUrl: './vehicle-detail-page.html',
@@ -68,6 +70,7 @@ export class VehicleDetailPageComponent {
   protected readonly isPhotoModalOpen = signal(false);
   protected readonly isMaintenanceCostsModalOpen = signal(false);
   protected readonly isWarrantyModalOpen = signal(false);
+  protected readonly isListingsModalOpen = signal(false);
   protected readonly selectedUpcomingMaintenance = signal<SelectedUpcomingMaintenance | null>(null);
   protected readonly selectedCompletedMaintenance = signal<CompletedMaintenanceResponse | null>(
     null,
@@ -220,6 +223,14 @@ export class VehicleDetailPageComponent {
 
   protected closeWarrantyModal(): void {
     this.isWarrantyModalOpen.set(false);
+  }
+
+  protected openListingsModal(): void {
+    this.isListingsModalOpen.set(true);
+  }
+
+  protected closeListingsModal(): void {
+    this.isListingsModalOpen.set(false);
   }
 
   protected openMaintenanceCostsModal(): void {

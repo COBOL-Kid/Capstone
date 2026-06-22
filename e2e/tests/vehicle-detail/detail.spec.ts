@@ -111,6 +111,18 @@ test.describe("Vehicle detail page", () => {
       .click();
   });
 
+  test("VEH-011: current market value entry point is visible", async ({
+    page,
+  }) => {
+    await page.goto(camryUrl);
+    await waitForAppReady(page);
+    await waitForVehicleDetailSettled(page);
+
+    await expect(
+      page.getByRole("button", { name: "Current Market Value" }),
+    ).toBeVisible();
+  });
+
   test("VEH-012: update mileage happy path", async ({ page }) => {
     await page.goto(camryUrl);
     await waitForAppReady(page);

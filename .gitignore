@@ -2,6 +2,7 @@
 .DS_Store
 Client/.DS_Store
 Client/Thumbs.db
+.pnpm-store/
 
 # IDEs and editors
 .cursor/

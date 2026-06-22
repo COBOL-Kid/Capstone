@@ -129,3 +129,14 @@ export async function openRecallCompleteForm(page: Page): Promise<Locator> {
   await dialog.getByRole("button", { name: "Mark complete" }).click();
   return dialog;
 }
+
+export function listingsDialog(page: Page): Locator {
+  return page.getByRole("dialog", { name: "Current market value" });
+}
+
+export async function openListingsModal(page: Page): Promise<Locator> {
+  await page.getByRole("button", { name: "Current Market Value" }).click();
+  const dialog = listingsDialog(page);
+  await expect(dialog).toBeVisible();
+  return dialog;
+}

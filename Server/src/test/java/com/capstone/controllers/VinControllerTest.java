@@ -104,37 +104,28 @@ class VinControllerTest {
     AuthenticatedUser user = user();
     VehicleListingsResponse listings =
         new VehicleListingsResponse(
-            "JTENU5JR6M5962554", "2021", "Toyota", "4RUNNER", 1, 661, List.of());
+            "JTENU5JR6M5962554",
+            "2021",
+            "Toyota",
+            "4RUNNER",
+            661,
+            new VehicleListingsPricingSummary(179148, 179148, 179148, 1),
+            List.of());
 
-    when(listingsService.findListingsForUserVin(1L, "JTENU5JR6M5962554", 1))
+    when(listingsService.findListingsForUserVin(1L, "JTENU5JR6M5962554"))
         .thenReturn(Optional.of(listings));
-    when(listingsService.findListingsForUserVin(1L, "MISSINGVIN1234567", 1))
+    when(listingsService.findListingsForUserVin(1L, "MISSINGVIN1234567"))
         .thenReturn(Optional.empty());
 
-    var foundResponse = controller.getVehicleListings(user, "JTENU5JR6M5962554", 1);
-    var missingResponse = controller.getVehicleListings(user, "MISSINGVIN1234567", 1);
+    var foundResponse = controller.getVehicleListings(user, "JTENU5JR6M5962554");
+    var missingResponse = controller.getVehicleListings(user, "MISSINGVIN1234567");
 
     assertEquals(HttpStatus.OK, foundResponse.getStatusCode());
     assertEquals(listings, foundResponse.getBody());
     assertEquals(HttpStatus.NOT_FOUND, missingResponse.getStatusCode());
     assertEquals(
         HttpStatus.UNAUTHORIZED,
-        controller.getVehicleListings(null, "JTENU5JR6M5962554", 1).getStatusCode());
-  }
-
-  @Test
-  void shouldRequirePositivePageForVehicleListings() {
-    VinController controller =
-        controller(
-            mock(VinService.class),
-            mock(VehicleOnboardingService.class),
-            mock(VehicleDashboardService.class),
-            mock(VehicleListingsService.class));
-    AuthenticatedUser user = user();
-
-    assertEquals(
-        HttpStatus.BAD_REQUEST,
-        controller.getVehicleListings(user, "JTENU5JR6M5962554", 0).getStatusCode());
+        controller.getVehicleListings(null, "JTENU5JR6M5962554").getStatusCode());
   }
 
   @Test

@@ -1,0 +1,46 @@
+{
+  "total": 661,
+  "data": [
+    {
+      "@id": "https://example.com/listings/1FA6P8JZ1L5552492",
+      "vin": "1FA6P8JZ1L5552492",
+      "createdAt": "2026-05-19 00:31:18",
+      "location": [-96.844514, 32.971378],
+      "vehicle": {
+        "vin": "1FA6P8JZ1L5552492",
+        "year": 2020,
+        "make": "Ford",
+        "model": "Mustang",
+        "style": "GT Premium 2dr Coupe",
+        "bodyStyle": "Car",
+        "engine": "5.2L 8Cyl Gasoline",
+        "drivetrain": "RWD",
+        "transmission": "Manual",
+        "exteriorColor": "White",
+        "interiorColor": "Black"
+      },
+      "wholesaleListing": null,
+      "retailListing": {
+        "carfaxUrl": "https://www.carfax.com/VehicleHistory/p/Report.cfx?vin=1FA6P8JZ1L5552492",
+        "city": "Carrollton",
+        "cpo": false,
+        "dealer": "Earth Motorcars",
+        "miles": 8,
+        "photoCount": 105,
+        "price": 179148,
+        "primaryImage": "https://retail.photos.vin/1FA6P8JZ1L5552492-1.jpg",
+        "state": "TX",
+        "used": true,
+        "vdp": "https://example.com/vdp",
+        "zip": "75006"
+      },
+      "history": {
+        "accidents": false,
+        "accidentCount": 0,
+        "oneOwner": false,
+        "ownerCount": 0,
+        "usageType": "Vehicle Use"
+      }
+    }
+  ]
+}

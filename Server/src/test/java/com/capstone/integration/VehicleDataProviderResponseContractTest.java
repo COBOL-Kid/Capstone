@@ -49,6 +49,9 @@ class VehicleDataProviderResponseContractTest {
     VehiclePhotosResponse photos =
         jsonMapper.readValue(
             VehicleDataFixtures.read("autodev-photos.json"), VehiclePhotosResponse.class);
+    AutoDevListingsResponse listings =
+        jsonMapper.readValue(
+            VehicleDataFixtures.read("autodev-listings.json"), AutoDevListingsResponse.class);
 
     assertEquals("success", repairEstimates.status());
     assertEquals("success", repairCosts.status());
@@ -56,6 +59,8 @@ class VehicleDataProviderResponseContractTest {
     assertEquals("success", ownerManual.status());
     assertEquals("success", warranty.status());
     assertEquals(2, photos.retailPhotos().size());
+    assertEquals(661, listings.total());
+    assertEquals(1, listings.listings().size());
     assertNotNull(repairEstimates.data());
     assertNotNull(warranty.data().warranty());
   }

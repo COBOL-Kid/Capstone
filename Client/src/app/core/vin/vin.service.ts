@@ -51,9 +51,8 @@ export class VinService {
     return this.http.get<VehicleDashboardResponse>(`${this.baseUrl}/${vin}/dashboard`);
   }
 
-  getVehicleListings(vin: string, page = 1): Observable<VehicleListingsResponse> {
-    const params = new HttpParams().set('page', page);
-    return this.http.get<VehicleListingsResponse>(`${this.baseUrl}/${vin}/listings`, { params });
+  getVehicleListings(vin: string): Observable<VehicleListingsResponse> {
+    return this.http.get<VehicleListingsResponse>(`${this.baseUrl}/${vin}/listings`);
   }
 
   updateMileage(vin: string, request: UpdateMileageRequest): Observable<VehicleDetailResponse> {

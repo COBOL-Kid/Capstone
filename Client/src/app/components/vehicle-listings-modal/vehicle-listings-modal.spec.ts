@@ -40,13 +40,18 @@ describe('VehicleListingsModalComponent', () => {
     },
   };
 
-  const pageOneResponse = {
+  const listingsResponse = {
     vin: 'JTENU5JR6M5962554',
     year: '2021',
     make: 'Toyota',
     model: '4RUNNER',
-    page: 1,
     total: 661,
+    pricingSummary: {
+      minPrice: 179148,
+      maxPrice: 179148,
+      averagePrice: 179148,
+      pricedListingCount: 1,
+    },
     listings: [sampleListing],
   };
 
@@ -66,31 +71,38 @@ describe('VehicleListingsModalComponent', () => {
     httpTesting.verify();
   });
 
-  it('shows loading then renders listings', async () => {
+  it('shows loading then renders listings and pricing summary', async () => {
     expect(fixture.nativeElement.textContent).toContain('Loading listings…');
 
-    const request = httpTesting.expectOne(
-      (req) =>
-        req.url === `${apiConfig.vinUrl}/JTENU5JR6M5962554/listings` &&
-        req.params.get('page') === '1',
-    );
-    request.flush(pageOneResponse);
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    request.flush(listingsResponse);
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Current market value');
     expect(fixture.nativeElement.textContent).toContain('2021 Toyota 4RUNNER');
     expect(fixture.nativeElement.textContent).toContain('661 comparable listings found');
+    expect(fixture.nativeElement.textContent).toContain('$179,148');
+    expect(fixture.nativeElement.textContent).toContain('Low');
+    expect(fixture.nativeElement.textContent).toContain('Average');
+    expect(fixture.nativeElement.textContent).toContain('High');
     expect(fixture.nativeElement.textContent).toContain('2020 Ford Mustang');
     expect(fixture.nativeElement.textContent).toContain('Earth Motorcars');
     expect(fixture.nativeElement.textContent).toContain('View listing');
+    expect(fixture.nativeElement.querySelector('.vehicle-listings-modal__image')).toBeNull();
   });
 
   it('shows empty state when no listings are returned', async () => {
-    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings?page=1`);
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
     request.flush({
-      ...pageOneResponse,
+      ...listingsResponse,
       total: 0,
+      pricingSummary: {
+        minPrice: null,
+        maxPrice: null,
+        averagePrice: null,
+        pricedListingCount: 0,
+      },
       listings: [],
     });
     await fixture.whenStable();
@@ -102,7 +114,7 @@ describe('VehicleListingsModalComponent', () => {
   });
 
   it('shows rate limit message for 429 responses', async () => {
-    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings?page=1`);
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
     request.flush('Vehicle listings are temporarily unavailable. Please try again shortly.', {
       status: 429,
       statusText: 'Too Many Requests',
@@ -115,48 +127,6 @@ describe('VehicleListingsModalComponent', () => {
     );
   });
 
-  it('loads the next page when Next is clicked', async () => {
-    const firstRequest = httpTesting.expectOne(
-      `${apiConfig.vinUrl}/JTENU5JR6M5962554/listings?page=1`,
-    );
-    firstRequest.flush(pageOneResponse);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const nextButton = Array.from(
-      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
-    ).find((button) => button.textContent?.trim() === 'Next');
-    expect(nextButton).toBeDefined();
-    nextButton!.click();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Loading listings…');
-
-    const secondRequest = httpTesting.expectOne(
-      (req) =>
-        req.url === `${apiConfig.vinUrl}/JTENU5JR6M5962554/listings` &&
-        req.params.get('page') === '2',
-    );
-    secondRequest.flush({
-      ...pageOneResponse,
-      page: 2,
-      listings: [
-        {
-          ...sampleListing,
-          vin: 'SECONDLISTINGVIN12',
-          year: '2019',
-          make: 'Honda',
-          model: 'Civic',
-        },
-      ],
-    });
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Page 2');
-    expect(fixture.nativeElement.textContent).toContain('2019 Honda Civic');
-  });
-
   it('does not close while loading', async () => {
     const closeSpy = vi.fn();
     fixture.componentInstance.close.subscribe(closeSpy);
@@ -164,8 +134,8 @@ describe('VehicleListingsModalComponent', () => {
     fixture.componentInstance['requestClose']();
     expect(closeSpy).not.toHaveBeenCalled();
 
-    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings?page=1`);
-    request.flush(pageOneResponse);
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    request.flush(listingsResponse);
     await fixture.whenStable();
     fixture.detectChanges();
 

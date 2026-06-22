@@ -52,18 +52,11 @@ export class VehicleListingsModalComponent implements OnInit, AfterViewInit {
     }
     return `${data.year} ${data.make} ${data.model}`;
   });
-  protected readonly currentPage = computed(() => this.response()?.page ?? 1);
   protected readonly totalCount = computed(() => this.response()?.total ?? null);
-  protected readonly canGoPrevious = computed(() => this.currentPage() > 1);
-  protected readonly canGoNext = computed(() => {
-    const data = this.response();
-    if (!data || data.total == null) {
-      return false;
-    }
-    if (data.listings.length === 0) {
-      return false;
-    }
-    return data.page * data.listings.length < data.total;
+  protected readonly pricingSummary = computed(() => this.response()?.pricingSummary ?? null);
+  protected readonly hasPricingSummary = computed(() => {
+    const summary = this.pricingSummary();
+    return summary != null && summary.pricedListingCount > 0;
   });
 
   private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
@@ -71,7 +64,7 @@ export class VehicleListingsModalComponent implements OnInit, AfterViewInit {
   private readonly vinService = inject(VinService);
 
   ngOnInit(): void {
-    this.loadPage(1);
+    this.loadListings();
   }
 
   ngAfterViewInit(): void {
@@ -88,20 +81,6 @@ export class VehicleListingsModalComponent implements OnInit, AfterViewInit {
       return;
     }
     this.close.emit();
-  }
-
-  protected goToPreviousPage(): void {
-    if (!this.canGoPrevious() || this.isLoading()) {
-      return;
-    }
-    this.loadPage(this.currentPage() - 1);
-  }
-
-  protected goToNextPage(): void {
-    if (!this.canGoNext() || this.isLoading()) {
-      return;
-    }
-    this.loadPage(this.currentPage() + 1);
   }
 
   protected formatPrice(price: number | null): string {
@@ -165,12 +144,12 @@ export class VehicleListingsModalComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private loadPage(page: number): void {
+  private loadListings(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
     this.vinService
-      .getVehicleListings(this.vin(), page)
+      .getVehicleListings(this.vin())
       .pipe(
         finalize(() => this.isLoading.set(false)),
         takeUntilDestroyed(this.destroyRef),

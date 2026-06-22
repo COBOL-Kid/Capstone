@@ -87,16 +87,12 @@ public class VinController {
               regexp = VIN_PATTERN,
               flags = Pattern.Flag.CASE_INSENSITIVE,
               message = VIN_MESSAGE)
-          String vin,
-      @RequestParam(value = "page", defaultValue = "1") int page) {
+          String vin) {
     if (user == null) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
-    if (page < 1) {
-      return new ResponseEntity<>("page must be a positive integer", HttpStatus.BAD_REQUEST);
-    }
     return vehicleListingsService
-        .findListingsForUserVin(user.userId(), vin, page)
+        .findListingsForUserVin(user.userId(), vin)
         .<ResponseEntity<?>>map(listings -> new ResponseEntity<>(listings, HttpStatus.OK))
         .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }

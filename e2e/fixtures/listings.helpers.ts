@@ -30,13 +30,20 @@ export interface VehicleListingMock {
   } | null;
 }
 
+export interface VehicleListingsPricingSummaryMock {
+  minPrice: number | null;
+  maxPrice: number | null;
+  averagePrice: number | null;
+  pricedListingCount: number;
+}
+
 export interface VehicleListingsResponseMock {
   vin: string;
   year: string;
   make: string;
   model: string;
-  page: number;
   total: number | null;
+  pricingSummary: VehicleListingsPricingSummaryMock;
   listings: VehicleListingMock[];
 }
 
@@ -79,13 +86,18 @@ export function buildListingsMockResponse(
     year: "2020",
     make: "Toyota",
     model: "Camry",
-    page: 1,
     total: 661,
+    pricingSummary: {
+      minPrice: 179148,
+      maxPrice: 179148,
+      averagePrice: 179148,
+      pricedListingCount: 1,
+    },
     listings: [SAMPLE_LISTING],
     ...overrides,
   };
 }
 
-export function camryListingsUrl(page = 1): string {
+export function camryListingsUrl(): string {
   return `**/api/vin/${SEEDED_VINS.camry}/listings**`;
 }

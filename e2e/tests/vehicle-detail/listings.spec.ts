@@ -18,7 +18,9 @@ import {
 const camryUrl = `/vehicles/${SEEDED_VINS.camry}`;
 
 test.describe("Vehicle listings modal", () => {
-  test("LIST-001: opens modal and loads page 1", async ({ page }) => {
+  test("LIST-001: opens modal and loads listings with pricing summary", async ({
+    page,
+  }) => {
     await page.route(camryListingsUrl(), async (route) => {
       if (route.request().method() !== "GET") {
         await route.continue();
@@ -40,6 +42,10 @@ test.describe("Vehicle listings modal", () => {
     await expect(
       dialog.getByText("661 comparable listings found"),
     ).toBeVisible();
+    await expect(dialog.getByText("Low")).toBeVisible();
+    await expect(dialog.getByText("Average")).toBeVisible();
+    await expect(dialog.getByText("High")).toBeVisible();
+    await expect(dialog.getByText("$179,148").first()).toBeVisible();
     await expect(dialog.getByText("2020 Ford Mustang")).toBeVisible();
     await expect(dialog.getByText("Earth Motorcars")).toBeVisible();
     await expect(
@@ -57,7 +63,16 @@ test.describe("Vehicle listings modal", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(
-          buildListingsMockResponse({ total: 0, listings: [] }),
+          buildListingsMockResponse({
+            total: 0,
+            pricingSummary: {
+              minPrice: null,
+              maxPrice: null,
+              averagePrice: null,
+              pricedListingCount: 0,
+            },
+            listings: [],
+          }),
         ),
       });
     });
@@ -96,47 +111,34 @@ test.describe("Vehicle listings modal", () => {
     await expect(dialog.getByRole("alert")).toContainText(rateLimitMessage);
   });
 
-  test("LIST-004: pagination loads next page", async ({ page }) => {
+  test("LIST-004: listings list is scrollable", async ({ page }) => {
+    const manyListings = Array.from({ length: 12 }, (_, index) => ({
+      ...SAMPLE_LISTING,
+      vin: `VIN${String(index).padStart(14, "0")}`,
+      price: 20000 + index * 1000,
+    }));
+
     await page.route(camryListingsUrl(), async (route) => {
       if (route.request().method() !== "GET") {
         await route.continue();
         return;
       }
-      const url = new URL(route.request().url());
-      const pageNum = url.searchParams.get("page") ?? "1";
-
-      if (pageNum === "1") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(buildListingsMockResponse()),
-        });
-        return;
-      }
-
-      if (pageNum === "2") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(
-            buildListingsMockResponse({
-              page: 2,
-              listings: [
-                {
-                  ...SAMPLE_LISTING,
-                  vin: "SECONDLISTINGVIN12",
-                  year: "2019",
-                  make: "Honda",
-                  model: "Civic",
-                },
-              ],
-            }),
-          ),
-        });
-        return;
-      }
-
-      await route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          buildListingsMockResponse({
+            total: manyListings.length,
+            pricingSummary: {
+              minPrice: 20000,
+              maxPrice: 31000,
+              averagePrice: 25500,
+              pricedListingCount: manyListings.length,
+            },
+            listings: manyListings,
+          }),
+        ),
+      });
     });
 
     await page.goto(camryUrl);
@@ -144,11 +146,16 @@ test.describe("Vehicle listings modal", () => {
     await waitForVehicleDetailSettled(page);
 
     const dialog = await openListingsModal(page);
-    await expect(dialog.getByText("2020 Ford Mustang")).toBeVisible();
+    const list = dialog.locator(".vehicle-listings-modal__list");
+    await expect(list).toBeVisible();
 
-    await dialog.getByRole("button", { name: "Next" }).click();
-    await expect(dialog.getByText("Page 2")).toBeVisible();
-    await expect(dialog.getByText("2019 Honda Civic")).toBeVisible();
+    const scrollMetrics = await list.evaluate((element) => ({
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+    }));
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(
+      scrollMetrics.clientHeight,
+    );
   });
 
   test("LIST-005: close blocked while loading", async ({ page }) => {

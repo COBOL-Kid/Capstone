@@ -119,14 +119,19 @@ describe('VinService', () => {
     );
   });
 
-  it('loads vehicle listings with page param', () => {
+  it('loads vehicle listings', () => {
     const listings = {
       vin: 'JTENU5JR6M5962554',
       year: '2021',
       make: 'Toyota',
       model: '4RUNNER',
-      page: 2,
       total: 661,
+      pricingSummary: {
+        minPrice: 179148,
+        maxPrice: 179148,
+        averagePrice: 179148,
+        pricedListingCount: 1,
+      },
       listings: [
         {
           vin: '1FA6P8JZ1L5552492',
@@ -160,15 +165,11 @@ describe('VinService', () => {
       ],
     };
 
-    service.getVehicleListings('JTENU5JR6M5962554', 2).subscribe((response) => {
+    service.getVehicleListings('JTENU5JR6M5962554').subscribe((response) => {
       expect(response).toEqual(listings);
     });
 
-    const request = httpTesting.expectOne(
-      (req) =>
-        req.url === `${apiConfig.vinUrl}/JTENU5JR6M5962554/listings` &&
-        req.params.get('page') === '2',
-    );
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
     request.flush(listings);
   });
 

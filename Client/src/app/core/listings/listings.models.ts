@@ -30,12 +30,19 @@ export interface VehicleListingResponse {
   history: VehicleListingHistoryResponse | null;
 }
 
+export interface VehicleListingsPricingSummary {
+  minPrice: number | null;
+  maxPrice: number | null;
+  averagePrice: number | null;
+  pricedListingCount: number;
+}
+
 export interface VehicleListingsResponse {
   vin: string;
   year: string;
   make: string;
   model: string;
-  page: number;
   total: number | null;
+  pricingSummary: VehicleListingsPricingSummary;
   listings: VehicleListingResponse[];
 }

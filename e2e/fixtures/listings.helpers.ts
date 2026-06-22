@@ -98,6 +98,35 @@ export function buildListingsMockResponse(
   };
 }
 
+export function buildMultiPriceListingsMockResponse(
+  listingCount = 3,
+): VehicleListingsResponseMock {
+  const listings = Array.from({ length: listingCount }, (_, index) => ({
+    ...SAMPLE_LISTING,
+    vin: `VIN${String(index).padStart(14, "0")}`,
+    price: 24500 + index * 2500,
+    miles: 42000 + index * 1200,
+  }));
+
+  return buildListingsMockResponse({
+    total: 661,
+    pricingSummary: {
+      minPrice: 24500,
+      maxPrice: 24500 + (listingCount - 1) * 2500,
+      averagePrice: Math.round(
+        listings.reduce((sum, listing) => sum + (listing.price ?? 0), 0) /
+          listings.length,
+      ),
+      pricedListingCount: listingCount,
+    },
+    listings,
+  });
+}
+
 export function camryListingsUrl(): string {
   return `**/api/vin/${SEEDED_VINS.camry}/listings**`;
+}
+
+export function listingsRequestHasPageParam(url: string): boolean {
+  return new URL(url).searchParams.has("page");
 }

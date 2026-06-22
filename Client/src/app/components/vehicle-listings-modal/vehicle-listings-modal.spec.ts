@@ -55,6 +55,21 @@ describe('VehicleListingsModalComponent', () => {
     listings: [sampleListing],
   };
 
+  const multiPriceResponse = {
+    ...listingsResponse,
+    pricingSummary: {
+      minPrice: 24500,
+      maxPrice: 29500,
+      averagePrice: 27000,
+      pricedListingCount: 3,
+    },
+    listings: [
+      { ...sampleListing, vin: 'VIN00000000000001', price: 24500 },
+      { ...sampleListing, vin: 'VIN00000000000002', price: 27000 },
+      { ...sampleListing, vin: 'VIN00000000000003', price: 29500 },
+    ],
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [VehicleListingsModalComponent],
@@ -75,6 +90,7 @@ describe('VehicleListingsModalComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Loading listings…');
 
     const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    expect(request.request.params.keys().length).toBe(0);
     request.flush(listingsResponse);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -90,6 +106,42 @@ describe('VehicleListingsModalComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Earth Motorcars');
     expect(fixture.nativeElement.textContent).toContain('View listing');
     expect(fixture.nativeElement.querySelector('.vehicle-listings-modal__image')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Previous');
+    expect(fixture.nativeElement.textContent).not.toContain('Next');
+  });
+
+  it('renders distinct low average and high pricing values', async () => {
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    request.flush(multiPriceResponse);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('$24,500');
+    expect(fixture.nativeElement.textContent).toContain('$27,000');
+    expect(fixture.nativeElement.textContent).toContain('$29,500');
+    expect(fixture.nativeElement.textContent).toContain('Based on 3 listings with prices');
+  });
+
+  it('hides pricing summary when no listings have prices', async () => {
+    const request = httpTesting.expectOne(`${apiConfig.vinUrl}/JTENU5JR6M5962554/listings`);
+    request.flush({
+      ...listingsResponse,
+      pricingSummary: {
+        minPrice: null,
+        maxPrice: null,
+        averagePrice: null,
+        pricedListingCount: 0,
+      },
+      listings: [{ ...sampleListing, price: null }],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2020 Ford Mustang');
+    expect(fixture.nativeElement.textContent).not.toContain('Low');
+    expect(fixture.nativeElement.textContent).not.toContain('Average');
+    expect(fixture.nativeElement.textContent).not.toContain('High');
+    expect(fixture.nativeElement.textContent).not.toContain('Based on');
   });
 
   it('shows empty state when no listings are returned', async () => {

@@ -1,6 +1,17 @@
 /* ----------------------------------------------------------------------------
    Action buttons (owner's manual, warranty, maintenance costs)
    ------------------------------------------------------------------------- */
+.vehicle-detail__specs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.vehicle-detail__specs-actions .vehicle-detail__manual-btn-wrap {
+  margin-top: 0;
+}
+
 .vehicle-detail__manual-btn-wrap {
   display: block;
   margin-top: 0.75rem;

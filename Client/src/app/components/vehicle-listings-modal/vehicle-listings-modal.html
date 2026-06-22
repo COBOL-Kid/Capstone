@@ -1,0 +1,148 @@
+<div (click)="requestClose()" aria-hidden="true" class="hc-overlay-backdrop"></div>
+
+<section
+  #dialog
+  aria-labelledby="vehicle-listings-modal-title"
+  aria-modal="true"
+  class="hc-dialog vehicle-listings-modal__dialog"
+  role="dialog"
+  tabindex="-1"
+>
+  <button
+    (click)="requestClose()"
+    [disabled]="isLoading()"
+    aria-label="Close current market value dialog"
+    class="hc-dialog__close"
+    type="button"
+  >
+    ×
+  </button>
+
+  <header class="hc-dialog__header">
+    <h2 id="vehicle-listings-modal-title">Current market value</h2>
+    @if (subtitle()) {
+      <p class="vehicle-listings-modal__subtitle">{{ subtitle() }}</p>
+    }
+  </header>
+
+  @if (isLoading()) {
+    <p aria-busy="true" class="vehicle-listings-modal__status" role="status">Loading listings…</p>
+    <ul aria-hidden="true" class="vehicle-listings-modal__skeleton-list">
+      @for (placeholder of [1, 2, 3]; track placeholder) {
+        <li class="vehicle-listings-modal__skeleton-item hc-skeleton"></li>
+      }
+    </ul>
+  } @else if (errorMessage(); as message) {
+    <p class="vehicle-listings-modal__status vehicle-listings-modal__status--error" role="alert">
+      {{ message }}
+    </p>
+  } @else if (listings().length === 0) {
+    <p class="vehicle-listings-modal__status">No comparable vehicles are listed right now.</p>
+  } @else {
+    @if (totalCount() != null) {
+      <p class="vehicle-listings-modal__summary">
+        {{ totalCount() | number }} comparable listing{{ totalCount() === 1 ? '' : 's' }} found
+      </p>
+    }
+
+    <ul class="vehicle-listings-modal__list">
+      @for (listing of listings(); track listing.vin) {
+        <li class="vehicle-listings-modal__item">
+          <div class="vehicle-listings-modal__item-media">
+            @if (listing.primaryImage) {
+              <img
+                [alt]="listing.year + ' ' + listing.make + ' ' + listing.model"
+                [src]="listing.primaryImage"
+                class="vehicle-listings-modal__image"
+              />
+            } @else {
+              <div class="vehicle-listings-modal__image-placeholder">No image</div>
+            }
+          </div>
+
+          <div class="vehicle-listings-modal__item-body">
+            <div class="vehicle-listings-modal__item-header">
+              <h3 class="vehicle-listings-modal__item-title">
+                {{ listing.year }} {{ listing.make }} {{ listing.model }}
+              </h3>
+              @if (listing.cpo) {
+                <span class="vehicle-listings-modal__badge">CPO</span>
+              }
+            </div>
+
+            @if (listing.style) {
+              <p class="vehicle-listings-modal__item-style">{{ listing.style }}</p>
+            }
+
+            <p class="vehicle-listings-modal__item-price">
+              {{ formatPrice(listing.price) }}
+              @if (listing.miles != null) {
+                <span class="vehicle-listings-modal__item-miles">
+                  · {{ listing.miles | number }} mi
+                </span>
+              }
+            </p>
+
+            @if (listing.dealer || formatLocation(listing)) {
+              <p class="vehicle-listings-modal__item-dealer">
+                @if (listing.dealer) {
+                  <span>{{ listing.dealer }}</span>
+                }
+                @if (formatLocation(listing)) {
+                  <span>{{ formatLocation(listing) }}</span>
+                }
+              </p>
+            }
+
+            @if (formatHistorySummary(listing); as historySummary) {
+              <p class="vehicle-listings-modal__item-history">{{ historySummary }}</p>
+            }
+
+            <div class="vehicle-listings-modal__item-links">
+              @if (hasSafeUrl(listing.vdp)) {
+                <button
+                  (click)="openExternalUrl(listing.vdp!)"
+                  class="vehicle-listings-modal__link-btn"
+                  type="button"
+                >
+                  View listing
+                </button>
+              }
+              @if (hasSafeUrl(listing.carfaxUrl)) {
+                <button
+                  (click)="openExternalUrl(listing.carfaxUrl!)"
+                  class="vehicle-listings-modal__link-btn"
+                  type="button"
+                >
+                  Carfax
+                </button>
+              }
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+
+    @if (canGoPrevious() || canGoNext()) {
+      <footer class="vehicle-listings-modal__pagination">
+        <button
+          (click)="goToPreviousPage()"
+          [disabled]="!canGoPrevious() || isLoading()"
+          class="vehicle-listings-modal__page-btn"
+          type="button"
+        >
+          Previous
+        </button>
+        <span class="vehicle-listings-modal__page-label">Page {{ currentPage() }}</span>
+        <button
+          (click)="goToNextPage()"
+          [disabled]="!canGoNext() || isLoading()"
+          class="vehicle-listings-modal__page-btn"
+          type="button"
+        >
+          Next
+        </button>
+      </footer>
+    }
+  }
+</section>

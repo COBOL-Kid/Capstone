@@ -39,7 +39,7 @@ class EmailVerificationCodeRepositoryJPATest {
     EmailVerificationCode expired = saveCode(user, "expired-hash");
     expired.setExpiresAt(Instant.now().minusSeconds(60));
     verificationCodeRepository.saveAndFlush(expired);
-    EmailVerificationCode active = saveCode(user, "active-hash");
+    saveCode(user, "active-hash");
 
     verificationCodeRepository.deleteByExpiresAtBefore(Instant.now());
     verificationCodeRepository.flush();

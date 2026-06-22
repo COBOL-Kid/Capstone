@@ -112,6 +112,17 @@ describe('VehicleDetailPageComponent', () => {
         {
           provide: VinService,
           useValue: {
+            getVehicleListings: vi.fn(() =>
+              of({
+                vin: 'JTENU5JR6M5962554',
+                year: '2021',
+                make: 'Toyota',
+                model: '4RUNNER',
+                page: 1,
+                total: 0,
+                listings: [],
+              }),
+            ),
             updateSelectedPhoto: vi.fn(() =>
               of({
                 vin: 'JTENU5JR6M5962554',
@@ -214,9 +225,10 @@ describe('VehicleDetailPageComponent', () => {
 
     expect(warrantyButton).toBeDefined();
     expect(warrantyButton!.disabled).toBe(true);
-    expect(warrantyButton!.closest('.vehicle-detail__costs-btn-wrap')?.getAttribute('title')).toBe(
+    expect(warrantyButton!.closest('.vehicle-detail__manual-btn-wrap')?.getAttribute('title')).toBe(
       informationUnavailableMessage,
     );
+    expect(warrantyButton!.closest('.vehicle-detail__specs')).not.toBeNull();
 
     warrantyButton!.click();
     fixture.detectChanges();
@@ -260,6 +272,23 @@ describe('VehicleDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Basic');
     expect(fixture.nativeElement.textContent).toContain('36/36,000');
     expect(fixture.nativeElement.textContent).toContain('Active');
+  });
+
+  it('opens listings modal when Current Market Value button is clicked', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const listingsButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Current Market Value'));
+
+    expect(listingsButton).toBeDefined();
+    expect(listingsButton!.disabled).toBe(false);
+    listingsButton!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-vehicle-listings-modal')).not.toBeNull();
   });
 
   it('shows warranty status in specs when coverage has computed fields', async () => {

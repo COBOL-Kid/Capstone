@@ -1,9 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { localDateIso, localDateIsoFromTimestamp } from './local-date';
 
 describe('localDateIso', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('formats the local calendar date, not UTC', () => {
+    vi.stubEnv('TZ', 'America/Los_Angeles');
+
     const eveningLocal = new Date(2026, 4, 28, 22, 0, 0);
 
     expect(localDateIso(eveningLocal)).toBe('2026-05-28');

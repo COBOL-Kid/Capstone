@@ -198,7 +198,9 @@ describe('AccountDrawerComponent', () => {
     fixture.detectChanges();
 
     expect(authService.verifyAccountChange).toHaveBeenCalledWith('123456');
-    expect(toastService.success).toHaveBeenCalledWith('Password updated.');
+    expect(toastService.success).toHaveBeenCalledWith(
+      'Password updated. Please sign in with your new password.',
+    );
   });
 
   it('resumes a pending password change on the verification step', () => {

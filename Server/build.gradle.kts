@@ -5,8 +5,8 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     java
     id("org.springframework.boot") version "4.1.0"
-    id("com.diffplug.spotless") version "8.6.0"
-    id("org.owasp.dependencycheck") version "12.1.0"
+    id("com.diffplug.spotless") version "8.7.0"
+    id("org.owasp.dependencycheck") version "12.2.2"
 }
 
 group = "com.capstone"
@@ -24,6 +24,17 @@ repositories {
     mavenCentral()
 }
 
+val flywayVersion = "12.9.0"
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.flywaydb") {
+            useVersion(flywayVersion)
+            because("Keep Flyway core and PostgreSQL adapter aligned on latest patch")
+        }
+    }
+}
+
 dependencies {
     val springBootBom = platform(SpringBootPlugin.BOM_COORDINATES)
     implementation(springBootBom)
@@ -39,7 +50,7 @@ dependencies {
 
     implementation("com.mailjet:mailjet-client:6.0.1")
 
-    runtimeOnly("org.flywaydb:flyway-database-postgresql:12.4.0")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     runtimeOnly("org.postgresql:postgresql")
 
     implementation(libs.jjwt.api)

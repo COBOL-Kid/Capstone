@@ -3,3 +3,6 @@ allowBuilds:
   esbuild: true
   lmdb: true
   msgpackr-extract: true
+
+overrides:
+  piscina: 5.2.0

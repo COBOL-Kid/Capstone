@@ -136,8 +136,8 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 
 ### One-time VM prerequisites
 
-- **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"`.
-- **pnpm 11:** `Client/package.json` pins `pnpm@11.6.0` via `packageManager`; activate with `corepack prepare pnpm@11.6.0 --activate` (CI workflows currently pin `11.3.0` in `pnpm/action-setup`).
+- **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"`.
+- **pnpm 11:** `Client/package.json` pins `pnpm@11.9.0` via `packageManager`; activate with `corepack prepare pnpm@11.9.0 --activate`.
 - **JDK 25:** Gradle toolchain in `Server/build.gradle.kts` (`vendor = IBM` for IBM Semeru). Production container images use ICR `ibm-semeru-runtimes` Open Edition tags.
 - **PostgreSQL 16+:** Docker `postgres:16`, local install, or Supabase. Start local Postgres: `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Example URL: `jdbc:postgresql://localhost:5432/honestcar`. Supabase transaction pooler: port `6543` with `prepareThreshold=0` and `sslmode=require`; direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails locally.
 

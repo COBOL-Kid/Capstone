@@ -15,13 +15,18 @@
   <p class="app-splash__status">Loading…</p>
 </div>
 
-<nav aria-label="Primary" class="border-b border-white/10">
+<nav aria-label="Primary" class="border-b border-border-subtle bg-navy-950/80 backdrop-blur">
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-    <a href="/" class="font-bold tracking-tight">Honest Car</a>
-    <div class="flex gap-4 text-sm">
-      <a href="/our-services">Our Services</a>
-      <a href="/sign-in">Sign In</a>
-      <a href="/sign-up">Sign Up</a>
+    <a href="/" class="font-display text-lg font-extrabold tracking-tight text-ink">Honest Car</a>
+    <div class="flex items-center gap-5 text-sm font-semibold text-muted">
+      <a href="/our-services" class="transition-colors hover:text-ink">Our Services</a>
+      <a href="/sign-in" class="transition-colors hover:text-ink">Sign In</a>
+      <a
+        href="/sign-up"
+        class="rounded-full bg-accent px-4 py-2 text-ink shadow-glow transition-transform hover:-translate-y-px"
+      >
+        Sign Up
+      </a>
     </div>
   </div>
 </nav>

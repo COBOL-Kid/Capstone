@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* Phase 0 placeholder. Full navy design-system tokens land in Phase 1. */
+
+@theme {
+  --color-navy-950: #07142b;
+  --color-navy-900: #0b2545;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-navy-950);
+  color: #f5f9ff;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

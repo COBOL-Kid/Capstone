@@ -29,16 +29,15 @@ Client/libpeerconnection.log
 Client/testem.log
 
 # Compiled output
-Client/dist
-Client/dist-ssr
+Client/build
+Client/.svelte-kit
 Client/tmp
 Client/out-tsc
 Client/bazel-out
 
 # Miscellaneous
 Client/*.local
-Client/.angular/cache
-Client/.sass-cache/
+Client/coverage
 Client/connect.lock
 Client/coverage
 Client/typings

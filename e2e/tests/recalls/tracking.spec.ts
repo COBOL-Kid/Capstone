@@ -107,7 +107,10 @@ test("REC-005: mark completed recall incomplete", async ({ page }) => {
   await page.getByRole("button", { name: "Mark incomplete" }).click();
 
   await expectToast(page, "Recall record updated.");
-  await expect(page.getByText("Open recalls")).toBeVisible();
+  // Exact match: the "No open recalls for this vehicle." empty state also
+  // contains "Open recalls" and would make a substring locator ambiguous
+  // (strict violation) while the post-mutation refresh is in flight.
+  await expect(page.getByText("Open recalls", { exact: true })).toBeVisible();
 });
 
 test("REC-007: recall mutation failure shows alert", async ({ page }) => {

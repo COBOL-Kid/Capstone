@@ -309,9 +309,14 @@
   }
 
   .vehicle-listings-modal__list {
+    flex: 1;
+    min-height: 0;
     list-style: none;
-    margin: 0;
+    margin: 0.75rem 0 0;
     padding: 0;
+    max-height: min(55vh, 28rem);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
     display: grid;
     gap: 0.75rem;
   }

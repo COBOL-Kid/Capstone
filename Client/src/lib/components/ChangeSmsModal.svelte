@@ -38,7 +38,9 @@
   let touched = $state(false);
 
   const busy = $derived(isSubmitting || isVerifying || isResending);
-  const smsInvalid = $derived(userSms.trim().length > 20 || !smsPattern.test(userSms.trim()));
+  const smsTooLong = $derived(userSms.trim().length > 20);
+  const smsBadPattern = $derived(!smsPattern.test(userSms.trim()));
+  const smsInvalid = $derived(smsTooLong || smsBadPattern);
 
   onMount(() => {
     userSms = currentSms;
@@ -107,7 +109,7 @@
   {#snippet header()}
     <header class="hc-dialog__header">
       <p class="hc-eyebrow">Honest Car</p>
-      <h2 id="change-sms-modal-title">Change SMS</h2>
+      <h2 id="change-sms-modal-title">Change SMS Number</h2>
     </header>
   {/snippet}
 
@@ -121,7 +123,7 @@
         <p class="hc-callout-title">Current SMS: {currentSms || 'Not provided'}</p>
 
         <label class="hc-field">
-          <span>New SMS number</span>
+          <span>New SMS phone number</span>
           <input
             autocomplete="tel"
             bind:value={userSms}
@@ -129,8 +131,13 @@
             type="tel"
             onblur={() => (touched = true)}
           />
-          {#if touched && smsInvalid}
-            <small class="hc-field__error">Enter a valid phone number (up to 20 characters).</small>
+          <small>Leave blank to remove your SMS number.</small>
+          {#if touched && smsTooLong}
+            <small class="hc-field__error">SMS number must be 20 characters or fewer.</small>
+          {:else if touched && smsBadPattern}
+            <small class="hc-field__error">
+              Use a phone number with digits and common phone characters.
+            </small>
           {/if}
         </label>
 
@@ -144,7 +151,7 @@
       </form>
     {:else}
       <EmailVerificationStep
-        description="We sent a 6-digit code to your email. Enter it below to confirm your SMS change."
+        description="We sent a 6-digit code to your email. Enter it below to confirm this SMS change."
         email={currentEmail}
         error={verificationError}
         {isResending}

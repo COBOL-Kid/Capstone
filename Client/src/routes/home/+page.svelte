@@ -353,7 +353,7 @@
                 </h3>
                 <p class="vehicle-card__subtitle">{vehicle.trim}</p>
                 <p class="vehicle-card__mileage">
-                  {vehicle.currentMileage.toLocaleString('en-US')} miles
+                  {vehicle.currentMileage} miles
                 </p>
               </div>
             </a>

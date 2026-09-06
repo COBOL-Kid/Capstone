@@ -4,10 +4,19 @@
 
   import AccountDrawer from './AccountDrawer.svelte';
 
+  interface AccountDrawerApi {
+    show: () => void;
+  }
+
   let drawerOpen = $state(false);
+  let accountDrawer = $state<AccountDrawerApi | undefined>(undefined);
   let scrolled = $state(false);
 
   const homeLink = $derived(authStore.isSignedIn ? '/home' : '/');
+
+  function openAccountDrawer(): void {
+    accountDrawer?.show();
+  }
 
   function handleScroll(): void {
     scrolled = window.scrollY > 8;
@@ -58,7 +67,7 @@
       </li>
     </ul>
 
-    <button class="navbar__account-button" onclick={() => (drawerOpen = true)} type="button">
+    <button class="navbar__account-button" onclick={openAccountDrawer} type="button">
       <span aria-hidden="true" class="navbar__account-avatar">
         <svg fill="none" height="16" viewBox="0 0 24 24" width="16">
           <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.7" />
@@ -74,7 +83,7 @@
     </button>
   </nav>
 
-  <AccountDrawer bind:open={drawerOpen} />
+  <AccountDrawer bind:this={accountDrawer} bind:open={drawerOpen} />
 </div>
 
 <style>

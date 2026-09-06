@@ -59,8 +59,10 @@
       {#if availableImageUrls.length === 0}
         <p class="vehicle-photo-modal__status">No photos available.</p>
       {:else}
-        <div aria-label="Available vehicle photos" class="vehicle-photo-modal__grid" role="group">
+        <div aria-label="Available vehicle photos" class="vehicle-photo-modal__grid" role="list">
           {#each availableImageUrls as url, index (url)}
+            <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role, a11y_role_supports_aria_props -->
+            <!-- role="listitem" on the tile button mirrors the Angular original so assistive tech and e2e target the same semantics -->
             <button
               aria-label="Select photo {index + 1}"
               aria-pressed={url === selectedImageUrl}
@@ -69,6 +71,7 @@
               class:vehicle-photo-modal__tile--saving={savingUrl === url}
               disabled={savingUrl !== null}
               onclick={() => selectPhoto(url)}
+              role="listitem"
               type="button"
             >
               <img alt="Vehicle photo {index + 1}" class="vehicle-photo-modal__image" src={url} />

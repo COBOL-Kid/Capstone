@@ -1,6 +1,6 @@
 # Honest Car E2E Regression Suite
 
-Playwright browser tests for the Honest Car SPA against the local Angular dev server and Spring Boot backend. Scenario IDs map to `PLAYWRIGHT_REGRESSION_TEST_SCENARIOS.md` at the repo root.
+Playwright browser tests for the Honest Car SPA against the local Vite dev server and Spring Boot backend. Scenario IDs map to `PLAYWRIGHT_REGRESSION_TEST_SCENARIOS.md` at the repo root.
 
 ## Prerequisites
 
@@ -89,7 +89,7 @@ Global setup re-runs the seed script before each test run so `AUTH-012` and main
 
 - Bootstrap issues `XSRF-TOKEN`; mutating API calls require `X-XSRF-TOKEN`.
 - Sessions use the HttpOnly `__session` cookie.
-- Authenticated tests log in via API in a fresh browser context before each test (Playwright `storageState` files were removed because Angular bootstrap calls `/api/auth/refresh`, which rotates refresh tokens and left later tests unauthenticated).
+- Authenticated tests log in via API in a fresh browser context before each test (Playwright `storageState` files were removed because SPA bootstrap calls `/api/auth/refresh`, which rotates refresh tokens and left later tests unauthenticated).
 - The suite runs serially (`workers: 1`) so two tests never authenticate as the same seed user at the same time.
 - Unverified tests use a seeded refresh token (`e2e-unverified-refresh-token`) because password login requires Mailjet for email verification.
 

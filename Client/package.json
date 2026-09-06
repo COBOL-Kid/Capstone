@@ -11,7 +11,7 @@
     "preview": "vite preview --port 4173",
     "test": "vitest run",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "deploy:hosting": "pnpm build && pnpm --dir .. exec firebase deploy --only hosting",
+    "deploy:hosting": "pnpm build && pnpm --dir .. dlx firebase-tools@latest deploy --only hosting",
     "audit": "pnpm audit",
     "audit:ci": "pnpm audit --audit-level=moderate"
   },

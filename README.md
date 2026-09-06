@@ -19,20 +19,20 @@ Since then, I’ve reworked the codebase as I’ve grown as a developer. My prof
 
 | Layer | Stack |
 |-------|-------|
-| Frontend | Angular 22 SPA (`Client/`) |
+| Frontend | SvelteKit 5 + Svelte 5 static SPA (`Client/`) |
 | Backend | Spring Boot 4.1 / Java 25 (`Server/`) |
 | Database | PostgreSQL 16+ (Flyway migrations) |
 | Production hosting | Firebase Hosting → Cloud Run (`honest-car-server`, IBM Semeru Runtime 25 JVM) |
 | Email | Mailjet (verification codes) |
 | Vehicle data | Auto.dev, Vehicle Databases |
 
-Authentication uses HttpOnly cookie-based JWTs with Spring Security CSRF (SPA mode). The Angular dev server and Firebase Hosting both proxy `/api/**` to the backend so the browser stays same-origin.
+Authentication uses HttpOnly cookie-based JWTs with Spring Security CSRF (SPA mode). The Vite dev server and Firebase Hosting both proxy `/api/**` to the backend so the browser stays same-origin.
 
 ## Repository layout
 
 ```
 Capstone/
-├── Client/          # Angular frontend
+├── Client/          # SvelteKit frontend
 ├── Server/          # Spring Boot backend
 ├── firebase.json    # Hosting rewrites (/api → Cloud Run)
 └── .github/         # Firebase Hosting CI (frontend only)
@@ -60,13 +60,13 @@ Example database URL: `jdbc:postgresql://localhost:5432/honestcar`
 | Frontend | `cd Client && pnpm start` | 4200 |
 | Health check | `curl http://localhost:8080/actuator/health` | — |
 
-Run the backend and frontend in separate terminals. With `SPRING_PROFILES_ACTIVE=dev`, Spring loads `.env` from the repo root (or `Server/.env`), sets `security.cookies.secure=false`, and defaults `app.public-url` to `http://localhost:4200`. The Angular dev server proxies `/api/**` to `http://localhost:8080`.
+Run the backend and frontend in separate terminals. With `SPRING_PROFILES_ACTIVE=dev`, Spring loads `.env` from the repo root (or `Server/.env`), sets `security.cookies.secure=false`, and defaults `app.public-url` to `http://localhost:4200`. The Vite dev server proxies `/api/**` to `http://localhost:8080`.
 
 ## Testing and formatting
 
 | Area | Format | Test | Build |
 |------|--------|------|-------|
-| Client | `pnpm exec prettier --write .` | `pnpm test` | `pnpm build` |
+| Client | `pnpm exec prettier --write .` | `pnpm test` (Vitest) + `pnpm check` | `pnpm build` |
 | Server | `./gradlew spotlessApply` | `./gradlew test` | `./gradlew build` |
 
 Dependency scanning: `cd Server && ./gradlew dependencyCheck` (OWASP); `cd Client && pnpm audit`.
@@ -75,7 +75,7 @@ Optional live API smoke tests: `cd Server && ./gradlew liveTest` (requires real 
 
 ## Deployment
 
-- **Frontend:** Firebase Hosting serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run. Deploy manually with `pnpm --dir Client deploy:hosting`. Pushes to `main` also deploy via GitHub Actions.
+- **Frontend:** Firebase Hosting serves `Client/build` (public routes prerendered, guarded routes via `/fallback.html` SPA fallback) and rewrites `/api/**` to Cloud Run. Deploy manually with `pnpm --dir Client deploy:hosting`. Pushes to `main` also deploy via GitHub Actions.
 - **Backend:** IBM Semeru Runtime 25 JVM container built from `Server/Dockerfile`, deployed to Cloud Run (`honest-car-server`, `us-central1`). Secrets and config come from GCP Secret Manager at deploy time—not from a local `.env`.
 
 Production URL defaults to `https://honest-car.co`.

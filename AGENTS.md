@@ -7,7 +7,7 @@
 - Consolidate Flyway migrations into V1 when the schema has not shipped to production yet.
 - Do not edit attached plan files when implementing a plan; follow the plan and update code only.
 - Prefer GCP-native observability (Cloud Logging, Error Reporting, trace correlation); no third-party APM or Sentry unless asked.
-- Angular backend mutations must use HttpClient (not `fetch`) so XSRF and credentials interceptors apply.
+- Frontend backend mutations must use `apiFetch` (`Client/src/lib/api/client.ts`), not raw `fetch`, so XSRF-token and credentials handling apply.
 - Spring Data JPA `*RepositoryJPA` interfaces must omit `@Repository`; `JpaRepository` extensions are auto-registered during repository scanning.
 - Production backend uses IBM Semeru Runtime 25 JVM on ICR UBI minimal images (`icr.io/appcafe/ibm-semeru-runtimes`), not GraalVM native image; deploy to Cloud Run via GCP Cloud Build source deploy, not manual image push.
 - Keep empty-state "Add a vehicle" button when the garage is empty; show the header (+) only after the first vehicle is added.
@@ -16,24 +16,24 @@
 ## Learned Workspace Facts
 
 - Vehicle Databases supplemental GETs treat HTTP 400 as no data (`null`); `probeRepairEstimatesByVin` 400 still signals trim selection (`TrimSelectionRequired`), not empty data.
-- Angular overlay modals use `requestClose()` to block backdrop/Escape/close while submit, verify, or resend is in progress.
+- Overlay modals use the shared `Dialog.svelte` `busy` prop to block backdrop/Escape/close while submit, verify, or resend is in progress.
 - Playwright E2E regression suite lives in standalone `e2e/` (not `Client/`); run with `workers: 1` because authenticated tests share `test.user@example.com` and password login revokes all refresh tokens for that user.
 
 ## Repository Overview
 
-- **Layout:** `Client/` (Angular 22 SPA) and `Server/` (Spring Boot 4.1.0 / Java 25 backend).
+- **Layout:** `Client/` (SvelteKit 5 + Svelte 5 static SPA, Tailwind v4) and `Server/` (Spring Boot 4.1.0 / Java 25 backend).
 - **JSON:** Server uses Jackson 3 (`tools.jackson` / `JsonMapper`). JWTs use JJWT via `jjwt-gson` (not `jjwt-jackson`).
 - **Git:** `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
 - **Support contact:** `support@honest-car.co` (see `Client/src/app/pages/about-page/about-page.html`).
 
 ## Authentication & Security
 
-- Auth tokens are HttpOnly cookies; JWTs are not stored in `localStorage`. Production/Firebase uses a single `__session` cookie (Base64 JSON with access + refresh tokens) because Firebase Hosting forwards only `__session` to Cloud Run on GET requests. Local dev still accepts legacy `accessToken` / `refreshToken` cookies via the Angular proxy.
+- Auth tokens are HttpOnly cookies; JWTs are not stored in `localStorage`. Production/Firebase uses a single `__session` cookie (Base64 JSON with access + refresh tokens) because Firebase Hosting forwards only `__session` to Cloud Run on GET requests. Local dev still accepts legacy `accessToken` / `refreshToken` cookies via the Vite dev proxy.
 - `validateSession()` clears the session only on **401** from `/api/account/me`; **403** or other hydration failures do not wipe a cookie-backed session from login/refresh.
 - `EmailVerifiedFilter` returns 403 for unverified `Role.USER` requests (e.g. `GET /api/vin`); unverified signups still reach `/home` with the verification banner. Home page skips `GET /api/vin` until `account.emailVerified === true` (`rxResource` `params`).
-- Spring Security uses CSRF SPA mode (`SecurityConfig`); Angular sends the `XSRF-TOKEN` cookie on mutating requests.
-- SPA bootstrap on load: `AppBootstrapService` (`provideAppInitializer` in `app.config.ts`) calls `GET /api/auth/csrf`, then `validateSession()`, before the app renders—issues the CSRF cookie and hydrates navbar auth state on cold visits.
-- Bootstrap loading splash: branded static HTML inside `<app-root>` in `Client/src/index.html` with `Client/public/bootstrap-splash.css` linked in `<head>` (not bundled `styles.css`) so first paint shows a loading screen during JS download and app-initializer HTTP calls; Angular replaces it when the root `App` component renders.
+- Spring Security uses CSRF SPA mode (`SecurityConfig`); the client sends the `XSRF-TOKEN` cookie as `X-XSRF-TOKEN` on mutating requests (`apiFetch` in `Client/src/lib/api/client.ts`).
+- SPA bootstrap on load: `runAppBootstrap()` (`onMount` in `Client/src/routes/+layout.svelte`) calls `GET /api/auth/csrf`, then `validateSession()`, before hiding the splash—issues the CSRF cookie and hydrates navbar auth state on cold visits.
+- Bootstrap loading splash: branded static HTML in `Client/src/routes/+layout.svelte` with `Client/static/bootstrap-splash.css` linked in `src/app.html` (not bundled `app.css`) so first paint shows a loading screen during JS download and bootstrap HTTP calls; Svelte removes it when `bootstrapped` flips (public routes are SSR-prerendered, guarded routes render client-side via `/fallback.html`).
 - Login rate limit: 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
 - No server-side CORS configuration (same-origin in prod via Firebase Hosting rewrites; dev proxy in Angular).
 
@@ -47,17 +47,17 @@
 
 - **Spring profile:** `SPRING_PROFILES_ACTIVE=dev` loads `.env`, sets `security.cookies.secure=false`, and defaults `app.public-url` to `http://localhost:4200`.
 - **`.env` import:** `application-dev.properties` imports `optional:file:../.env[.properties]` (repo root) and `optional:file:.env[.properties]` (`Server/.env`). Copy variable names from `Server/src/main/resources/application.properties`. Set `MAILJET_ENABLED=false` when Mailjet keys are unavailable.
-- **Frontend API URLs:** Same-origin via `Client/src/app/core/api/api.config.ts` (`resolveBackendOrigin` returns `window.location.origin`).
-- **Dev proxy:** `Client/proxy.conf.json` forwards `/api/**` to `http://localhost:8080`.
+- Frontend API URLs: Same-origin (`backendOrigin` returns `window.location.origin` in `Client/src/lib/api/config.ts`).
+- **Dev proxy:** `Client/vite.config.ts` forwards `/api/**` to `http://localhost:8080`.
 
 | Service | Command | Port |
 |---------|---------|------|
 | Backend (JVM) | `cd Server && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` | 8080 |
 | Backend (container) | `cd Server && docker build -t honest-car-server .` then `docker run -p 8080:8080 honest-car-server` | 8080 |
-| Frontend | `cd Client && pnpm start` (use `pnpm start --host 0.0.0.0` on Cloud Agent VMs) | 4200 |
+| Frontend | `cd Client && pnpm start` (Vite dev on `:4200`) | 4200 |
 | Health | `curl http://localhost:8080/actuator/health` | — |
 
-Run backend and frontend in separate terminals (tmux on Cloud Agent VMs). Do **not** pass `pnpm start -- --host` (double `--` breaks `ng serve`).
+Run backend and frontend in separate terminals (tmux on Cloud Agent VMs). On Cloud Agent VMs expose Vite with `pnpm start --host 0.0.0.0`.
 
 **Browse-only dev** works with placeholder vehicle-provider keys and `MAILJET_ENABLED=false`. Full vehicle and email flows need Auto.dev, Vehicle Databases, and Mailjet keys in `.env`.
 
@@ -65,7 +65,7 @@ Run backend and frontend in separate terminals (tmux on Cloud Agent VMs). Do **n
 
 | Area | Format (after edits) | Lint check | Test | Build |
 |------|----------------------|------------|------|-------|
-| Client | `pnpm exec prettier --write .` | `pnpm exec prettier --check .` | `pnpm test` (Vitest via `@angular/build:unit-test`) | `pnpm build` |
+| Client | `pnpm exec prettier --write .` | `pnpm exec prettier --check .` | `pnpm test` (Vitest) + `pnpm check` (svelte-check) | `pnpm build` |
 | Server | `./gradlew spotlessApply` | `./gradlew spotlessCheck` | `./gradlew test` | `./gradlew build` or `docker build -t honest-car-server .` (from `Server/`) |
 
 **Targeted Server regression suites** (auth/repository work):
@@ -115,13 +115,14 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 
 ### Client testing conventions
 
-- Auth specs live under `Client/src/app/core/auth/` and `Client/src/app/core/http/`. Interceptor specs (`unauthorized.interceptor.spec.ts`, `credentials.interceptor.spec.ts`) use `provideHttpClient(withInterceptors([...]))` + `HttpTestingController`, matching `auth.service.spec.ts`.
+- Unit specs live next to sources (`Client/src/lib/**/*.test.ts`, Vitest): api config/errors/safe-url, local-date, warranty-display, vehicle-page mapping.
 - Registration/login error handling is tested against plain-text error bodies returned by `GlobalExceptionHandler` (e.g. 500 → `"Sometimes things just don't go as planned."`).
+- Playwright E2E regression suite lives in standalone `e2e/` (not `Client/`); run with `workers: 1` because authenticated tests share `test.user@example.com` and password login revokes all refresh tokens for that user. E2E targets the Vite dev server on `:4200` (`pnpm start` in `Client/`).
 
 - **Dependency scanning:** `cd Server && ./gradlew dependencyCheck` (OWASP); `cd Client && pnpm audit` or `pnpm audit:ci`.
 - **Optional live API smoke tests:** `cd Server && ./gradlew liveTest` (tagged `live`; needs real provider/Mailjet env vars).
 - **Gradle:** Uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` pinned at `11.15.0`. JDK 25 toolchain. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh`. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF).
-- **Known flaky tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs). Client `local-date.spec.ts` may fail when the VM timezone is UTC.
+- **Known flaky tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs).
 
 ## Deployment & CI
 
@@ -129,7 +130,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 - **Backend (Cloud Run):** Service `honest-car-server`, region `us-central1`. Image `us-central1-docker.pkg.dev/honest-car-498923/cloud-run-source-deploy/honest-car-server`. Build from `Server/` with `docker build -t <image>:latest .`, push to Artifact Registry, then `gcloud run services update honest-car-server --region=us-central1 --image=<image>:latest` (Cloud Run may not pick up a repushed `:latest` tag automatically). Secrets and config come from Secret Manager / service env vars at deploy time—not baked into the image or a local `.env`.
 - **JVM container:** `ENTRYPOINT java -jar /app/app.jar` on `icr.io/appcafe/ibm-semeru-runtimes:open-25-jre-ubi-minimal`; build stage uses `open-25-jdk-ubi-minimal` and `./gradlew bootJar`. Only `SPRING_PROFILES_ACTIVE=prod` is set in the Dockerfile—do not bake `ENV PORT=8080`; Cloud Run injects `PORT` at runtime and prod binds via `server.port=${PORT:8080}` (`EXPOSE 8080` is informational). UBI minimal images need `USER root` before `microdnf`; builder stage installs `findutils` (Gradle needs `xargs`). Apply Spring Boot BOM to `developmentOnly` so `bootJar` resolves devtools. Conditional beans (e.g. Mailjet) resolve at runtime from deploy-time env vars. Avoid BuildKit-only `RUN --mount=type=cache` in the Dockerfile (Google Cloud Build's default builder does not enable BuildKit).
 - **Prod profile:** `server.port=${PORT:8080}`, `app.public-url` defaults to `https://honest-car.co` (`APP_PUBLIC_URL` override), structured JSON stdout logging (`logging.structured.format.console=logstash`), `server.forward-headers-strategy=framework`, `GCP_PROJECT_ID` for Cloud Logging trace correlation.
-- **Frontend (Firebase Hosting):** `firebase.json` and `.firebaserc` live at the repo root; hosting serves `Client/dist/Client/browser` and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting` (builds Client, then runs Firebase CLI from repo root).
+- **Frontend (Firebase Hosting):** `firebase.json` and `.firebaserc` live at the repo root; hosting serves `Client/build` (prerendered public routes plus `/fallback.html` SPA fallback) and rewrites `/api/**` to Cloud Run `honest-car-server` in `us-central1` (`run.serviceId` is the service name). Custom domain `honest-car.co` is configured in Firebase Console. Deploy: `pnpm --dir Client deploy:hosting` (builds Client, then runs Firebase CLI from repo root).
 - **CI (frontend only; no Server workflow):** `firebase-hosting-pull-request.yml` (PR preview channels) and `firebase-hosting-merge.yml` (push to `main` → live). Workflows run `pnpm install --frozen-lockfile` + `pnpm build` in `Client/`; `FirebaseExtended/action-hosting-deploy` deploys—do not run `deploy:hosting` in CI (double deploy). GitHub secret: `FIREBASE_SERVICE_ACCOUNT_HONEST_CAR_498923`. PR preview channels deploy **Client only**; `/api/**` still hits shared Cloud Run—Server fixes require a separate Cloud Run image deploy. Server verification is local: `./gradlew test` (and `liveTest` when needed).
 
 ## Cursor Cloud Agent Setup

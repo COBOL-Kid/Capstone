@@ -745,6 +745,12 @@
     white-space: nowrap;
     border: 0;
   }
+
+  /* Shell gating while splash is active */
+  .app-shell[inert] {
+    pointer-events: none;
+    user-select: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

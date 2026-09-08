@@ -15,7 +15,13 @@ export function resolveBackendOrigin(origin: string): string {
 
 export function isSameBackendOrigin(url: string): boolean {
   try {
-    return new URL(url, backendOrigin || 'http://localhost').origin === backendOrigin;
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      return true;
+    }
+    const base =
+      backendOrigin ||
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+    return new URL(url, base).origin === base;
   } catch {
     return false;
   }

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { ApiError } from '$lib/api/client';
+  import { isSafeHttpUrl } from '$lib/api/safe-url';
   import { authStore } from '$lib/stores/auth.svelte';
   import { toastStore } from '$lib/stores/toast.svelte';
   import { vehiclesStore } from '$lib/stores/vehicles.svelte';
@@ -335,7 +336,7 @@
                 ×
               </button>
               <div class="vehicle-card__image-container">
-                {#if vehicle.selectedImageUrl}
+                {#if isSafeHttpUrl(vehicle.selectedImageUrl)}
                   <img
                     alt="Photo of {vehicle.year} {vehicle.make} {vehicle.model}"
                     class="vehicle-card__image"

@@ -2,7 +2,7 @@
   "name": "honest-car-e2e",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.10.0",
   "scripts": {
     "test": "playwright test --workers=1",
     "test:ui": "playwright test --ui --workers=1",

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { ApiError } from '$lib/api/client';
   import { isSafeHttpUrl } from '$lib/api/safe-url';
@@ -66,20 +65,19 @@
     ),
   );
 
-  onMount(() => {
-    void fetchPageData();
-  });
+  let lastLoadedVin = '';
 
   $effect(() => {
     const currentVin = vin;
-    if (currentVin) {
+    if (currentVin && currentVin !== lastLoadedVin) {
+      lastLoadedVin = currentVin;
       closeAllModals();
-      void fetchPageData();
+      void fetchPageData(currentVin);
     }
   });
 
-  async function fetchPageData(): Promise<void> {
-    const currentVin = vin;
+  async function fetchPageData(targetVin?: string): Promise<void> {
+    const currentVin = targetVin ?? vin;
     if (!currentVin) {
       return;
     }
@@ -264,7 +262,7 @@
 
       <div class="vehicle-detail__header">
         <div class="vehicle-detail__image-wrap hc-surface">
-          {#if vehicle.selectedImageUrl}
+          {#if isSafeHttpUrl(vehicle.selectedImageUrl)}
             <img
               alt="Photo of {vehicle.vehicleYear} {vehicle.vehicleMake} {vehicle.vehicleModel}"
               class="vehicle-detail__image"

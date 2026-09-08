@@ -1,16 +1,26 @@
 <script lang="ts">
-  import { runAppBootstrap } from '$lib/api/bootstrap';
+  import { ensureAppBootstrapped, isAppBootstrapped } from '$lib/api/bootstrap';
   import Navbar from '$lib/components/Navbar.svelte';
   import ToastHost from '$lib/components/ToastHost.svelte';
   import { onMount } from 'svelte';
   import type { Snippet } from 'svelte';
 
-  let { children }: { children: Snippet } = $props();
-  let bootstrapped = $state(false);
+  interface Props {
+    data?: { bootstrapped?: boolean };
+    children: Snippet;
+  }
+
+  let { data, children }: Props = $props();
+  let clientBootstrapped = $state(false);
+  const bootstrapped = $derived(
+    Boolean(data?.bootstrapped || isAppBootstrapped() || clientBootstrapped),
+  );
 
   onMount(async () => {
-    await runAppBootstrap();
-    bootstrapped = true;
+    if (!bootstrapped) {
+      await ensureAppBootstrapped();
+      clientBootstrapped = true;
+    }
   });
 </script>
 
@@ -28,10 +38,16 @@
   </div>
 {/if}
 
-<Navbar />
+<div
+  class="app-shell"
+  inert={!bootstrapped ? true : undefined}
+  aria-hidden={!bootstrapped ? 'true' : undefined}
+>
+  <Navbar />
 
-<main>
-  {@render children()}
-</main>
+  <main>
+    {@render children()}
+  </main>
 
-<ToastHost />
+  <ToastHost />
+</div>

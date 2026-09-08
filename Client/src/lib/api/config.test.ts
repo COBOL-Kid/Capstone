@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveBackendOrigin } from './config';
+import { isSameBackendOrigin, resolveBackendOrigin } from './config';
 
 describe('apiConfig', () => {
   it('uses the page origin for API calls on localhost', () => {
@@ -12,5 +12,11 @@ describe('apiConfig', () => {
     expect(resolveBackendOrigin('https://honest-car.example.com')).toBe(
       'https://honest-car.example.com',
     );
+  });
+
+  it('correctly identifies same-origin vs external URLs', () => {
+    expect(isSameBackendOrigin('/api/vin')).toBe(true);
+    expect(isSameBackendOrigin('/api/auth/csrf')).toBe(true);
+    expect(isSameBackendOrigin('https://api.external.com/data')).toBe(false);
   });
 });

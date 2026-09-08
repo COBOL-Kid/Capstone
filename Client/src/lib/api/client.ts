@@ -1,4 +1,4 @@
-import { isSameBackendOrigin } from './config';
+import { apiConfig, isSameBackendOrigin } from './config';
 
 /** HTTP error with parsed body. Thrown by apiFetch for non-2xx responses. */
 export class ApiError extends Error {
@@ -22,7 +22,7 @@ export function onUnauthorized(handler: UnauthorizedHandler): void {
   unauthorizedHandler = handler;
 }
 
-function readXsrfToken(): string | null {
+export function readXsrfToken(): string | null {
   if (typeof document === 'undefined') {
     return null;
   }
@@ -36,6 +36,35 @@ function readXsrfToken(): string | null {
 }
 
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+
+let csrfPromise: Promise<void> | null = null;
+
+/** Issues or ensures the CSRF token cookie is present before mutating requests. */
+export async function ensureCsrfToken(): Promise<void> {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return;
+  }
+  if (readXsrfToken()) {
+    return;
+  }
+  if (!csrfPromise) {
+    csrfPromise = (async () => {
+      try {
+        await apiGet<unknown>(`${apiConfig.authUrl}/csrf`);
+      } catch {
+        // Bootstrap continues without CSRF; mutating requests will fail naturally.
+      } finally {
+        csrfPromise = null;
+      }
+    })();
+  }
+  return csrfPromise;
+}
+
+/** Resets in-flight CSRF request promise for test isolation. */
+export function resetCsrfToken(): void {
+  csrfPromise = null;
+}
 
 async function parseBody(response: Response): Promise<unknown> {
   if (response.status === 204) {
@@ -57,7 +86,11 @@ export async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<
   const headers = new Headers(init.headers);
 
   if (MUTATING.has(method) && isSameBackendOrigin(url)) {
-    const token = readXsrfToken();
+    let token = readXsrfToken();
+    if (!token && typeof window !== 'undefined' && typeof document !== 'undefined') {
+      await ensureCsrfToken();
+      token = readXsrfToken();
+    }
     if (token && !headers.has('X-XSRF-TOKEN')) {
       headers.set('X-XSRF-TOKEN', token);
     }
@@ -69,7 +102,11 @@ export async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<
   const response = await fetch(url, { ...init, method, headers, credentials: 'include' });
 
   if (response.status === 401 && isSameBackendOrigin(url)) {
-    if (!url.includes('/api/auth/authenticate') && !url.includes('/api/auth/register')) {
+    if (
+      !url.includes('/api/auth/authenticate') &&
+      !url.includes('/api/auth/register') &&
+      !url.includes('/api/auth/csrf')
+    ) {
       unauthorizedHandler?.(url);
     }
   }

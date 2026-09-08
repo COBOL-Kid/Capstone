@@ -24,18 +24,18 @@
 - **Layout:** `Client/` (SvelteKit 5 + Svelte 5 static SPA, Tailwind v4) and `Server/` (Spring Boot 4.1.0 / Java 25 backend).
 - **JSON:** Server uses Jackson 3 (`tools.jackson` / `JsonMapper`). JWTs use JJWT via `jjwt-gson` (not `jjwt-jackson`).
 - **Git:** `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
-- **Support contact:** `support@honest-car.co` (see `Client/src/app/pages/about-page/about-page.html`).
+- **Support contact:** `support@honest-car.co` (see `Client/src/routes/our-services/+page.svelte`).
 
 ## Authentication & Security
 
 - Auth tokens are HttpOnly cookies; JWTs are not stored in `localStorage`. Production/Firebase uses a single `__session` cookie (Base64 JSON with access + refresh tokens) because Firebase Hosting forwards only `__session` to Cloud Run on GET requests. Local dev still accepts legacy `accessToken` / `refreshToken` cookies via the Vite dev proxy.
 - `validateSession()` clears the session only on **401** from `/api/account/me`; **403** or other hydration failures do not wipe a cookie-backed session from login/refresh.
-- `EmailVerifiedFilter` returns 403 for unverified `Role.USER` requests (e.g. `GET /api/vin`); unverified signups still reach `/home` with the verification banner. Home page skips `GET /api/vin` until `account.emailVerified === true` (`rxResource` `params`).
+- `EmailVerifiedFilter` returns 403 for unverified `Role.USER` requests (e.g. `GET /api/vin`); unverified signups still reach `/home` with the verification banner. Home page skips `GET /api/vin` until `account.emailVerified === true`.
 - Spring Security uses CSRF SPA mode (`SecurityConfig`); the client sends the `XSRF-TOKEN` cookie as `X-XSRF-TOKEN` on mutating requests (`apiFetch` in `Client/src/lib/api/client.ts`).
-- SPA bootstrap on load: `runAppBootstrap()` (`onMount` in `Client/src/routes/+layout.svelte`) calls `GET /api/auth/csrf`, then `validateSession()`, before hiding the splash—issues the CSRF cookie and hydrates navbar auth state on cold visits.
-- Bootstrap loading splash: branded static HTML in `Client/src/routes/+layout.svelte` with `Client/static/bootstrap-splash.css` linked in `src/app.html` (not bundled `app.css`) so first paint shows a loading screen during JS download and bootstrap HTTP calls; Svelte removes it when `bootstrapped` flips (public routes are SSR-prerendered, guarded routes render client-side via `/fallback.html`).
+- SPA bootstrap on load: `ensureAppBootstrapped()` / `runAppBootstrap()` (`Client/src/lib/api/bootstrap.ts`) issues the CSRF cookie and hydrates navbar auth state before guarded route loads run and before hiding the splash on cold visits.
+- Bootstrap loading splash: branded static HTML in `Client/src/routes/+layout.svelte` with `Client/static/bootstrap-splash.css` linked in `src/app.html` (not bundled `app.css`) so first paint shows a loading screen during JS download and bootstrap HTTP calls; Svelte removes it when `bootstrapped` flips, and gates the shell with `inert` while active (public routes are SSR-prerendered, guarded routes render client-side via `/fallback.html`).
 - Login rate limit: 5 attempts per IP per 15 minutes (`security.login.max-attempts-per-ip`, `security.login.rate-limit-window-minutes`).
-- No server-side CORS configuration (same-origin in prod via Firebase Hosting rewrites; dev proxy in Angular).
+- No server-side CORS configuration (same-origin in prod via Firebase Hosting rewrites; dev proxy in Vite).
 
 ## Database
 
@@ -77,13 +77,14 @@ cd Server && ./gradlew test \
   --tests "com.capstone.domain.UserDeletionIntegrationTest"
 ```
 
-**Targeted Client auth/interceptor tests** (`ng test` does not accept bare filenames after `--`; use `--include`):
+**Targeted Client auth/interceptor tests** (Vitest):
 
 ```bash
-cd Client && pnpm exec ng test --watch=false \
-  --include='src/app/core/auth/unauthorized.interceptor.spec.ts' \
-  --include='src/app/core/http/credentials.interceptor.spec.ts' \
-  --include='src/app/core/auth/auth.service.spec.ts'
+cd Client && pnpm test \
+  src/lib/api/client.test.ts \
+  src/lib/api/bootstrap.test.ts \
+  src/lib/stores/auth.svelte.test.ts \
+  src/routes/home/page.test.ts
 ```
 
 ### Server testing conventions
@@ -138,7 +139,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 ### One-time VM prerequisites
 
 - **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"`.
-- **pnpm 11:** `Client/package.json` pins `pnpm@11.9.0` via `packageManager`; activate with `corepack prepare pnpm@11.9.0 --activate`.
+- **pnpm 11:** `Client/package.json` pins `pnpm@11.10.0` via `packageManager`; activate with `corepack prepare pnpm@11.10.0 --activate`.
 - **JDK 25:** Gradle toolchain in `Server/build.gradle.kts` (`vendor = IBM` for IBM Semeru). Production container images use ICR `ibm-semeru-runtimes` Open Edition tags.
 - **PostgreSQL 16+:** Docker `postgres:16`, local install, or Supabase. Start local Postgres: `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Example URL: `jdbc:postgresql://localhost:5432/honestcar`. Supabase transaction pooler: port `6543` with `prepareThreshold=0` and `sslmode=require`; direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails locally.
 

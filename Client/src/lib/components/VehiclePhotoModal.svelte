@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isSafeHttpUrl } from '$lib/api/safe-url';
   import { updateSelectedPhoto } from '$lib/services/vin';
 
   import Dialog from './Dialog.svelte';
@@ -17,6 +18,7 @@
   let serverError = $state<string | null>(null);
 
   const busy = $derived(savingUrl !== null);
+  const safeImageUrls = $derived(availableImageUrls.filter(isSafeHttpUrl));
 
   async function selectPhoto(url: string): Promise<void> {
     if (savingUrl) {
@@ -56,11 +58,11 @@
 
   {#snippet children()}
     <div class="vehicle-photo-modal__body">
-      {#if availableImageUrls.length === 0}
+      {#if safeImageUrls.length === 0}
         <p class="vehicle-photo-modal__status">No photos available.</p>
       {:else}
         <div aria-label="Available vehicle photos" class="vehicle-photo-modal__grid" role="list">
-          {#each availableImageUrls as url, index (url)}
+          {#each safeImageUrls as url, index (url)}
             <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role, a11y_role_supports_aria_props -->
             <!-- role="listitem" on the tile button mirrors the Angular original so assistive tech and e2e target the same semantics -->
             <button

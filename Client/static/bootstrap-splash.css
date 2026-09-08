@@ -1,4 +1,4 @@
-/* Bootstrap splash — self-contained styles for first paint before Angular loads. */
+/* Bootstrap splash — self-contained styles for first paint before Svelte loads. */
 
 :root {
   --splash-bg: #07142b;
@@ -25,13 +25,18 @@ body {
 }
 
 .app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.75rem;
-  min-height: 100dvh;
+  width: 100vw;
+  height: 100dvh;
   padding: 2rem 1.5rem;
+  overflow: hidden;
   background:
     radial-gradient(120% 80% at 50% 0%, rgba(19, 49, 92, 0.35) 0%, transparent 60%),
     linear-gradient(
@@ -46,6 +51,11 @@ body {
   text-align: center;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.app-shell[inert] {
+  pointer-events: none;
+  user-select: none;
 }
 
 .app-splash__brand {

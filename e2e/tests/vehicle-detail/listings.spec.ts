@@ -197,7 +197,9 @@ test.describe("Vehicle listings modal", () => {
     await expect(closeButton).toBeDisabled();
 
     resolveFirstResponse!();
-    await expect(dialog.getByText("661 comparable listings found")).toBeVisible();
+    await expect(
+      dialog.getByText("661 comparable listings found"),
+    ).toBeVisible();
 
     await dialog
       .getByRole("button", { name: "Close current market value dialog" })
@@ -290,14 +292,12 @@ test.describe("Vehicle listings modal", () => {
 
     const dialog = await openListingsModal(page);
     await expect(dialog.locator("img")).toHaveCount(0);
-    await expect(
-      dialog.getByRole("button", { name: "Previous" }),
-    ).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Previous" })).toHaveCount(
+      0,
+    );
     await expect(dialog.getByRole("button", { name: "Next" })).toHaveCount(0);
     await expect(dialog.getByText(/^Page \d+$/)).toHaveCount(0);
-    await expect(
-      dialog.getByRole("button", { name: "Carfax" }),
-    ).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Carfax" })).toHaveCount(0);
   });
 
   test("LIST-009: pricing summary shows distinct low average and high values", async ({

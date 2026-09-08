@@ -21,7 +21,7 @@
 
 ## Repository Overview
 
-- **Layout:** `Client/` (Angular 22 SPA) and `Server/` (Spring Boot 4.1.0 / Java 25 backend).
+- **Layout:** `Client/` (Angular 22 SPA) and `Server/` (Spring Boot 4.1.1 / Java 25 backend).
 - **JSON:** Server uses Jackson 3 (`tools.jackson` / `JsonMapper`). JWTs use JJWT via `jjwt-gson` (not `jjwt-jackson`).
 - **Git:** `origin` is GitHub only (`https://github.com/COBOL-Kid/Capstone.git`; GitLab remote removed).
 - **Support contact:** `support@honest-car.co` (see `Client/src/app/pages/about-page/about-page.html`).
@@ -120,7 +120,7 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 
 - **Dependency scanning:** `cd Server && ./gradlew dependencyCheck` (OWASP); `cd Client && pnpm audit` or `pnpm audit:ci`.
 - **Optional live API smoke tests:** `cd Server && ./gradlew liveTest` (tagged `live`; needs real provider/Mailjet env vars).
-- **Gradle:** Uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` pinned at `11.15.0`. JDK 25 toolchain. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh`. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF).
+- **Gradle:** Uses `implementation(platform(SpringBootPlugin.BOM_COORDINATES))` instead of `io.spring.dependency-management`; `flyway-database-postgresql` pinned at `12.11.0`. JDK 25 toolchain. On Windows there is no `gradlew.bat`—invoke `./gradlew` via Git Bash `sh`. Dockerfile runs `sed -i 's/\r$//' gradlew` before invoking Gradle (Windows CRLF).
 - **Known flaky tests:** `VehicleOnboardingProviderBurstIntegrationTest` (timing-sensitive on slow VMs). Client `local-date.spec.ts` may fail when the VM timezone is UTC.
 
 ## Deployment & CI
@@ -136,8 +136,8 @@ static void integrationTestProperties(DynamicPropertyRegistry registry) {
 
 ### One-time VM prerequisites
 
-- **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"`.
-- **pnpm 11:** `Client/package.json` pins `pnpm@11.9.0` via `packageManager`; activate with `corepack prepare pnpm@11.9.0 --activate`.
+- **Node.js 24 LTS:** `nvm install 24 && nvm alias default 24`. Cloud Agent VMs ship `/exec-daemon/node` (v22) earlier on `PATH` than nvm; prepend Node 24 in `~/.bashrc`, e.g. `export PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"`.
+- **pnpm 12:** `Client/package.json` pins `pnpm@12.4.0` via `packageManager`; activate with `corepack prepare pnpm@12.4.0 --activate`.
 - **JDK 25:** Gradle toolchain in `Server/build.gradle.kts` (`vendor = IBM` for IBM Semeru). Production container images use ICR `ibm-semeru-runtimes` Open Edition tags.
 - **PostgreSQL 16+:** Docker `postgres:16`, local install, or Supabase. Start local Postgres: `sudo pg_ctlcluster 16 main start` (create `honestcar` DB/user if needed). Example URL: `jdbc:postgresql://localhost:5432/honestcar`. Supabase transaction pooler: port `6543` with `prepareThreshold=0` and `sslmode=require`; direct `db.<project-ref>.supabase.co:5432` is IPv6-only and often fails locally.
 

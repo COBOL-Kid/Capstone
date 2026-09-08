@@ -2,7 +2,7 @@
   "name": "honest-car-e2e",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@12.4.0",
   "scripts": {
     "test": "playwright test --workers=1",
     "test:ui": "playwright test --ui --workers=1",
@@ -12,9 +12,9 @@
     "install:browsers": "playwright install chromium"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.13.3",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.6",
     "typescript": "~6.0.3"
   }
 }

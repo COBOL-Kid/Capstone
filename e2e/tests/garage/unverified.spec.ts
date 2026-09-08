@@ -12,10 +12,7 @@ test("GAR-010: unverified user does not fetch or show vehicles", async ({
 }) => {
   const vinRequests: string[] = [];
   page.on("request", (request) => {
-    if (
-      request.url().includes("/api/vin") &&
-      request.method() === "GET"
-    ) {
+    if (request.url().includes("/api/vin") && request.method() === "GET") {
       vinRequests.push(request.url());
     }
   });

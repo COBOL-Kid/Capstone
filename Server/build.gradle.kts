@@ -4,9 +4,9 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     java
-    id("org.springframework.boot") version "4.1.0"
-    id("com.diffplug.spotless") version "8.7.0"
-    id("org.owasp.dependencycheck") version "12.2.2"
+    id("org.springframework.boot") version "4.1.1"
+    id("com.diffplug.spotless") version "8.10.1"
+    id("org.owasp.dependencycheck") version "13.0.0"
 }
 
 group = "com.capstone"
@@ -24,7 +24,7 @@ repositories {
     mavenCentral()
 }
 
-val flywayVersion = "12.9.0"
+val flywayVersion = "12.11.0"
 
 configurations.configureEach {
     resolutionStrategy.eachDependency {

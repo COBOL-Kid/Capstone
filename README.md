@@ -43,7 +43,7 @@ Capstone/
 ### Prerequisites
 
 - **JDK 25**
-- **Node.js 24 LTS** and **pnpm 11** (`corepack prepare pnpm@11.9.0 --activate`)
+- **Node.js 24 LTS** and **pnpm 12** (`corepack prepare pnpm@12.4.0 --activate`)
 - **PostgreSQL 16+** (local install, Docker, or Supabase)
 - A repo-root `.env` file — copy variable names from `Server/src/main/resources/application.properties`
 
